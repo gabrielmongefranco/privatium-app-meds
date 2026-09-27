@@ -32,6 +32,8 @@ local NOTICES = {
   removed = 'Removed. Privatium keeps the original record in its log.',
   missing = 'That record is not in the app. It may have been removed.',
   unnamed = 'Name your household first. The reminder settings are saved with it.',
+  named   = 'Saved. The search now finds this medication by that name.',
+  merged  = 'Merged. The fills, the list entries and the names now belong to this medication.',
 }
 
 --- The sentence for a notice code.

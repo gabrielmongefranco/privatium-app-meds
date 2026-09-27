@@ -81,8 +81,7 @@ On the Contacts page, a phone number is a link. On a phone, choosing it starts a
 The catalog lists products. It does not say who takes them.
 
 1. Choose **Setup**, then **Medication catalog**.
-2. Use the search box to check that the medication is not there yet. The search looks
-   through every name of a medication, so "apap" finds the entries for acetaminophen.
+2. Use the search box to check that the medication is not there yet.
 3. Choose **Add a medication**.
 4. Type the brand name, the generic name, or both.
 5. Type the strength as the label prints it, with the unit. Examples are "10 mg",
@@ -94,6 +93,43 @@ The catalog lists products. It does not say who takes them.
 8. Leave the short name empty. The app builds it, such as "Examplol (Exampline) 10 mg".
    Type a short name only if you want a different one.
 9. Choose **Save**.
+
+### Find a medication by any name
+
+The search box of the catalog looks through every name of a medication: the short name,
+the brand name, the generic name and the other names. Capital letters and punctuation do
+not matter.
+
+| You type | The app shows |
+|---|---|
+| A name or the start of one, such as "apap" or "atorva" | The medications that answer to it |
+| A name with a typing mistake, such as "Lipitro" | The closest names, under **Did you mean one of these?** |
+
+A close name is only a suggestion. Different medications can have names that look alike,
+so read the name before you choose.
+
+### Teach the app another name
+
+A label, a statement and a person may each use a different name for one medication. Teach
+the app a name once, and the search finds the medication by it from then on.
+
+1. Search for the name as it is written.
+2. Under **Teach the app this name**, choose the medication that the name belongs to.
+
+You can also open a medication and type the name under **Add another name**.
+
+### Merge two entries for one product
+
+If the catalog holds one product twice, under two names, merge the two entries.
+
+1. Open the entry that should go away.
+2. Choose **Merge into another medication**.
+3. Find the entry that stays and choose **Keep this one**.
+4. Read what will happen, then choose **Merge**.
+
+The fills, the list entries and the prior authorizations move to the entry that stays.
+The names of the entry that goes away become other names of the entry that stays. A merge
+cannot be undone in the app, so merge only entries with the same strength.
 
 ### Change the reminder settings
 

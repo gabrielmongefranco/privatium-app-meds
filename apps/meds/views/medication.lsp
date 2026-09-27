@@ -47,17 +47,30 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 </div>
 
 <h2>Other names</h2>
+<p>The search finds this medication by its short name, its brand name, its generic name,
+   and every name listed here.</p>
 <? if #other_names == 0 then ?>
   <p class="pv-empty">This medication has no other names.</p>
 <? else ?>
-  <ul>
+  <ul class="meds-names">
     <? for _, other in ipairs(other_names) do ?>
-      <li><?= other.alias ?></li>
+      <li><span><?= other.alias ?></span>
+        <a class="pv-btn" href="<?= url('/setup/catalog/' .. medication.medication_id .. '/names/' .. other.id .. '/remove') ?>"><?= icon('trash') ?> Remove<span class="pv-visually-hidden"> the name <?= other.alias ?></span></a></li>
     <? end ?>
   </ul>
 <? end ?>
 
+<form method="post" action="<?= url('/setup/catalog/' .. medication.medication_id .. '/names') ?>" novalidate>
+  <?= csrf() ?>
+  <?= render('_field', { name = 'alias', label = 'Add another name', value = typed_alias,
+        err = alias_err, required = true, maxlength = 200,
+        help = 'A name as a label, a statement or a person writes it.' }) ?>
+  <button type="submit" class="pv-btn"><?= icon('plus-lg') ?> Add the name</button>
+</form>
+
+<h2>Actions</h2>
 <p class="pv-actions">
   <a class="pv-btn" href="<?= url('/setup/catalog/' .. medication.medication_id .. '/edit') ?>"><?= icon('pencil') ?> Change</a>
+  <a class="pv-btn" href="<?= url('/setup/catalog/' .. medication.medication_id .. '/merge') ?>"><?= icon('arrows-collapse') ?> Merge into another medication</a>
   <a class="pv-btn" href="<?= url('/setup/catalog/' .. medication.medication_id .. '/remove') ?>"><?= icon('trash') ?> Remove</a>
 </p>

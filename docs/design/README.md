@@ -28,8 +28,8 @@ due. It is for the owner who reviews the design and for the developer who builds
 [import plan](import.md) covers the owner's legacy database.
 
 > **Planned.** Most screens on this page do not exist yet. Built so far: the household
-> name, Contacts, and Setup with People, the Medication catalog and the Reminder
-> settings. [The usage page](../usage.md) describes them. The build order below says
+> name, Contacts, and Setup with People, the Medication catalog with its search, and
+> the Reminder settings. [The usage page](../usage.md) describes them. The build order below says
 > what comes next.
 
 ### Goals
@@ -568,7 +568,7 @@ Each step ends with a clean `privatium lint` and with its documentation updated.
 
 1. Tables, views and the starter catalog, with the data model page. This step is done.
 2. Setup screens for people, pharmacies, prescribers and the catalog. This step is done.
-3. The medication search, the other names and the merge.
+3. The medication search, the other names and the merge. This step is done.
 4. The one-time import.
 5. Medications and the medication page.
 6. Record a fill, and History.

@@ -3,8 +3,9 @@
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
 -- Last Modified: 2026-09-27
--- Summary: The screens that list, show, add, change and remove the medications of the
---          catalog. A catalog entry is a product; what a person takes is kept elsewhere.
+-- Summary: The screens of the medication catalog: search, show, add, change, remove,
+--          other names, and the merge of two entries that are the same product.
+--          A catalog entry is a product; what a person takes is kept elsewhere.
 -- Notes: See README file for documentation and full license information.
 --
 -- Copyright © 2026 Gabriel Mongefranco
@@ -24,6 +25,8 @@
 local pv              = require 'privatium'
 local choices         = require 'choices'
 local medication_name = require 'medication_name'
+local medication_search = require 'medication_search'
+local merge           = require 'merge'
 local page            = require 'page'
 local store           = require 'store'
 local text            = require 'text'
@@ -35,27 +38,17 @@ local NAME_MAX     = 200   -- Generic names of products with several drugs run l
 local STRENGTH_MAX = 60
 local CHOICE_MAX   = 60
 local PACKAGE_MAX  = 40
-local FILTER_MAX   = 100
 local FIELDS       = { 'brand_name', 'generic_name', 'strength', 'route', 'dose_form',
                        'package_size', 'package_type', 'short_name' }
 
 --- Reads ---
 
--- Grain: one row per medication that answers to the filter under any of its names.
--- An empty filter returns the whole catalog.
-local function filtered(filter)
-  -- The filter is matched as text, so the three characters LIKE gives a meaning to are
-  -- escaped. The value itself is bound, never joined into the statement.
-  local literal = filter:gsub('[\\%%_]', '\\%0')
+-- Grain: one row per medication.
+local function everything()
   return pv.query([[
-    SELECT m.medication_id, m.short_name, m.full_name, m.is_specialty
-      FROM v_medication m
-     WHERE ?1 = ''
-        OR EXISTS (SELECT 1
-                     FROM v_medication_name n
-                    WHERE n.medication_id = m.medication_id
-                      AND n.name LIKE '%' || ?1 || '%' ESCAPE '\')
-     ORDER BY m.short_name COLLATE NOCASE, m.medication_id]], { literal })
+    SELECT medication_id, short_name, full_name, is_specialty
+      FROM v_medication
+     ORDER BY short_name COLLATE NOCASE, medication_id]])
 end
 
 -- Grain: one row, the medication with its built full name, or nil.
@@ -201,14 +194,16 @@ end
 --- Routes ---
 
 pv.get(LIST, function(req)
-  local filter = text.clean(req.query.q) or ''
-  if (text.length(filter) or FILTER_MAX + 1) > FILTER_MAX then filter = '' end
-  local medications = filtered(filter)
+  local typed = medication_search.typed(req.query.q)
+  local found = medication_search.find(typed)
+  local medications = typed == '' and everything() or found.matches
   return pv.render('catalog', {
     section     = 'setup',
     notice      = page.notice(req.query.notice),
-    filter      = filter,
+    filter      = typed,
     medications = medications,
+    close       = found.close,
+    exact       = found.exact,
     found       = page.counted(#medications, 'medication', 'medications'),
   })
 end)
@@ -290,4 +285,127 @@ pv.post(LIST .. '/:id/remove', function(req)
   end)
   if not removed then return pv.redirect(url(LIST .. '/' .. id .. '/remove')) end
   return pv.redirect(url(LIST .. '?notice=removed'))
+end)
+
+--- Other names ---
+
+local function name_known(id, name)
+  local key = text.key(name)
+  for _, row in ipairs(pv.query('SELECT name FROM v_medication_name WHERE medication_id = ?', { id })) do
+    if text.key(row.name) == key then return true end
+  end
+  return false
+end
+
+pv.post(LIST .. '/:id/names', function(req)
+  local medication = one(req.params.id)
+  if not medication then return pv.redirect(url(LIST .. '?notice=missing')) end
+  local id = medication.medication_id
+  local alias, problem = validate.text(req.form.alias, 'the other name', NAME_MAX, true)
+  if alias and name_known(id, alias) then
+    problem = 'Type another name. This medication already answers to that one.'
+  end
+  if not problem then
+    local saved, refusal = store.save('medication_alias', nil, { medication_id = id, alias = alias })
+    if saved then return pv.redirect(url(LIST .. '/' .. id .. '?notice=named')) end
+    problem = refusal
+  end
+  return pv.render('medication', {
+    section     = 'setup',
+    medication  = medication,
+    other_names = other_names(id),
+    typed_alias = req.form.alias,
+    alias_err   = problem,
+  })
+end)
+
+pv.get(LIST .. '/:id/names/:name_id/remove', function(req)
+  local medication = one(req.params.id)
+  local alias = pv.get_row('medication_alias', req.params.name_id)
+  if not medication or not alias or alias.medication_id ~= medication.medication_id then
+    return pv.redirect(url(LIST .. '?notice=missing'))
+  end
+  return pv.render('remove', {
+    section = 'setup',
+    heading = 'Remove another name',
+    name    = alias.alias,
+    used_by = {},
+    action  = url(LIST .. '/' .. medication.medication_id .. '/names/' .. alias.id .. '/remove'),
+    back    = url(LIST .. '/' .. medication.medication_id),
+  })
+end)
+
+pv.post(LIST .. '/:id/names/:name_id/remove', function(req)
+  local medication = one(req.params.id)
+  local alias = pv.get_row('medication_alias', req.params.name_id)
+  if not medication or not alias or alias.medication_id ~= medication.medication_id then
+    return pv.redirect(url(LIST .. '?notice=missing'))
+  end
+  pv.delete('medication_alias', alias.id)
+  return pv.redirect(url(LIST .. '/' .. medication.medication_id .. '?notice=removed'))
+end)
+
+--- Merge ---
+
+-- The two medications of a merge, or nil when either is missing or both are the same.
+local function pair(req)
+  local source, target = one(req.params.id), one(req.params.target_id)
+  if not source or not target or source.medication_id == target.medication_id then return nil end
+  return source, target
+end
+
+-- What a plan will do, as sentences for the page that asks first.
+local function sentences(plan)
+  local list = {}
+  local function add(count, singular, plural, ending)
+    if count > 0 then list[#list + 1] = page.counted(count, singular, plural) .. ending end
+  end
+  add(#plan.fills, 'fill', 'fills', ' will move.')
+  add(#plan.entries_moved, "entry on a person's list", "entries on people's lists", ' will move.')
+  add(#plan.entries_dropped, "entry on a person's list", "entries on people's lists",
+      ' will be removed, because that person has both medications on their list. The entry in use is kept.')
+  add(#plan.authorizations, 'prior authorization', 'prior authorizations', ' will move.')
+  add(#plan.aliases_moved + #plan.names_added, 'name', 'names', ' will become other names of the medication that stays.')
+  return list
+end
+
+pv.get(LIST .. '/:id/merge', function(req)
+  local source = one(req.params.id)
+  if not source then return pv.redirect(url(LIST .. '?notice=missing')) end
+  local typed = medication_search.typed(req.query.q)
+  if typed == '' then typed = source.generic_name or source.brand_name or '' end
+  local found = medication_search.find(typed)
+  local candidates = {}
+  for _, group in ipairs({ found.matches, found.close }) do
+    for _, medication in ipairs(group) do
+      if medication.medication_id ~= source.medication_id then
+        candidates[#candidates + 1] = medication
+      end
+    end
+  end
+  return pv.render('merge_choose', {
+    section = 'setup', source = source, filter = typed, candidates = candidates,
+  })
+end)
+
+pv.get(LIST .. '/:id/merge/:target_id', function(req)
+  local source, target = pair(req)
+  if not source then return pv.redirect(url(LIST .. '?notice=missing')) end
+  return pv.render('merge_confirm', {
+    section = 'setup', source = source, target = target,
+    changes = sentences(merge.plan(source, target)),
+  })
+end)
+
+pv.post(LIST .. '/:id/merge/:target_id', function(req)
+  local source, target = pair(req)
+  if not source then return pv.redirect(url(LIST .. '?notice=missing')) end
+  local merged, refusal = merge.apply(merge.plan(source, target))
+  if not merged then
+    return pv.render('merge_confirm', {
+      section = 'setup', source = source, target = target,
+      changes = sentences(merge.plan(source, target)), err = refusal,
+    })
+  end
+  return pv.redirect(url(LIST .. '/' .. target.medication_id .. '?notice=merged'))
 end)

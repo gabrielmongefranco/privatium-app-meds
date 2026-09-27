@@ -65,3 +65,8 @@ main form fieldset > label:not(:has(input[type="checkbox"])):not(:has(input[type
 @media print {
   .pv-header, .pv-footer, .meds-nav, .pv-actions { display: none; }
 }
+
+/* Other names sit one to a line, each with its own Remove button. */
+.meds-names { list-style: none; padding: 0; }
+.meds-names li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; padding: .25rem 0; border-bottom: 1px solid var(--pv-line); }
+.meds-teach { margin: 0 0 .5rem; }

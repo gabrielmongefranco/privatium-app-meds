@@ -46,6 +46,9 @@ view, and must change in the same commit as `schema.sql`.
 | `app.lua` | The entry point. It loads the route modules, in the order paths are tried. |
 | `lib/routes/` | One module for each part of the app. Loading a module registers its routes. |
 | `lib/text.lua`, `validate.lua`, `choices.lua`, `medication_name.lua`, `page.lua`, `clock.lua` | Pure Lua with no framework calls, so plain Lua 5.4 can test them |
+| `lib/match.lua` | Pure Lua: how well a typed name matches a name of a medication |
+| `lib/medication_search.lua` | The search that every screen uses to find a medication |
+| `lib/merge.lua` | The plan and the batch of a merge |
 | `lib/store.lua` | The one place that writes and removes records |
 | `views/` | One template for each page. A name that starts with `_` is a partial. |
 
@@ -65,6 +68,8 @@ view, and must change in the same commit as `schema.sql`.
 | `GET /setup/catalog` | `catalog` | The catalog, narrowed by `?q=` |
 | `GET /setup/catalog/:id` | `catalog` | One medication with its other names |
 | `GET`, `POST /setup/catalog/new`, `/:id/edit`, `/:id/remove` | `catalog` | Add, change, remove |
+| `POST /setup/catalog/:id/names`, `GET`, `POST /:id/names/:name_id/remove` | `catalog` | Other names |
+| `GET /setup/catalog/:id/merge`, `GET`, `POST /:id/merge/:target_id` | `catalog` | Merge two entries |
 
 ### Conventions to preserve
 
@@ -90,6 +95,7 @@ view, and must change in the same commit as `schema.sql`.
   it.
 - Every time and date on a screen is local. Read them from `lib/clock.lua`, and use
   `date('now', 'localtime')` in SQL.
+- A close match in a search is a suggestion. Code never picks a medication from one.
 - A diagnostic message holds no field value. `page.masked` strips quoted values.
 - Templates use `<?= ?>` only. There is no `<?raw ?>` here and there should not be.
 - `static/meds.css` uses the shell's color tokens. Inherit form controls and focus rings

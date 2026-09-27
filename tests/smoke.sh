@@ -288,9 +288,9 @@ expect_text "catalog page counts the medications" "41 medications"
 expect_status "catalog filtered by another name" 200 "$(get '/setup/catalog?q=apap')"
 expect_text "two medications answer to the other name" "2 medications"
 expect_status "catalog filtered by a percent sign" 200 "$(get '/setup/catalog?q=%25')"
-expect_text "a percent sign is matched as text" "6 medications"
+expect_text "a percent sign alone finds nothing" "No medication answers"
 expect_status "catalog filtered by an underscore" 200 "$(get '/setup/catalog?q=_')"
-expect_text "an underscore is matched as text" "No medication answers"
+expect_text "an underscore alone finds nothing" "No medication answers"
 expect_status "catalog filtered by SQL" 200 "$(get "/setup/catalog?q=%27%20OR%201%3D1%20--")"
 expect_text "SQL in the filter matches nothing" "No medication answers"
 expect_status "catalog filtered by markup" 200 "$(get '/setup/catalog?q=%3Cimg%20src%3Dx%3E')"
@@ -332,6 +332,79 @@ expect_status "a medication goes with its other names" 303 "$(post /setup/catalo
   /setup/catalog/01J8MEDS0000000000MED00003/remove)"
 expect_status "one medication fewer" 40 "$(count_of medication)"
 expect_status "one other name fewer" 37 "$(count_of medication_alias)"
+
+### Medication Search, Other Names And Merge ###
+expect_status "search by a misspelled name" 200 "$(get '/setup/catalog?q=Lipitro')"
+expect_text "a close name is offered as a question" "Did you mean one of these?"
+expect_text "the close medication is named" "Lipitor (Atorvastatin) 20 mg"
+expect_text "a close name says to check it" "names that look alike"
+expect_status "search by the start of a generic name" 200 "$(get '/setup/catalog?q=atorva')"
+expect_text "the start of a name finds the medication" "1 medication"
+expect_no_text "a contained name is not a question" "Did you mean one of these?"
+expect_text "an unknown name can be taught" "Teach the app this name"
+expect_status "search by an exact other name" 200 "$(get '/setup/catalog?q=PEG%203350')"
+expect_no_text "a known name is not taught again" "Teach the app this name"
+
+lipitor=01J8MEDS0000000000MED00015
+expect_status "a name is taught" 303 "$(post /setup/catalog/new "/setup/catalog/$lipitor/names" 'alias=atorva 20')"
+expect_status "search by the taught name" 200 "$(get '/setup/catalog?q=ATORVA-20')"
+expect_text "the taught name finds the medication" "Lipitor (Atorvastatin) 20 mg"
+expect_no_text "the taught name is now known" "Teach the app this name"
+expect_status "a name the medication has is refused" 200 "$(post /setup/catalog/new "/setup/catalog/$lipitor/names" 'alias=LIPITOR')"
+expect_text "a name the medication has says why" "already answers to that one"
+expect_status "an empty other name is refused" 200 "$(post /setup/catalog/new "/setup/catalog/$lipitor/names" 'alias= ')"
+expect_status "markup as another name is saved as text" 303 "$(post /setup/catalog/new "/setup/catalog/$lipitor/names" 'alias=<b>bold</b>')"
+expect_status "medication page with other names" 200 "$(get "/setup/catalog/$lipitor")"
+expect_text "markup in another name is shown escaped" "&lt;b&gt;bold&lt;/b&gt;"
+name_id="$(grep -o "/names/[0-9A-Z]\{26\}/remove" "$BODY" | head -1 | sed 's|/names/||; s|/remove||')"
+expect_status "removing another name asks first" 200 "$(get "/setup/catalog/$lipitor/names/$name_id/remove")"
+expect_status "another name of a different medication is not removed" 303 "$(post /setup/catalog/new \
+  "/setup/catalog/01J8MEDS0000000000MED00016/names/$name_id/remove")"
+names_before="$(count_of medication_alias)"
+expect_status "another name is removed" 303 "$(post "/setup/catalog/$lipitor/names/$name_id/remove" \
+  "/setup/catalog/$lipitor/names/$name_id/remove")"
+expect_status "one other name fewer after the removal" "$((names_before - 1))" "$(count_of medication_alias)"
+
+# Two entries for one product, as two sources would name it. The second has a fill, a
+# list entry and a prior authorization; the person also has the first on their list.
+expect_status "the same product under a second name is added" 303 "$(post /setup/catalog/new /setup/catalog/new \
+  'generic_name=Atorvastatin calcium' 'strength=20 mg' 'route=Oral' 'dose_form=Tablet')"
+get '/setup/catalog?q=atorvastatin%20calcium%2020' >/dev/null
+duplicate="$(grep -o '/setup/catalog/[0-9A-Z]\{26\}"' "$BODY" | sed 's|.*/||; s|"||' | grep -v "$lipitor" | head -1)"
+expect_status "records for both entries are recorded" 200 "$(curl -s -m 10 -o /dev/null -w '%{http_code}' \
+  -H 'Content-Type: application/json' \
+  -d "{\"events\":[{\"op\":\"put\",\"tbl\":\"fill\",\"id\":\"01J8MEDS0000000000TEST0002\",\"d\":{\"person_id\":\"$alex\",\"medication_id\":\"$duplicate\",\"pharmacy_id\":\"01J8MEDS0000000000TEST0001\",\"filled_on\":\"2026-09-02\",\"days_supply\":30,\"quantity\":\"30\",\"amount_paid\":\"4.50\"}},{\"op\":\"put\",\"tbl\":\"person_medication\",\"id\":\"01J8MEDS0000000000TEST0003\",\"d\":{\"person_id\":\"$alex\",\"medication_id\":\"$duplicate\",\"status\":\"taking_regularly\",\"refills_left\":2}},{\"op\":\"put\",\"tbl\":\"person_medication\",\"id\":\"01J8MEDS0000000000TEST0004\",\"d\":{\"person_id\":\"$alex\",\"medication_id\":\"$lipitor\",\"status\":\"not_taking\",\"refills_left\":0}},{\"op\":\"put\",\"tbl\":\"prior_authorization\",\"id\":\"01J8MEDS0000000000TEST0005\",\"d\":{\"person_id\":\"$alex\",\"medication_id\":\"$duplicate\",\"valid_from\":\"2026-01-01\",\"valid_to\":\"2026-12-31\"}}]}" \
+  "$APP/api/events")"
+expect_status "merge page offers the other entry" 200 "$(get "/setup/catalog/$duplicate/merge")"
+expect_text "merge page names the entry that stays" "Lipitor (Atorvastatin) 20 mg"
+expect_status "merge asks first" 200 "$(get "/setup/catalog/$duplicate/merge/$lipitor")"
+expect_text "merge says how many fills move" "1 fill will move."
+expect_text "merge says which list entry is kept" "The entry in use is kept."
+expect_text "merge says it cannot be undone" "cannot be undone in the app"
+expect_status "a medication is not merged into itself" 303 "$(get "/setup/catalog/$lipitor/merge/$lipitor")"
+fills_before="$(count_of fill)"; entries_before="$(count_of person_medication)"
+expect_status "merge without the token is refused" 403 "$(curl -s -m 10 -o /dev/null -w '%{http_code}' -X POST "$APP/setup/catalog/$duplicate/merge/$lipitor")"
+expect_status "merge is done" 303 "$(post "/setup/catalog/$duplicate/merge/$lipitor" "/setup/catalog/$duplicate/merge/$lipitor")"
+expect_status "no fill is lost in a merge" "$fills_before" "$(count_of fill)"
+expect_status "the list entry not in use is dropped" "$((entries_before - 1))" "$(count_of person_medication)"
+curl -s -m 10 "$APP/api/row/fill/01J8MEDS0000000000TEST0002" >"$BODY"
+expect_text "the fill points to the entry that stays" "\"medication_id\":\"$lipitor\""
+expect_text "the fill keeps its amount" '"amount_paid":"4.50"'
+expect_text "the fill keeps its quantity" '"quantity":"30.000"'
+curl -s -m 10 "$APP/api/row/person_medication/01J8MEDS0000000000TEST0003" >"$BODY"
+expect_text "the list entry in use points to the entry that stays" "\"medication_id\":\"$lipitor\""
+expect_text "the list entry keeps its refills" '"refills_left":"2"'
+expect_status "the dropped list entry is gone" 404 "$(curl -s -m 10 -o /dev/null -w '%{http_code}' "$APP/api/row/person_medication/01J8MEDS0000000000TEST0004")"
+curl -s -m 10 "$APP/api/row/prior_authorization/01J8MEDS0000000000TEST0005" >"$BODY"
+expect_text "the prior authorization points to the entry that stays" "\"medication_id\":\"$lipitor\""
+expect_status "the merged entry is gone" 303 "$(get "/setup/catalog/$duplicate")"
+expect_status "medication page after the merge" 200 "$(get "/setup/catalog/$lipitor?notice=merged")"
+expect_text "the page confirms the merge" "Merged."
+expect_status "search by the name of the merged entry" 200 "$(get '/setup/catalog?q=atorvastatin%20calcium%2020%20mg')"
+expect_text "the old name finds the entry that stays" "Lipitor (Atorvastatin) 20 mg"
+curl -s -m 10 "$APP/api/q/v_active_medication" >"$BODY"
+expect_text "the view shows the medication under the name that stays" '"medication_name":"Lipitor (Atorvastatin) 20 mg"'
+expect_text "the view counts the fill of the merged entry" '"last_filled_on":"2026-09-02"'
 
 ### Setup ###
 expect_status "setup page" 200 "$(get /setup)"
