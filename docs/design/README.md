@@ -250,7 +250,7 @@ one of your pharmacies instead.
 |---|---|---|
 | Ready | Every value was read | Ticked |
 | Not paid | The claim status is not Paid | Not ticked. Tick it only if the fill took place. |
-| Already recorded | The person has a fill with the same prescription number and date | The fill has no check box |
+| Already recorded | The person has a fill with the same prescription number and date, or a fill of the same medication on the same date | The fill has no check box |
 | Details missing | The fill was not opened in the portal before copying | The fill has no check box |
 | Could not read | A value is not a date or a number | The fill has no check box |
 
@@ -261,7 +261,11 @@ When a fill you ticked has no medication or no pharmacy yet, **Add fills** adds 
 The page comes back with your choices and marks the ones that are open.
 
 The prescription number and the date together tell the app that a fill is already
-recorded. So pasting the same page twice adds nothing the second time.
+recorded. So pasting the same page twice adds nothing the second time. A fill that was
+typed by hand or imported may have no prescription number. So the app also leaves out a
+fill when the person has a fill of the same medication on the same date. This check
+runs once the app knows which medication a name means. A medication that has no fill
+left to add asks no question.
 
 **Add fills** writes every included row in one batch. For each row, it also lowers the
 refills left of that medication by one, never below zero.

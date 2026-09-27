@@ -920,7 +920,8 @@ expect_text "the new medication is on the list" '"medication_name":"Pastedol ER 
 
 # A prescription number that an earlier fill has names the medication, however the
 # portal writes the number and the name.
-numbered="$(us '-1 day')LISINOPRIL (GENERIC) TABSEXAMPLE PHARMACY\$ 12.00\$ 5.00PaidLess Infosort Icon
+# The first two fills are on dates with no fill of the medication, so they stay to be added.
+numbered="$(us '-11 days')LISINOPRIL (GENERIC) TABSEXAMPLE PHARMACY\$ 12.00\$ 5.00PaidLess Infosort Icon
 EXAMPLE PHARMACY
 
 PHARMACY ID
@@ -931,7 +932,7 @@ RX NUMBER
 
 DAYS SUPPLY
 30
-$(us '-2 days')BLOOD PRESSURE PILLEXAMPLE PHARMACY\$ 12.00\$ 5.00PaidLess Infosort Icon
+$(us '-12 days')BLOOD PRESSURE PILLEXAMPLE PHARMACY\$ 12.00\$ 5.00PaidLess Infosort Icon
 EXAMPLE PHARMACY
 
 PHARMACY ID
@@ -960,6 +961,45 @@ expect_text "a number alone puts the medication first and leaves the choice open
 expect_flat_text "a number alone offers the medication" "name=\"medication_2_choice\" value=\"$prinivil\""
 expect_no_flat_text "a number alone marks nothing" "name=\"medication_2_choice\" value=\"$prinivil\" checked"
 expect_text "a number written with a hyphen is the same number" "Already recorded"
+
+# A fill with no prescription number is known by its medication and its date. The page
+# of the portal gives the fill a number, which must not let it in a second time.
+typed_day="$(date -d '-20 days' +%Y-%m-%d)"
+expect_status "a fill with no prescription number is recorded" 200 "$(curl -s -m 10 -o /dev/null -w '%{http_code}' -X POST \
+  -H 'Content-Type: application/json' \
+  -d "{\"events\":[{\"op\":\"put\",\"tbl\":\"fill\",\"id\":\"01J8MEDS0000000000TEST0007\",\"d\":{\"person_id\":\"$alex\",\"medication_id\":\"$prinivil\",\"pharmacy_id\":\"01J8MEDS0000000000TEST0001\",\"filled_on\":\"$typed_day\",\"days_supply\":30,\"quantity\":\"30\"}}],\"since\":0}" \
+  "$APP/api/events")"
+repeated="SERVICE DATEDRUG NAMEPHARMACYPLAN PAIDYOU PAIDCLAIM STATUS
+$(us '-20 days')LISINOPRIL 10 MG TABLETEXAMPLE PHARMACY\$ 12.00\$ 5.00PaidLess Infosort Icon
+EXAMPLE PHARMACY
+
+PHARMACY ID
+1234567893
+
+RX NUMBER
+700009
+
+DAYS SUPPLY
+30
+$(us '-21 days')LISINOPRIL 10 MG TABLETEXAMPLE PHARMACY\$ 12.00\$ 5.00PaidLess Infosort Icon
+EXAMPLE PHARMACY
+
+PHARMACY ID
+1234567893
+
+RX NUMBER
+700009
+
+DAYS SUPPLY
+30"
+expect_status "a page with a fill that was typed by hand is read" 200 "$(post /fills/paste /fills/paste/read "person_id=$alex" "pasted=$repeated")"
+expect_text "the same medication on the same date is already recorded" "This person has a fill of this medication on the same date."
+expect_text "the same medication on another date is ready" "2 fills found. 1 ready to add."
+expect_no_flat_text "a fill that is already recorded cannot be marked" 'name="include_1"'
+fills_before="$(count_of fill)"
+expect_status "the page is added" 303 "$(post /fills/paste /fills/paste/add "person_id=$alex" "pasted=$repeated" \
+  'include_1=yes' 'include_2=yes')"
+expect_status "only the fill of the other date is added" "$((fills_before + 1))" "$(count_of fill)"
 
 # A long page with many names is read inside the limits of one request.
 many="SERVICE DATEDRUG NAMEPHARMACYPLAN PAIDYOU PAIDCLAIM STATUS"

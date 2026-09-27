@@ -121,7 +121,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
         <? else ?>
           <span class="pv-badge pv-badge-muted"><?= icon('dash-circle') ?> <?= row.result ?></span>
         <? end ?>
-        <? if row.result == 'Already recorded' then ?>This person has a fill with the same prescription number and date. It is left out.<? end ?>
+        <? if row.result == 'Already recorded' and row.same_day then ?>This person has a fill of this medication on the same date. It is left out.<? elseif row.result == 'Already recorded' then ?>This person has a fill with the same prescription number and date. It is left out.<? end ?>
         <? if row.result == 'Details missing' then ?>The details of this fill were not open in the portal. Open them and copy the list again.<? end ?>
         <? if row.result == 'Not paid' then ?>The claim status is "<?= claim.status ?>". Add this fill only if it took place.<? end ?>
       </p>
