@@ -148,11 +148,11 @@ expect_status "catalog rows after the sample data" "$seed_medications" "$(count_
 expect_status "other names after the sample data" "$seed_names" "$(count_of medication_alias)"
 expect_status "no person in the sample data" 0 "$(count_of person)"
 curl -s -m 20 "$APP/api/q/v_medication?limit=10000" >"$BODY"
-expect_text "a product that comes by the carton has an entry for each carton" '"short_name":"Edex (Alprostadil) 10 mcg/mL Cartridge 1 mL 2 Pack"'
-expect_text "the larger carton is an entry of its own" '"short_name":"Edex (Alprostadil) 10 mcg/mL Cartridge 1 mL 6 Pack"'
-expect_text "a device shows the strength of its label" '"short_name":"Caverject (Alprostadil) 20 mcg/0.5 mL Prefilled Syringe 2 Pack"'
+expect_text "a product that comes by the carton has an entry for each carton" '"short_name":"Otrexup (Methotrexate) 10 mg/0.4 mL Auto-Injector 1 Pack"'
+expect_text "the larger carton is an entry of its own" '"short_name":"Otrexup (Methotrexate) 10 mg/0.4 mL Auto-Injector 4 Pack"'
+expect_text "a device shows the strength of its label" '"short_name":"Auvi-Q (Epinephrine) 0.3 mg/0.3 mL Auto-Injector 2 Pack"'
 expect_text "a brand filed under a salt is in the catalog" '"short_name":"Januvia (Sitagliptin) 100 mg"'
-expect_text "an entry of a carton holds its size" '"package_size":"6"'
+expect_text "an entry of a carton holds its size" '"package_size":"4"'
 expect_text "an entry of a carton holds its type" '"package_type":"Pack"'
 
 ### Greeting ###
