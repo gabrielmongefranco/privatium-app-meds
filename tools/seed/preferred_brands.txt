@@ -1,0 +1,36 @@
+# This file is part of Prescription Tracker
+# tools/seed/preferred_brands.txt
+# Author(s): Gabriel Mongefranco
+# Created: 2026-09-27
+# Last Modified: 2026-09-27
+# Summary: Brand names the starter catalog shows in a short name when a drug has several
+#          brands. The brands of the entries written by hand count too.
+# Format: one brand per line, as RxNorm writes it.
+# Notes: See README file for documentation and full license information.
+#
+# Copyright © 2026 Gabriel Mongefranco
+# Licensed under the GNU General Public License v3.0 or later.
+# See <https://www.gnu.org/licenses/>.
+
+Viagra
+Cialis
+Levitra
+Edex
+Caverject
+EpiPen
+Baqsimi
+Gvoke
+Apidra
+Fiasp
+Pulmicort
+Xopenex
+Pepto-Bismol
+Imitrex
+Novolin R
+Novolin N
+Novolin 70/30
+Depo-Testosterone
+AndroGel
+NovoLog
+Humalog
+Lantus

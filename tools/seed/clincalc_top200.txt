@@ -1,0 +1,213 @@
+# This file is part of Prescription Tracker
+# tools/seed/clincalc_top200.txt
+# Summary: The 200 drugs most often prescribed in the United States in 2024, by
+#          ingredient, in rank order. The seed builder adds each one to the starter
+#          catalog at every strength that RxTerms lists.
+# Format: one drug per line. A drug with several ingredients separates them with "; ".
+#
+# Source: Kane SP. The Top 200 of 2024, ClinCalc DrugStats Database, Version 2026.08.
+#         ClinCalc: https://clincalc.com/DrugStats/Top200Drugs.aspx. Updated August 9,
+#         2026. Accessed September 27, 2026.
+# License of this list: Creative Commons Attribution-ShareAlike 4.0 International
+#         (CC BY-SA 4.0), https://creativecommons.org/licenses/by-sa/4.0/
+# Changes made: the names and their order were kept; the counts were left out.
+Atorvastatin
+Levothyroxine
+Metformin
+Amlodipine
+Lisinopril
+Albuterol
+Losartan
+Metoprolol
+Rosuvastatin
+Omeprazole
+Gabapentin
+Sertraline
+Escitalopram
+Semaglutide
+Dextroamphetamine; Dextroamphetamine Saccharate; Amphetamine; Amphetamine Aspartate
+Pantoprazole
+Bupropion
+Hydrochlorothiazide
+Fluoxetine
+Trazodone
+Montelukast
+Amoxicillin
+Fluticasone
+Tamsulosin
+Apixaban
+Simvastatin
+Insulin Glargine
+Empagliflozin
+Furosemide
+Meloxicam
+Acetaminophen; Hydrocodone
+Tirzepatide
+Methylphenidate
+Duloxetine
+Prednisone
+Carvedilol
+Famotidine
+Ibuprofen
+Buspirone
+Venlafaxine
+Tramadol
+Potassium Chloride
+Hydroxyzine
+Allopurinol
+Clopidogrel
+Ergocalciferol
+Cetirizine
+Ondansetron
+Cyclobenzaprine
+Spironolactone
+Oxycodone
+Estradiol
+Aspirin
+Glipizide
+Zolpidem
+Lamotrigine
+Alprazolam
+Citalopram
+Pregabalin
+Cholecalciferol
+Clonazepam
+Azithromycin
+Pravastatin
+Valsartan
+Ezetimibe
+Diclofenac
+Insulin Lispro
+Ethinyl Estradiol; Norethindrone
+Propranolol
+Latanoprost
+Atenolol
+Lisdexamfetamine
+Doxycycline
+Amoxicillin; Clavulanate
+Dulaglutide
+Hydrochlorothiazide; Lisinopril
+Lorazepam
+Fluticasone; Salmeterol
+Insulin Aspart
+Celecoxib
+Finasteride
+Quetiapine
+Clonidine
+Aripiprazole
+Cephalexin
+Alendronate
+Topiramate
+Tizanidine
+Dapagliflozin
+Acetaminophen; Oxycodone
+Hydrochlorothiazide; Losartan
+Olmesartan
+Testosterone
+Amitriptyline
+Folic Acid
+Rivaroxaban
+Fenofibrate
+Triamcinolone
+Paroxetine
+Ferrous Sulfate
+Loratadine
+Warfarin
+Valacyclovir
+Budesonide; Formoterol
+Ethinyl Estradiol; Norgestimate
+Fluticasone; Umeclidinium; Vilanterol
+Methocarbamol
+Acetaminophen
+Diltiazem
+Thyroid
+Baclofen
+Naproxen
+Sumatriptan
+Prednisolone
+Esomeprazole
+Mirtazapine
+Levetiracetam
+Norethindrone
+Tadalafil
+Nifedipine
+Progesterone
+Insulin Degludec
+Cyanocobalamin
+Hydralazine
+Adalimumab
+Azelastine
+Sitagliptin
+Glimepiride
+Chlorthalidone
+Oxybutynin
+Pioglitazone
+Ketoconazole
+Irbesartan
+Hydroxychloroquine
+Sulfamethoxazole; Trimethoprim
+Benzonatate
+Nitrofurantoin
+Isosorbide
+Methylprednisolone
+Hydrochlorothiazide; Triamterene
+Levocetirizine
+Clindamycin
+Atomoxetine
+Dexmethylphenidate
+Methotrexate
+Donepezil
+Desvenlafaxine
+Ropinirole
+Clobetasol
+Fluticasone; Vilanterol
+Albuterol; Ipratropium
+Phentermine
+Ofloxacin
+Mupirocin
+Verapamil
+Olanzapine
+Metronidazole
+Prazosin
+Ciprofloxacin
+Sildenafil
+Ethinyl Estradiol; Levonorgestrel
+Evolocumab
+Mesalamine
+Memantine
+Ethinyl Estradiol; Etonogestrel
+Diazepam
+Lithium
+Nortriptyline
+Timolol
+Cefdinir
+Magnesium Salts
+Meclizine
+Cyclosporine
+Fluconazole
+Rimegepant
+Tretinoin
+Lovastatin
+Drospirenone; Ethinyl Estradiol
+Tiotropium
+Docusate
+Temazepam
+Benazepril
+Brimonidine
+Sacubitril; Valsartan
+Valproate
+Nebivolol
+Acyclovir
+Morphine
+Doxazosin
+Amlodipine; Benazepril
+Nirmatrelvir; Ritonavir
+Emtricitabine; Tenofovir
+Budesonide
+Tacrolimus
+Dupilumab
+Enalapril
+Anastrozole
+Melatonin
+Torsemide
+Polyethylene Glycol 3350
