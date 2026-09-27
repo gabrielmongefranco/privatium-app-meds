@@ -15,40 +15,145 @@ See <https://www.gnu.org/licenses/fdl-1.3.html>. See README for full license inf
 ## The `meds` app
 
 Tier 1, Lua. A personal prescription tracker for families with chronic conditions. This
-first version stores one household name and greets with it.
+version has every screen of [the app design](../../docs/design/README.md). The script
+for the one-time import of the owner's legacy database lives outside this repository.
 
 ### Schema
 
-`profile(id VARCHAR PK, display_name VARCHAR NOT NULL)`: at most one row, ever.
+| Table | Grain |
+|---|---|
+| `profile` | One row per node, at most one row ever. Holds the five reminder day counts. No row means every default. |
+| `person` | One row per household member |
+| `medication` | One row per product in the catalog |
+| `medication_alias` | One row per medication per other name |
+| `pharmacy` | One row per pharmacy |
+| `prescriber` | One row per prescriber |
+| `person_medication` | One row per person per medication they take or took |
+| `fill` | One row per fill |
+| `prior_authorization` | One row per approval window for one person and one medication |
+
+The views start with `v_`. `v_active_medication` is the readable one: every medication
+in use with its refill status, next fill date and recommended next fill date.
 [The data model page](../../docs/data-model.md) is the reference for every table and
-must change in the same commit as `schema.sql`.
+view, and must change in the same commit as `schema.sql`.
+
+### Layout
+
+| Path | Holds |
+|---|---|
+| `app.lua` | The entry point. It loads the route modules, in the order paths are tried. |
+| `lib/routes/` | One module for each part of the app. Loading a module registers its routes. |
+| `lib/text.lua`, `validate.lua`, `choices.lua`, `medication_name.lua`, `page.lua`, `clock.lua` | Pure Lua with no framework calls, so plain Lua 5.4 can test them |
+| `lib/match.lua` | Pure Lua: how well a typed name matches a name of a medication |
+| `lib/medication_search.lua` | The search that every screen uses to find a medication |
+| `lib/written_name.lua` | Pure Lua: takes apart a name as a portal wrote it, and compares it with a name and a strength |
+| `lib/medication_pick.lua` | Reads the medication box of a form: a medication in use, a typed name, or a new medication |
+| `lib/catalog_entry.lua` | The checks of a catalog entry, shared by the catalog form and the medication box |
+| `lib/reference_words.lua` | Pure Lua: turns the route and the dose form of a drug reference into words of the catalog |
+| `static/medication_lookup.js` | The lookup of a new medication, in the browser: RxTerms, then the openFDA NDC Directory, then RxNorm |
+| `lib/quick_add.lua` | A person, a pharmacy or a prescriber that a form adds by name beside its own record |
+| `lib/suggestions.lua` | The values in use that text boxes offer while a person types |
+| `lib/merge.lua` | The plan and the batch of a merge |
+| `lib/entries.lua` | Reads the medication lists with their refill dates, words and groups |
+| `lib/refill.lua` | Pure Lua: the group and the words of a refill status |
+| `lib/fills.lua` | Checks a fill and writes it, with the list entry that goes with it |
+| `lib/portal_reader.lua` | Pure Lua: takes the pasted text of a portal page apart into claims |
+| `lib/authorization_watch.lua` | Finds the prior authorizations that end soon or have ended |
+| `lib/people_filter.lua` | The person filter that list pages share |
+| `lib/store.lua` | The one place that writes and removes records |
+| `views/` | One template for each page. A name that starts with `_` is a partial. |
 
 ### Routes
 
-| Route | Handler |
-|---|---|
-| `GET /` | Greeting, or an invitation when no profile exists |
-| `GET /edit` | The name form |
-| `POST /name` | Trims, validates, appends |
+| Route | Module | Handler |
+|---|---|---|
+| `GET /` | `home` | The Refills page, or a welcome while the household has no people |
+| `GET /setup` | `home` | Links to the parts of Setup |
+| `GET`, `POST /setup/reminders` | `home` | The five day counts |
+| `GET /setup/people` | `people` | The list |
+| `GET`, `POST /setup/people/new`, `/:id/edit`, `/:id/remove` | `people` | Add, change, remove |
+| `GET /contacts` | `contacts` | Pharmacies and prescribers |
+| `GET`, `POST /contacts/pharmacies/new`, `/:id/edit`, `/:id/remove` | `contacts` | Add, change, remove |
+| `GET`, `POST /contacts/prescribers/new`, `/:id/edit`, `/:id/remove` | `contacts` | Add, change, remove |
+| `GET /setup/catalog` | `catalog` | The catalog, narrowed by `?q=` |
+| `GET /setup/catalog/:id` | `catalog` | One medication with its other names |
+| `GET`, `POST /setup/catalog/new`, `/:id/edit`, `/:id/remove` | `catalog` | Add, change, remove |
+| `GET /medications`, `/medications/:id` | `medications` | The lists, and the page of one medication of one person |
+| `GET`, `POST /medications/new`, `/:id/edit`, `/:id/remove`, `POST /:id/status` | `medications` | Add, change, remove, change the status |
+| `GET /people/:id/medication-list` | `medications` | The list made for paper |
+| `GET`, `POST /fills/paste`, `/fills/paste/read`, `/fills/paste/add` | `paste` | Pasted fills: paste, review, add |
+| `GET /fills` | `fills` | History, with filters, totals and paid by year |
+| `GET`, `POST /fills/new`, `/:id/edit`, `/:id/remove` | `fills` | Record, change, remove |
+| `GET /authorizations`, `GET`, `POST /authorizations/new`, `/:id/edit`, `/:id/remove` | `authorizations` | Prior authorizations |
+| `POST /setup/catalog/:id/names`, `GET`, `POST /:id/names/:name_id/remove` | `catalog` | Other names |
+| `GET /setup/catalog/:id/merge`, `GET`, `POST /:id/merge/:target_id` | `catalog` | Merge two entries |
 
 ### Conventions to preserve
 
-- `pv.append('profile', me.id, ...)` reuses the existing id. That makes an edit an
-  amendment rather than a second household. Do not mint a new ULID on save.
+- Saving the reminder settings reuses the id of the stored `profile` row. That makes
+  the save an amendment rather than a second row. Do not mint a new ULID on save.
+- A form never sends a person to another page to add a record it needs. A drop-down of
+  people, pharmacies or prescribers is the partial `_select_or_new`, read with
+  `quick_add.read`. A medication is the partial `_medication_picker`, read with
+  `medication_pick.read`. The new records and the record of the form land in one batch.
+- A typed name that a record already has picks that record. No form adds a name twice.
+- A text box whose values repeat gets `suggestions` in `_field`, which renders a
+  `<datalist>`. It needs no script.
+- A row of `medication` that was copied from a drug reference keeps its `rxcui`,
+  `source` and `retrieved_on` through every amendment. `catalog_entry.read` carries them.
+- An amendment replaces the whole row. Read the row, change what the form changed, and
+  append every column. A column left out of the append is cleared.
+- Privatium does not apply a column `DEFAULT` on write. Supply every required value in
+  Lua.
+- The two refill dates follow the rules in the data model page. Explain any change to
+  those rules to the owner before coding it.
+- A medication's short name is `Brand (Generic) strength` unless the owner typed another.
+  A second spelling of a product is a `medication_alias` row, never a second medication.
+- A view that must run in any SQLite tool leaves out the `DECIMAL` columns.
 - Every link goes through `url()`, so the app works unchanged in solo mode.
+- SQL is a literal with bound parameters. The linter refuses SQL built by joining
+  strings, so each table has its own statements.
+- A form check lives in `lib/validate.lua` and returns a value, or nil and a sentence
+  for the person. A form that is refused comes back with what was typed.
+- A page address carries record ids and notice codes only. `lib/page.lua` turns a known
+  code into a sentence and ignores any other.
+- A record that other records point to is not removed. The removal page says what uses
+  it.
+- Every time and date on a screen is local. Read them from `lib/clock.lua`, and use
+  `date('now', 'localtime')` in SQL.
+- Pasted text is untrusted. `portal_reader` only takes it apart; `fills.read` checks every
+  value, and the add step reads the text again instead of trusting the review form.
+- A close match in a search is a suggestion. Code never picks a medication from one.
+  Two things pick one: a name that exactly one medication answers to, and a pasted name
+  that starts with the brand or generic name of exactly one medication and holds its
+  strength. The review of pasted fills shows the second kind, marked, before anything
+  is added.
+- The catalog can hold thousands of entries. A search narrows in SQL first and compares
+  the few that are left in Lua, or a request runs out of steps. A page never lists the
+  whole catalog.
+- What the lookup script puts into a form is untrusted. `medication_pick` and
+  `catalog_entry` check it like typed text. The script writes answers of a reference
+  with `textContent`, never as markup.
+- `sample/seed.jsonl` is written by `tools/build_seed.py` from the lists in
+  `tools/seed/`. Change the lists and run the script. Do not edit the seed by hand.
+- A diagnostic message holds no field value. `page.masked` strips quoted values.
 - Templates use `<?= ?>` only. There is no `<?raw ?>` here and there should not be.
 - `static/meds.css` uses the shell's color tokens. Inherit form controls and focus rings
   rather than duplicating the shell stylesheet.
 - Every source file carries the project header from `AGENTS.md`, not Privatium's.
 - Health information will live in this app. Keep real names, dates of birth and
   medication records out of `sample/seed.jsonl`, tests and documentation.
+- `sample/seed.jsonl` holds the starter catalog only. It never
+  holds a person or a record about one, so an owner can load it into a real household.
 
 ### Extending it
 
-Adding a field means one column in `schema.sql`, one input in `views/edit.lsp`, and one
-key in the `pv.append` call. The schema change rematerializes from the logs; existing
-events lack the key and the column is NULL for them. Adding a table means a `CREATE
-TABLE` with a grain comment, a section in the data model page, and synthetic rows in the
-seed.
+Adding a field means one column in `schema.sql`, one input in the form, and one key in
+every `pv.append` call that writes the table. The schema change rematerializes from the
+logs; existing events lack the key and the column is NULL for them. Adding a table means
+a `CREATE TABLE` with a grain comment and a section in the data model page.
 
-Run `privatium lint apps/meds` before finishing.
+Run the three checks in [the test how-to](../../docs/how-to/run-the-tests.md) before
+finishing: `privatium lint apps/meds`, `lua5.4 tests/lua/run.lua` and `tests/smoke.sh`.
+A new check in `lib/validate.lua` gets unit tests, and a new screen gets smoke tests,
+with at least one request that must be refused.

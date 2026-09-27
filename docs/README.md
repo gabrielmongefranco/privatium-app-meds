@@ -17,15 +17,26 @@ detail.
 
 ### Guides
 
+- [Using the app](usage.md): how to use every screen.
 - [Data model](data-model.md): every table the app stores, its grain, the meaning of each
   column, and which fields hold personal or health information.
+- [How to run the tests](how-to/run-the-tests.md): the lint, the unit tests and the smoke
+  test.
+- [How to build the starter catalog](how-to/build-the-starter-catalog.md): the script
+  that writes the sample data, its sources and their licenses.
+- [App design](design/README.md): what each screen does, the refill status rules, and
+  the owner's decisions.
+- [Compliance](compliance.md): the security and accessibility controls in place, the
+  evidence for each, and what a person still has to check.
+- [Import of the legacy database](design/import.md): how the records of the owner's
+  legacy database reach the app.
 - [Documentation template](doc-template.md): starting structure for a knowledge base page.
 - [Skill authoring examples](skill-examples.md): optional recipes for common project types.
 
 ### Conclusion
 
-Start with the data model if you are about to change the schema, and with the project
-README if you are about to run the app.
+Start with the usage page if you run the app, and with the data model if you are about
+to change the schema.
 
 ### Additional resources
 

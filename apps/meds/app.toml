@@ -2,7 +2,7 @@
 # apps/meds/app.toml
 # Author(s): Gabriel Mongefranco
 # Created: 2026-09-26
-# Last Modified: 2026-09-26
+# Last Modified: 2026-09-27
 # Summary: Manifest for the Prescription Tracker app. Tier 1 (Lua), API 1.
 # Notes: See README file for documentation and full license information.
 #
@@ -23,7 +23,7 @@
 [app]
 slug        = "meds"
 title       = "Prescription Tracker"
-version     = "0.1.0"
+version     = "0.3.0"
 api         = 1
 tier        = "lua"
 description = "A personal prescription tracker for families with chronic conditions."
@@ -34,3 +34,13 @@ license     = "GPL-3.0-or-later"
 [nav]
 order     = 10
 advertise = true
+
+[permissions]
+# The lookup of a new medication runs in the browser and asks three public drug
+# references, in this order: RxTerms, then the openFDA NDC Directory, then RxNorm.
+# It sends the name that was typed into the lookup box, and nothing else.
+remote = [
+  "https://clinicaltables.nlm.nih.gov",
+  "https://api.fda.gov",
+  "https://rxnav.nlm.nih.gov",
+]

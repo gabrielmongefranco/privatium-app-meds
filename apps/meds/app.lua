@@ -2,9 +2,9 @@
 -- apps/meds/app.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-26
--- Last Modified: 2026-09-26
--- Summary: Routes for the Prescription Tracker app. This first version stores the
---          household's display name and greets with it; prescription tables come next.
+-- Last Modified: 2026-09-27
+-- Summary: Entry point of the Prescription Tracker app. The routes live in lib/routes,
+--          one module for each part of the app; loading a module registers its routes.
 -- Notes: See README file for documentation and full license information.
 --
 -- Copyright © 2026 Gabriel Mongefranco
@@ -21,30 +21,13 @@
 -- You should have received a copy of the GNU General Public License along
 -- with this program. If not, see <https://www.gnu.org/licenses/>.
 
-local pv = require 'privatium'
-
--- The one household using this node. At most one row exists.
-local function profile()
-  return pv.query1('SELECT id, display_name FROM profile LIMIT 1')
-end
-
-pv.get('/', function()
-  return pv.render('index', { me = profile() })
-end)
-
-pv.get('/edit', function()
-  return pv.render('edit', { me = profile() })
-end)
-
-pv.post('/name', function(req)
-  local name = (req.form.display_name or ''):gsub('^%s+', ''):gsub('%s+$', '')
-  if name == '' then
-    return pv.render('edit', { me = profile(), err = 'Please enter a name.' })
-  end
-
-  local me = profile()
-  -- Reusing the existing id makes this an amendment, not a second household.
-  pv.append('profile', me and me.id or nil, { display_name = name })
-
-  return pv.redirect(url('/'))
-end)
+-- A path that matches a pattern is handled by the first route registered for it, so
+-- the order below is the order in which paths are tried.
+require 'routes.home'       -- The home page, the household name, Setup, reminder settings
+require 'routes.people'     -- The people of the household
+require 'routes.contacts'   -- Pharmacies and prescribers
+require 'routes.catalog'    -- The medication catalog
+require 'routes.medications'     -- What each person takes, and the list made for paper
+require 'routes.paste'           -- Fills pasted from a portal; before fills, so 'paste' is never read as an id
+require 'routes.fills'           -- The history of fills, and the form for one fill
+require 'routes.authorizations'  -- Prior authorizations

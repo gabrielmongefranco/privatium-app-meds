@@ -1,0 +1,24 @@
+# This file is part of Prescription Tracker
+# tools/seed/clincalc_names_in_rxterms.txt
+# Author(s): Gabriel Mongefranco
+# Created: 2026-09-27
+# Last Modified: 2026-09-27
+# Summary: The drugs of the ClinCalc list that RxTerms files under another name.
+# Format: the ClinCalc name, " = ", the name RxTerms uses. "skip" leaves the drug out.
+#         A second " = " and a name give the generic name the catalog shows.
+# Notes: See README file for documentation and full license information.
+#
+# Copyright © 2026 Gabriel Mongefranco
+# Licensed under the GNU General Public License v3.0 or later.
+# See <https://www.gnu.org/licenses/>.
+
+Insulin Glargine = Insulin analog, glargine
+Insulin Lispro = Insulin analog, lispro
+Insulin Aspart = Insulin analog, aspart
+Insulin Degludec = Insulin analog, degludec
+Cyanocobalamin = Vitamin B12
+Thyroid = Thyroid (USP)
+Emtricitabine; Tenofovir = Emtricitabine/Tenofovir disoproxil = Emtricitabine / Tenofovir disoproxil
+Dextroamphetamine; Dextroamphetamine Saccharate; Amphetamine; Amphetamine Aspartate = Amphetamine/Dextroamphetamine = Amphetamine / Dextroamphetamine
+# ClinCalc groups several magnesium products under one name. None of them is the group.
+Magnesium Salts = skip

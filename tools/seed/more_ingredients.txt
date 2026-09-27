@@ -1,0 +1,52 @@
+# This file is part of Prescription Tracker
+# tools/seed/more_ingredients.txt
+# Author(s): Gabriel Mongefranco
+# Created: 2026-09-27
+# Last Modified: 2026-09-27
+# Summary: Drugs the starter catalog holds beside the ClinCalc top 200, by ingredient.
+#          The seed builder adds each one at every strength that RxTerms lists.
+# Format: one drug per line, as the catalog shows its generic name. A drug with several
+#         ingredients separates them with "; ". Text after " = " is the name RxTerms uses,
+#         when it differs. " +salt" at the end keeps the salt that RxNorm names, as in
+#         "Testosterone cypionate", where the salts are different products.
+# Notes: See README file for documentation and full license information.
+#
+# Copyright © 2026 Gabriel Mongefranco
+# Licensed under the GNU General Public License v3.0 or later.
+# See <https://www.gnu.org/licenses/>.
+
+Albuterol; Ipratropium
+Alprostadil
+Aspirin
+Azithromycin
+Bismuth subsalicylate
+Budesonide
+Carbamide peroxide
+Carboxymethylcellulose
+Cefdinir
+Cephalexin
+Cetirizine
+Ciprofloxacin
+Ciprofloxacin; Dexamethasone
+Diphenhydramine
+Epinephrine
+Fexofenadine
+Glucagon
+Insulin aspart = Insulin aspart, human
+Insulin glulisine = Insulin analog, glulisine
+Insulin isophane (NPH) = Insulin, human isophane
+Insulin isophane / Insulin regular = Insulin, human mixed
+Insulin regular = Insulin, human regular
+Levalbuterol
+Loratadine
+Naproxen
+Ofloxacin
+Olopatadine
+Papaverine
+Polyethylene Glycol 3350
+Polymyxin B; Trimethoprim
+Sildenafil
+Sumatriptan
+Tadalafil
+Testosterone = Testosterone +salt
+Vardenafil
