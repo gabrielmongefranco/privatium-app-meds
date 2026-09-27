@@ -4,7 +4,7 @@ docs/design/import.md
 Author(s): Gabriel Mongefranco
 Created: 2026-09-26
 Last Modified: 2026-09-27
-Summary: Proposed plan for the owner's one-time import of the legacy SQLite database:
+Summary: The owner's one-time import of the legacy SQLite database:
          table mapping, the review of medication names, cleaning rules, new ids, safety
          rules and checks.
 Notes: See README file for documentation and full license information.
@@ -17,7 +17,7 @@ See <https://www.gnu.org/licenses/fdl-1.3.html>. See README for full license inf
 
 # Prescription Tracker
 
-## Import plan (proposed)
+## Import of the legacy database
 
 [Back to project README](../../README.md)
 
@@ -25,8 +25,8 @@ This page describes how the records of the owner's legacy SQLite database reach 
 planned app. The import runs once, for one household. The page covers what moves where,
 how medication names are reviewed, what gets cleaned, and how to check the result.
 
-> **Planned.** The import script does not exist yet. The mapping and the cleaning rules
-> on this page were tried with a scratch script, as the last section says.
+The import script exists and was tried on a scratch node. It is not part of this
+repository, because it serves one household and works on health information.
 
 ### Why the app cannot open the legacy file
 
@@ -70,15 +70,15 @@ event passes the same type checks and the same constraints as a form entry.
 ### The review file
 
 The legacy catalog can hold the same product under several names. The review file is
-where you settle the names before anything is loaded. It is a spreadsheet file with one
-row per legacy medication.
+where you settle the names before anything is loaded. It is a file named `review.csv`
+that a spreadsheet program opens, with one row per legacy medication.
 
 | Column | Filled in by the script | What you do |
 |---|---|---|
 | Legacy name | The name in the legacy catalog | Nothing |
 | Short name | The brand name, the generic name in brackets, then the strength | Change it only if you want another name in the app |
-| Specialty | No | Write yes for each specialty medication |
-| Same product as | The legacy name of another row, or the short name of a starter catalog entry, when both share a name, a strength and a form | Keep it, clear it, or write another name |
+| Specialty | no | Write yes for each specialty medication |
+| Same product as | The legacy name of another row, when both share a name, a strength and a form. For an entry of the starter catalog, the word `catalog:` and its short name. | Keep it, clear it, or write another legacy name |
 | Looks like | Rows whose names are close but not equal | Read it. Fill in **Same product as** only when you are sure. |
 
 The script fills in **Same product as** only for rows that share a generic or brand name
@@ -92,7 +92,7 @@ Load applies the file this way:
 - Every legacy name that differs from the short name, the generic name and the brand
   name becomes another name.
 - When a person has a list entry under both rows, load keeps the entry that is in use.
-  When both are in use, load stops and names the two rows.
+  When both are in use, load stops and names the two legacy tracking numbers.
 
 ### Table mapping
 
@@ -213,7 +213,8 @@ so their dates can differ from the legacy view.
 
 ### Steps for the owner
 
-The commands show the planned shape. The paths are examples.
+The paths are examples. Give `--app-url` to the review command too, and the review file
+also suggests entries of the starter catalog.
 
 1. Stop changing the legacy database. Copy the file to a backup.
 2. Install the app and start the node. The app must be empty, or hold the sample data
@@ -221,21 +222,23 @@ The commands show the planned shape. The paths are examples.
 3. Write the review file:
 
    ```sh
-   python3 /path/to/private-folder/import_legacy.py review --source /path/to/legacy.db
+   python3 /path/to/import_legacy.py review --source /path/to/legacy.db --app-url http://127.0.0.1:8420/a/meds
    ```
 
-4. Open the review file in the private folder. Set the short names, mark the specialty
-   medications, and settle the rows that are the same product.
+4. Open `review.csv` in the private folder. Set the short names, mark the specialty
+   medications, and settle the rows that are the same product. The private folder is
+   named `meds-import` and sits beside the legacy file, unless you name another with
+   `--folder`.
 5. Load the records into the node:
 
    ```sh
-   python3 /path/to/private-folder/import_legacy.py load --source /path/to/legacy.db --app-url http://127.0.0.1:8420/a/meds
+   python3 /path/to/import_legacy.py load --source /path/to/legacy.db --app-url http://127.0.0.1:8420/a/meds
    ```
 
 6. Verify the result:
 
    ```sh
-   python3 /path/to/private-folder/import_legacy.py verify --source /path/to/legacy.db --app-url http://127.0.0.1:8420/a/meds
+   python3 /path/to/import_legacy.py verify --source /path/to/legacy.db --app-url http://127.0.0.1:8420/a/meds
    ```
 
 7. Open the app and look at the Refills page.
@@ -244,22 +247,23 @@ The commands show the planned shape. The paths are examples.
 
 ### What was checked
 
-A scratch script applied the mapping and the cleaning rules to the owner's database on
-2026-09-26 and 2026-09-27. It opened the file read-only, kept the converted rows in
-memory, and printed counts only. It merged no medications.
+On 2026-09-27 the script ran against the owner's database and a scratch node that held
+the sample data. The scratch node and its folder were removed afterward.
 
-- Every legacy row converted under the schema's constraints, with no reject.
-- The total amount paid was the same before and after cleaning.
-- Every prior authorization matched exactly one person.
-- Both dates matched the legacy view for every row of that view. That held with an empty
-  days supply counted as zero and as 1 day.
+| Check | Result |
+|---|---|
+| An app address on another computer | Refused |
+| A private folder inside a Git working tree | Refused |
+| Load with no review file | Refused |
+| Review | One row for each legacy medication, in a folder that only its owner can read |
+| Load | Every table accepted, with no reject |
+| Load a second time | Nothing appended |
+| Verify: row counts, total amount paid | Match |
+| Verify: next fill date and recommended next fill date | Match for every row of the legacy view that belongs to no merged medication |
+| Every section of the app with the imported records | Opened |
 
-A second test loaded invented rows into a scratch node through the data API, with ids
-made as described above. The node accepted them. A second load of the same rows appended
-nothing. A load of a row that had changed was refused with status 409.
-
-The scratch script is not the import script. The review file and the merge have not been
-tried.
+The review file of that run kept the suggestions of the script and was not settled by
+the owner. The owner's own run may merge other rows.
 
 ### Conclusion
 

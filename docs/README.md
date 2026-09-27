@@ -26,8 +26,8 @@ detail.
   the owner's decisions.
 - [Compliance](compliance.md): the security and accessibility controls in place, the
   evidence for each, and what a person still has to check.
-- [Import plan (proposed)](design/import.md): how the records of a legacy database will
-  reach the app.
+- [Import of the legacy database](design/import.md): how the records of the owner's
+  legacy database reach the app.
 - [Documentation template](doc-template.md): starting structure for a knowledge base page.
 - [Skill authoring examples](skill-examples.md): optional recipes for common project types.
 

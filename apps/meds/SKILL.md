@@ -15,8 +15,8 @@ See <https://www.gnu.org/licenses/fdl-1.3.html>. See README for full license inf
 ## The `meds` app
 
 Tier 1, Lua. A personal prescription tracker for families with chronic conditions. This
-version has every screen of [the app design](../../docs/design/README.md). The one-time
-import of the owner's legacy database is planned and lives outside this repository.
+version has every screen of [the app design](../../docs/design/README.md). The script
+for the one-time import of the owner's legacy database lives outside this repository.
 
 ### Schema
 

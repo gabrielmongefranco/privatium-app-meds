@@ -27,7 +27,7 @@ and for developers who change the app. [The usage page](../usage.md) shows how t
 screens. The [data model](../data-model.md) describes the tables and views.
 
 Every screen on this page is built, except where a note marked **Planned** says
-otherwise. The [import plan](import.md) for the owner's legacy database is planned.
+otherwise. The [import page](import.md) covers the owner's legacy database.
 
 ### Goals
 
@@ -524,7 +524,7 @@ rows.
 | Reading the views with a SQLite library that lacks the decimal extension | Every view ran except the spending view |
 
 No check drove a browser. [The compliance page](../compliance.md) lists what a person
-still has to check by hand. The import script does not exist yet.
+still has to check by hand.
 
 ### Decisions made
 
@@ -561,7 +561,8 @@ Each step ended with a clean `privatium lint`, passing tests and updated documen
 1. Tables, views and the starter catalog, with the data model page. Done.
 2. Setup screens for people, pharmacies, prescribers and the catalog. Done.
 3. The medication search, the other names and the merge. Done.
-4. The one-time import. **Planned.** See the [import plan](import.md).
+4. The one-time import. Done. The script is kept outside this repository. See the
+   [import page](import.md).
 5. Medications and the medication page. Done.
 6. Record a fill, and History. Done.
 7. Paste fills. Done, for one layout of portal page.

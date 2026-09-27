@@ -352,7 +352,7 @@ dates are worked out. Change `schema.sql` and this page together.
 - [Using the app](usage.md)
 - [The app folder](../apps/meds/README.md)
 - [App design](design/README.md), the planned screens.
-- [Import plan](design/import.md), the planned import of a legacy database.
+- [Import of the legacy database](design/import.md)
 - [Privatium's app contract](https://github.com/gabrielmongefranco/privatium/blob/main/spec/app-contract.md), the normative definition of an app and its data.
 - [Privatium's data dictionary](https://github.com/gabrielmongefranco/privatium/blob/main/spec/data-dictionary.md), which defines the column types.
 - [Privatium's security page](https://github.com/gabrielmongefranco/privatium/blob/main/docs/security.md)
