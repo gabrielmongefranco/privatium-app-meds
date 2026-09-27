@@ -2,7 +2,8 @@
 """
 Summary: Builds apps/meds/sample/seed.jsonl, the starter catalog. It reads lists of
          drugs by ingredient, asks RxTerms for every strength of each drug, asks RxNorm
-         for the brand names, and adds the entries that were written by hand.
+         for the brand names, and adds the entries that were written by hand and the
+         syringes and needles.
 
 This file is part of Prescription Tracker
 tools/build_seed.py
@@ -70,6 +71,11 @@ ALIASES_MAX = 5                    # A drug with more brands than this gets none
 ID_PREFIX_MEDICATION = "01J8MEDS0000RX"   # 14 characters; the RxNorm identifier fills the rest
 ID_PREFIX_PACK = "01J8MEDS0000RP"         # For an entry of one package; the identifier and the count follow
 ID_PREFIX_ALIAS = "01J8MEDS0000AK"
+ID_PREFIX_SUPPLY = "01J8MEDS0000SP"       # The family, volume, gauge and length follow
+SUPPLY_FORM = "Supplies"           # The value of medication.form for a syringe or a needle
+SUPPLY_PARTS = 5                   # The parts of one line of the list of supplies
+NONE_OF_IT = "-"                   # In the list of supplies: the family has no such part
+MILLIMETRES_IN_AN_INCH = decimal.Decimal("25.4")
 RXCUI_DIGITS_IN_PACK_ID = 9        # The rest of the id of a package holds the count
 PACK_MAX = 12                      # A carton of more units than this is made for clinics
 PACK_TYPE = "Pack"                 # The package type of an entry of one package
@@ -194,6 +200,77 @@ def requests_of():
             by_key[key] = request
             distinct.append(request)
     return distinct
+
+
+def numbers_of(text):
+    """The gauges of one line of the list of supplies: one number, or a range like 27-34."""
+    if text == NONE_OF_IT:
+        return [None]
+    first, _, last = text.partition("-")
+    return list(range(int(first), int(last or first) + 1))
+
+
+def listed(text):
+    """The parts between the commas of one line of the list of supplies."""
+    if text == NONE_OF_IT:
+        return [None]
+    return [part.strip() for part in text.split(",")]
+
+
+def millimetres(length):
+    """A length of the list of supplies in millimetres: '4 mm', '1/2' or '1 1/2' inches."""
+    if length.endswith(" mm"):
+        return decimal.Decimal(length[:-len(" mm")])
+    inches = decimal.Decimal(0)
+    for part in length.split():
+        above, _, below = part.partition("/")
+        inches += decimal.Decimal(above) / decimal.Decimal(below or 1)
+    return inches * MILLIMETRES_IN_AN_INCH
+
+
+def supplies_of():
+    """The syringes and needles of the catalog.
+
+    Returns a list of rows of the seed. Grain: one row per family, volume, gauge and
+    length, in the order of the list. The id holds those four, so it stays the same when
+    the list grows: two digits of the family, four of the volume in hundredths of a
+    millilitre, two of the gauge, and four of the length in hundredths of a millimetre.
+    """
+    rows, seen = [], set()
+    for line in read_list("supplies.txt"):
+        parts = [part.strip() for part in line.split(" | ")]
+        if len(parts) != SUPPLY_PARTS or not re.fullmatch(r"\d\d", parts[0]):
+            print("build_seed: cannot read this line of supplies.txt:", line)
+            sys.exit(2)
+        code, name = parts[0], parts[1]
+        for volume in listed(parts[2]):
+            for gauge in numbers_of(parts[3]):
+                for length in listed(parts[4]):
+                    size = []
+                    if volume:
+                        size.append(volume + " mL")
+                    if gauge:
+                        inch = "" if length.endswith(" mm") else '"'
+                        size.append("%dG x %s%s" % (gauge, length, inch))
+                    number = "%s%04d%02d%04d" % (
+                        code,
+                        decimal.Decimal(volume or 0) * 100,
+                        gauge or 0,
+                        (millimetres(length) * 100).to_integral_value() if length else 0)
+                    if number in seen:
+                        print("build_seed: supplies.txt lists this size twice:", line)
+                        sys.exit(2)
+                    seen.add(number)
+                    strength = ", ".join(size)
+                    if not gauge:
+                        strength += " (without needle)"
+                    rows.append({
+                        "op": "put", "tbl": "medication",
+                        "id": ID_PREFIX_SUPPLY + number,
+                        "d": {"short_name": name + ", " + strength, "generic_name": name,
+                              "strength": strength, "form": SUPPLY_FORM,
+                              "is_specialty": False}})
+    return rows
 
 
 ### Compare Names ###
@@ -728,7 +805,8 @@ def main():
     name_entries(entries, {plain(row["d"]["short_name"]) for row in hand_medications})
     entries.sort(key=lambda entry: (entry["short_name"].lower(), int(entry["rxcui"])))
 
-    lines = [json.dumps(row, ensure_ascii=False) for row in by_hand]
+    supplies = supplies_of()
+    lines = [json.dumps(row, ensure_ascii=False) for row in by_hand + supplies]
     alias_number = 0
     for entry in entries:
         medication_id = padded_id(ID_PREFIX_MEDICATION, entry["rxcui"])
@@ -756,6 +834,7 @@ def main():
 
     print("build_seed: asked the services", reference.asked, "times")
     print("build_seed:", len(hand_medications), "entries written by hand,",
+          len(supplies), "syringes and needles,",
           len(entries), "entries from RxTerms,", alias_number, "brand names as other names")
     if added_brands:
         print("build_seed: brands added from their own products:",

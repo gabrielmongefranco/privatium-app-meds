@@ -50,8 +50,8 @@ under the heading narrows the list to one person.
 2. Choose **Setup**, then **People**, and add the first person. A first name is enough.
    The birth date is optional.
 
-The starter catalog holds about 2,278 medications: the 200 drugs most prescribed in the
-United States at every strength, and common supplies such as glucose monitor sensors. It
+The starter catalog holds about 2,507 medications: the 200 drugs most prescribed in the
+United States at every strength, and common supplies such as glucose monitor sensors, syringes and needles. It
 adds no person and no record about anyone.
 
 A product that comes by the carton has one catalog entry for each size of carton, such

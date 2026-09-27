@@ -347,10 +347,10 @@ edits.
 ### Sample data
 
 `apps/meds/sample/seed.jsonl` holds a starter catalog and nothing else.
-The catalog has 2,278 medications and 524 other names for them. It holds the 200 drugs
+The catalog has 2,507 medications and 524 other names for them. It holds the 200 drugs
 most prescribed in the United States, and the drugs of the owner's list, at every strength
 that RxTerms lists. It also holds entries written by hand, such as continuous glucose
-monitors. [How to build the starter catalog](how-to/build-the-starter-catalog.md) names
+monitors, and syringes and needles in many sizes. [How to build the starter catalog](how-to/build-the-starter-catalog.md) names
 the sources and their licenses. It holds no person, no fill and no other record about anyone.
 
 A Privatium node offers to load the file from its settings page only while the app's log

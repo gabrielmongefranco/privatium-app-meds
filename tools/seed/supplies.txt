@@ -1,0 +1,43 @@
+# This file is part of Prescription Tracker
+# tools/seed/supplies.txt
+# Author(s): Gabriel Mongefranco
+# Created: 2026-09-27
+# Last Modified: 2026-09-27
+# Summary: Syringes and needles of the starter catalog, by family. The build script makes
+#          one entry for each volume, gauge and length of a family.
+# Format: five parts on a line, with " | " between them:
+#           code | name | volumes | gauges | lengths
+#         code     Two digits that stay with the family for good. They are part of the
+#                  id of every entry, so a code is never changed or used for another
+#                  family. Two lines may share a code when they share a name.
+#         name     The name of the item, without its size.
+#         volumes  In millilitres, with commas between them. A dash means none.
+#         gauges   One gauge, or a range such as 27-34. A dash means none.
+#         lengths  With commas between them. A length in inches is written as on the
+#                  box, such as 1/2 or 1 1/2. A length in millimetres ends in mm.
+#                  A dash means none.
+# Notes: See README file for documentation and full license information.
+#        The entries name sizes only, not brands. Not every size is sold by every maker.
+#
+# Copyright © 2026 Gabriel Mongefranco
+# Licensed under the GNU Free Documentation License v1.3 or later.
+# See <https://www.gnu.org/licenses/fdl-1.3.html>.
+
+# Syringes that take a needle of their own
+10 | Syringe, Luer-Lock | 1, 3, 5, 10 | - | -
+
+# Needles for a syringe. The wide ones draw from a vial, the fine ones inject.
+20 | Needle, Hypodermic | - | 18-22 | 1, 1 1/2
+20 | Needle, Hypodermic | - | 23-27 | 1/2, 5/8, 1, 1 1/2
+
+# Syringes that come with a needle
+30 | Syringe with Needle, Luer-Lock | 3 | 21-25 | 1, 1 1/2
+30 | Syringe with Needle, Luer-Lock | 3 | 25 | 5/8
+40 | Syringe with Needle, Insulin | 0.3, 0.5, 1 | 27-34 | 3/8, 1/2, 5/8
+40 | Syringe with Needle, Insulin | 0.3, 0.5, 1 | 29-32 | 15/64, 5/16
+50 | Syringe with Needle, Tuberculin | 1 | 24-27 | 1/2, 5/8, 1
+60 | Syringe with Safety Needle, Tuberculin | 1 | 24-27 | 1/2, 5/8, 1
+
+# Needles for a pen
+70 | Needle, Pen Tip | - | 28-35 | 2 mm, 3 mm, 4 mm, 5 mm, 3/8, 1/2, 5/8
+70 | Needle, Pen Tip | - | 29-32 | 6 mm, 8 mm

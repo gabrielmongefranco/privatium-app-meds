@@ -152,6 +152,8 @@ expect_text "a product that comes by the carton has an entry for each carton" '"
 expect_text "the larger carton is an entry of its own" '"short_name":"Otrexup (Methotrexate) 10 mg/0.4 mL Auto-Injector 4 Pack"'
 expect_text "a device shows the strength of its label" '"short_name":"Auvi-Q (Epinephrine) 0.3 mg/0.3 mL Auto-Injector 2 Pack"'
 expect_text "a brand filed under a salt is in the catalog" '"short_name":"Januvia (Sitagliptin) 100 mg"'
+expect_text "a syringe with its needle is in the catalog" '"short_name":"Syringe with Needle, Insulin, 0.5 mL, 31G x 5/16\""'
+expect_text "a needle for a pen is in the catalog" '"short_name":"Needle, Pen Tip, 32G x 4 mm"'
 expect_text "an entry of a carton holds its size" '"package_size":"4"'
 expect_text "an entry of a carton holds its type" '"package_type":"Pack"'
 

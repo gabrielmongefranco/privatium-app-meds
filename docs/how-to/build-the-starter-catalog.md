@@ -35,6 +35,7 @@ Nobody who only uses the app has to do this. The file is part of the repository.
 | `more_ingredients.txt` | More drugs, by ingredient |
 | `preferred_brands.txt` | The brand a short name shows when a drug has several brands. A brand of this list that no entry names is added with its own products. |
 | `labeled_in_micrograms.txt` | Drugs whose labels print every strength up to 1 mg in micrograms |
+| `supplies.txt` | Syringes and needles, by family. The script makes one entry for each volume, gauge and length. |
 | `by_hand.jsonl` | Entries written by hand: the first catalog of the project, and products that no drug reference holds, such as continuous glucose monitors |
 
 RxTerms is a drug vocabulary of the United States National Library of Medicine. RxNorm is
@@ -50,7 +51,8 @@ its drug list, which gives every product a number.
 ### Steps
 
 1. Change the lists in `tools/seed/`, if you want another drug in the catalog. Add one
-   line with the name of the ingredient to `more_ingredients.txt`.
+   line with the name of the ingredient to `more_ingredients.txt`. For another size of
+   syringe or needle, change `supplies.txt`. The top of that file explains its format.
 2. Run the script from the root of the repository:
 
    ```sh
@@ -65,7 +67,7 @@ its drug list, which gives every product a number.
    does not hold:
 
    ```text
-   build_seed: 61 entries written by hand, 2217 entries from RxTerms, 454 brand names as other names
+   build_seed: 61 entries written by hand, 229 syringes and needles, 2217 entries from RxTerms, 454 brand names as other names
    ```
 
 4. Run the three checks in [How to run the tests](run-the-tests.md). The smoke test loads
@@ -92,7 +94,9 @@ its drug list, which gives every product a number.
    entry the number of the product.
 9. It makes every short name different. Two products with one name and one strength get
    their form or their device added, such as "Pen Injector 3 mL".
-10. It writes the entries written by hand first, then the others by name.
+10. It makes the syringes and needles from `supplies.txt`. It asks no service for them.
+11. It writes the entries written by hand first, then the syringes and needles, then
+    the others by name.
 
 The same lists and the same answers always give the same file.
 
@@ -124,6 +128,8 @@ with the project's own license needs anything more. This page makes no claim abo
 
 - A strength below 1 mg stays in milligrams when openFDA holds no label for the product,
   or when as many labels print milligrams as micrograms.
+- The syringes and needles name sizes, not brands. Some sizes on the list are rare, and
+  a maker may not sell them. The list was not checked against the boxes of any maker.
 - The strengths of compounded mixes differ from pharmacy to pharmacy. The two entries
   written by hand hold one strength each. Check them against your own label.
 - ClinCalc groups several magnesium products under one name. The catalog leaves that

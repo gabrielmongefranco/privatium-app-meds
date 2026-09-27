@@ -474,7 +474,7 @@ The catalog gets its entries in three ways.
 
 | Way | What it adds |
 |---|---|
-| The starter catalog | About 2,278 entries, loaded once into an empty app |
+| The starter catalog | About 2,507 entries, loaded once into an empty app |
 | The lookup in a form | One entry at a time, when you add a medication the catalog lacks |
 | Your own typing | Anything else |
 
@@ -488,6 +488,7 @@ it copies only the entry you pick.
 - The drugs of the owner's list that ClinCalc does not rank, at every strength too.
 - Entries written by hand for products that no drug reference holds, such as continuous
   glucose monitors, alcohol prep pads and compounded mixes.
+- Syringes and needles, one entry for each volume, gauge and length.
 
 RxTerms is a drug vocabulary of the United States National Library of Medicine, made for
 entering prescriptions. [How to build the starter catalog](../how-to/build-the-starter-catalog.md)
