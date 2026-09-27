@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 README.md
 Author(s): Gabriel Mongefranco
 Created: 2026-09-26
-Last Modified: 2026-09-26
+Last Modified: 2026-09-27
 Summary: Provides an overview of the project, in Markdown format.
 Notes: See README file for documentation and full license information.
 
@@ -28,7 +28,7 @@ Prescription Tracker is a personal prescription tracker for families with chroni
 
 It is a Privatium app: a folder of Lua, SQL and HTML templates that a Privatium node runs on hardware you control. Your records live as plain text in a folder on your disk, with no account, no cloud, and no database server. Backing up is copying a folder.
 
-This is the app that Privatium was built for. The first version stores a household name and greets with it; the prescription, refill and prior-authorization screens follow. The [documentation](./docs) records each table as it lands.
+This is the app that Privatium was built for. This version keeps the people of a household, its pharmacies and prescribers, and a medication catalog; the prescription, refill and prior-authorization screens follow. The [documentation](./docs) records each table and screen as it lands.
 
 Tested with Privatium v0.3.
 
@@ -59,7 +59,7 @@ Installing an app from a stranger deserves the same thought as running a script 
 
 
 ## Documentation
-+ **Complete documentation:** See the [`/docs`](./docs) folder in this repository for the data model, setup notes and technical details.
++ **Complete documentation:** See the [`/docs`](./docs) folder in this repository for the usage guide, the data model, the app design and the test how-to.
 + [`apps/meds/README.md`](apps/meds/README.md) describes the app folder itself.
 + [`SKILLS.md`](SKILLS.md) lists the guides an AI assistant reads before changing this repository, including the Privatium guides pinned to the version above.
 

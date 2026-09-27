@@ -1,11 +1,10 @@
 <?--
 This file is part of Prescription Tracker
-apps/meds/views/index.lsp
+apps/meds/views/pharmacy_form.lsp
 Author(s): Gabriel Mongefranco
-Created: 2026-09-26
+Created: 2026-09-27
 Last Modified: 2026-09-27
-Summary: The home page. Greets the household by name, or invites it to introduce itself.
-         The output tag escapes by default, so a name containing markup is displayed, never run.
+Summary: The form that adds or changes a pharmacy.
 Notes: See README file for documentation and full license information.
 
 Copyright © 2026 Gabriel Mongefranco
@@ -24,18 +23,17 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 --?>
 
 <?= render('_nav', { section = section }) ?>
-<div class="meds">
-<p class="meds-mark"><?= icon('capsule') ?></p>
-<? if not me then ?>
-  <h1>Welcome to your prescription tracker.</h1>
-  <p>Give your household a name, and the app will remember it for next time.</p>
-  <a class="pv-btn pv-btn-primary" href="<?= url('/edit') ?>">
-    <?= icon('capsule') ?> Get started
-  </a>
-<? else ?>
-  <h1><?= greeting ?>, <?= me.display_name ?>.</h1>
-  <a class="pv-btn" href="<?= url('/edit') ?>">
-    <?= icon('pencil') ?> Change the name
-  </a>
-<? end ?>
-</div>
+<h1><?= heading ?></h1>
+<?= render('_problems', { problems = problems }) ?>
+
+<form method="post" action="<?= action ?>" novalidate>
+  <?= csrf() ?>
+  <?= render('_field', { name = 'name', label = 'Name', value = typed.name, err = errors.name,
+        required = true, maxlength = 120 }) ?>
+  <?= render('_contact_fields', { typed = typed, errors = errors }) ?>
+
+  <p class="pv-actions">
+    <button type="submit" class="pv-btn pv-btn-primary"><?= icon('check-lg') ?> Save</button>
+    <a class="pv-btn" href="<?= url('/contacts') ?>">Cancel</a>
+  </p>
+</form>

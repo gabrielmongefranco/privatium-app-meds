@@ -1,11 +1,11 @@
 <?--
 This file is part of Prescription Tracker
-apps/meds/views/index.lsp
+apps/meds/views/_nav.lsp
 Author(s): Gabriel Mongefranco
-Created: 2026-09-26
+Created: 2026-09-27
 Last Modified: 2026-09-27
-Summary: The home page. Greets the household by name, or invites it to introduce itself.
-         The output tag escapes by default, so a name containing markup is displayed, never run.
+Summary: The app's stylesheet and the navigation bar. Every page includes it first, so the
+         bar sits in the same place on every page and marks the current section.
 Notes: See README file for documentation and full license information.
 
 Copyright © 2026 Gabriel Mongefranco
@@ -23,19 +23,11 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <https://www.gnu.org/licenses/>.
 --?>
 
-<?= render('_nav', { section = section }) ?>
-<div class="meds">
-<p class="meds-mark"><?= icon('capsule') ?></p>
-<? if not me then ?>
-  <h1>Welcome to your prescription tracker.</h1>
-  <p>Give your household a name, and the app will remember it for next time.</p>
-  <a class="pv-btn pv-btn-primary" href="<?= url('/edit') ?>">
-    <?= icon('capsule') ?> Get started
-  </a>
-<? else ?>
-  <h1><?= greeting ?>, <?= me.display_name ?>.</h1>
-  <a class="pv-btn" href="<?= url('/edit') ?>">
-    <?= icon('pencil') ?> Change the name
-  </a>
-<? end ?>
-</div>
+<link rel="stylesheet" href="<?= url('/static/meds.css') ?>">
+<nav aria-label="Prescription Tracker">
+  <ul class="pv-subnav meds-nav">
+    <li><a href="<?= url('/') ?>"<? if section == 'home' then ?> aria-current="page"<? end ?>><?= icon('house') ?> Home</a></li>
+    <li><a href="<?= url('/contacts') ?>"<? if section == 'contacts' then ?> aria-current="page"<? end ?>><?= icon('telephone') ?> Contacts</a></li>
+    <li><a href="<?= url('/setup') ?>"<? if section == 'setup' then ?> aria-current="page"<? end ?>><?= icon('gear') ?> Setup</a></li>
+  </ul>
+</nav>

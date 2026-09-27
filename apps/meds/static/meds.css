@@ -3,7 +3,7 @@
  * apps/meds/static/meds.css
  * Author(s): Gabriel Mongefranco
  * Created: 2026-09-26
- * Last Modified: 2026-09-26
+ * Last Modified: 2026-09-27
  * Summary: Styles for the Prescription Tracker pages, using the shell's accessible color tokens.
  * Notes: See README file for documentation and full license information.
  *
@@ -35,3 +35,33 @@
 .meds h1 { max-width: 24ch; }
 .meds form input { display: block; }
 .meds .pv-help { margin: .5rem 0 1.25rem; }
+
+/* The navigation bar keeps the shell's 44-pixel targets. */
+.meds-nav a { display: inline-flex; align-items: center; gap: .4rem; min-height: 44px; }
+
+/* "(optional)" is part of the label's text, in the muted color, at full weight 400. */
+.meds-optional { color: var(--pv-muted); font-weight: 400; }
+
+/* A choice groups a drop-down and a text box. The shell lays labels inside a fieldset
+   out in a row, which suits check boxes; these labels sit above their controls. */
+.meds-choice label { display: block; min-height: 0; margin: .5rem 0 .25rem; font-weight: 600; }
+main form fieldset .pv-help { margin: .25rem 0 .5rem; }
+main form fieldset > label:not(:has(input[type="checkbox"])):not(:has(input[type="radio"])) {
+  display: block; min-height: 0; margin: .75rem 0 .25rem; font-weight: 600;
+}
+
+/* The list of problems takes the focus when a refused form comes back. */
+.meds-problems h2 { font-size: 1.125rem; margin: 0 0 .25rem; }
+.meds-problems a { color: inherit; }
+
+/* Contacts and Setup links are lists of cards, so they carry no bullets. */
+.meds-cards { list-style: none; padding: 0; margin: 0 0 2rem; }
+.meds-links { margin-bottom: 2rem; }
+
+/* Row actions wrap instead of widening the table. */
+.meds-row-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.meds-search { margin: 0 0 1.5rem; }
+
+@media print {
+  .pv-header, .pv-footer, .meds-nav, .pv-actions { display: none; }
+}

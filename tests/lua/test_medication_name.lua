@@ -1,10 +1,9 @@
 -- This file is part of Prescription Tracker
--- apps/meds/app.lua
+-- tests/lua/test_medication_name.lua
 -- Author(s): Gabriel Mongefranco
--- Created: 2026-09-26
+-- Created: 2026-09-27
 -- Last Modified: 2026-09-27
--- Summary: Entry point of the Prescription Tracker app. The routes live in lib/routes,
---          one module for each part of the app; loading a module registers its routes.
+-- Summary: Unit tests for apps/meds/lib/medication_name.lua.
 -- Notes: See README file for documentation and full license information.
 --
 -- Copyright © 2026 Gabriel Mongefranco
@@ -21,9 +20,13 @@
 -- You should have received a copy of the GNU General Public License along
 -- with this program. If not, see <https://www.gnu.org/licenses/>.
 
--- A path that matches a pattern is handled by the first route registered for it, so
--- the order below is the order in which paths are tried.
-require 'routes.home'       -- The home page, the household name, Setup, reminder settings
-require 'routes.people'     -- The people of the household
-require 'routes.contacts'   -- Pharmacies and prescribers
-require 'routes.catalog'    -- The medication catalog
+local medication_name = require 'medication_name'
+
+return function(equal)
+  equal('brand, generic and strength', medication_name.short('Examplol', 'Exampline', '10 mg'), 'Examplol (Exampline) 10 mg')
+  equal('no brand', medication_name.short(nil, 'Exampline', '10 mg'), 'Exampline 10 mg')
+  equal('no generic', medication_name.short('Examplol', nil, '10 mg'), 'Examplol 10 mg')
+  equal('no strength', medication_name.short('Examplol', 'Exampline', nil), 'Examplol (Exampline)')
+  equal('brand only', medication_name.short('Examplol', nil, nil), 'Examplol')
+  equal('neither name', medication_name.short(nil, nil, '10 mg'), nil)
+end

@@ -1,10 +1,9 @@
 -- This file is part of Prescription Tracker
--- apps/meds/app.lua
+-- tests/lua/test_clock.lua
 -- Author(s): Gabriel Mongefranco
--- Created: 2026-09-26
+-- Created: 2026-09-27
 -- Last Modified: 2026-09-27
--- Summary: Entry point of the Prescription Tracker app. The routes live in lib/routes,
---          one module for each part of the app; loading a module registers its routes.
+-- Summary: Unit tests for apps/meds/lib/clock.lua.
 -- Notes: See README file for documentation and full license information.
 --
 -- Copyright © 2026 Gabriel Mongefranco
@@ -21,9 +20,17 @@
 -- You should have received a copy of the GNU General Public License along
 -- with this program. If not, see <https://www.gnu.org/licenses/>.
 
--- A path that matches a pattern is handled by the first route registered for it, so
--- the order below is the order in which paths are tried.
-require 'routes.home'       -- The home page, the household name, Setup, reminder settings
-require 'routes.people'     -- The people of the household
-require 'routes.contacts'   -- Pharmacies and prescribers
-require 'routes.catalog'    -- The medication catalog
+local clock = require 'clock'
+
+return function(equal)
+  equal('midnight is morning', clock.greeting(0), 'Good morning')
+  equal('11 is morning', clock.greeting(11), 'Good morning')
+  equal('noon is afternoon', clock.greeting(12), 'Good afternoon')
+  equal('17 is afternoon', clock.greeting(17), 'Good afternoon')
+  equal('18 is evening', clock.greeting(18), 'Good evening')
+  equal('23 is evening', clock.greeting(23), 'Good evening')
+
+  equal('today has the form YYYY-MM-DD', clock.today():match('^%d%d%d%d%-%d%d%-%d%d$') ~= nil, true)
+  equal('today is the local date', clock.today(), os.date('%Y-%m-%d'))
+  equal('the hour is the local hour', clock.hour(), tonumber(os.date('%H')))
+end

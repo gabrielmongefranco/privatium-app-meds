@@ -24,11 +24,14 @@ licensing, testing, or authorization rules.
 This repository is one Privatium app, `apps/meds/`, the Prescription Tracker: a personal
 prescription tracker for families with chronic conditions. It is a Tier 1 app, written in
 Lua 5.4 with LSP templates and a SQL schema, and it runs on a Privatium node the owner
-controls. Everything outside `apps/meds/` is documentation, licensing and assistant guides.
+controls. Everything outside `apps/meds/` is documentation, tests, licensing and
+assistant guides.
 
 ### Environment and structure
 
 - `apps/meds/` is the app folder. Its name and the `slug` in `app.toml` must stay `meds`.
+- `tests/` holds the unit tests and the smoke test. They stay outside the app folder, so
+  an installed app carries no test code.
 - `docs/data-model.md` describes every table. It changes in the same commit as
   `apps/meds/schema.sql`.
 - `apps/meds/sample/seed.jsonl` is synthetic sample data. It must never hold a real name,
@@ -54,6 +57,14 @@ Before finishing any change to the app, lint it and fix every finding:
 
 The command exits with code 3 while findings remain. The GitHub Actions workflow
 `.github/workflows/lint.yml` runs the same lint with the pinned Privatium release.
+
+Then run the tests from the root of the repository, and fix every failure:
+
+    lua5.4 tests/lua/run.lua
+    PRIVATIUM=/path/to/privatium tests/smoke.sh
+
+The unit tests need Lua 5.4, the version Privatium runs. The smoke test starts its own
+node on a temporary data directory and uses invented data only.
 
 ### Project constraints
 
