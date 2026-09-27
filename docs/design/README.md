@@ -498,7 +498,7 @@ dates, medications, the conditions they treat, prescription numbers and claim nu
   medication.
 - **Logs.** Diagnostic messages hold record ids and counts, never field values.
 - **Sample data.** `sample/seed.jsonl` holds invented people and products only.
-- **Import.** The [import plan](import.md) keeps real records out of this repository.
+- **Import.** The [import page](import.md) keeps real records out of this repository.
 
 This design makes no claim of compliance with any health privacy law.
 
@@ -576,13 +576,13 @@ Each step ended with a clean `privatium lint`, passing tests and updated documen
 
 You now know what the app shows, how it decides that a refill is due, and what is
 still planned. Read the [data model](../data-model.md) next, then the
-[import plan](import.md).
+[import page](import.md).
 
 ### Additional resources
 
 - [Using the app](../usage.md)
 - [Data model](../data-model.md)
-- [Import plan](import.md)
+- [Import of the legacy database](import.md)
 - [How to run the tests](../how-to/run-the-tests.md)
 - [Compliance](../compliance.md)
 - [The schema, as SQL](../../apps/meds/schema.sql)
