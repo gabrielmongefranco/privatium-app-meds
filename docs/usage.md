@@ -196,7 +196,7 @@ pasted. You can pick one of your pharmacies instead.
 |---|---|
 | Ready | Every value was read. The fill is ticked for you. |
 | Not paid | The claim status is not Paid. Tick the fill only if it took place. |
-| Already recorded | The person has a fill with the same prescription number and date. It is left out. |
+| Already recorded | The person has a fill with the same prescription number and date, or a fill of the same medication on the same date. It is left out. |
 | Details missing | The details were not open in the portal. Open them and copy again. |
 | Could not read | A value is not a date or a number. The row says which. |
 
@@ -211,7 +211,8 @@ list and you decide. Hyphens and spaces in a number do not matter.
 Adding a pasted fill lowers the refills left of its medication by one. What the plan
 paid and the deductible are shown and not stored.
 
-Pasting the same page twice adds nothing the second time.
+Pasting the same page twice adds nothing the second time. A fill that you typed by hand
+without a prescription number is found by its medication and its date.
 
 The app reads one layout of portal page today. The
 [app design](design/README.md) shows that layout.

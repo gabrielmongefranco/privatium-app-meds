@@ -115,6 +115,22 @@ function fills.recorded(person_id, rx_number, filled_on)
   return found.fills > 0
 end
 
+--- Whether a person already has a fill of a medication on a date.
+-- Many fills carry no prescription number, such as the ones a person typed from
+-- memory. The person, the medication and the date name the fill then.
+-- @return boolean
+function fills.on_day(person_id, medication_id, filled_on)
+  if not person_id or not medication_id or not filled_on then return false end
+  local found = pv.query1([[
+    SELECT count(*) AS fills
+      FROM fill
+     WHERE person_id = ?
+       AND medication_id = ?
+       AND filled_on = ?]],
+    { person_id, medication_id, filled_on })
+  return found.fills > 0
+end
+
 --- The medications a person filled under a prescription number.
 -- A prescription is for one medication, so a number that is known names it.
 -- @return table  A list of medication ids. Grain: one per medication, most often one.

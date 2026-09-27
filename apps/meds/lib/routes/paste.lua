@@ -162,6 +162,41 @@ local function medications_of(claims, rows, person_id, typed, submitted)
   return list, by_key
 end
 
+-- The medication that a name of the paste stands for, when it is one of the app: the
+-- medication that answers to the name, or the one that is chosen for it.
+local function medication_of(subject, typed, submitted)
+  if subject.known then return subject.known.medication_id end
+  if submitted then return subject.pick and subject.pick.id end
+  local choice = text.clean(typed[subject.prefix .. '_choice'])
+  if choice and choice ~= medication_pick.NEW and choice ~= medication_pick.OTHER
+     and pv.get_row('medication', choice) then
+    return choice
+  end
+  return nil
+end
+
+-- Leaves out the fills that the person has already: the same medication on the same
+-- date. A fill that was typed by hand or imported often has no prescription number,
+-- so the number alone would let it in a second time. A medication with no fill left
+-- asks no question.
+local function leave_out_repeated(rows, medications, medication_by, person_id, typed, submitted)
+  for _, row in ipairs(rows) do
+    local subject = row.can_add and medication_by[text.key(row.claim.drug_name)]
+    local id = subject and medication_of(subject, typed, submitted)
+    if id and fills.on_day(person_id, id, row.claim.filled_on) then
+      row.result, row.same_day = 'Already recorded', true
+      row.can_add, row.ready, row.wanted = nil, nil, false
+      if not submitted then typed['include_' .. row.index] = nil end
+      for position, claim in ipairs(subject.claims) do
+        if claim == row.claim then table.remove(subject.claims, position) break end
+      end
+    end
+  end
+  for position = #medications, 1, -1 do
+    if #medications[position].claims == 0 then table.remove(medications, position) end
+  end
+end
+
 -- The key of the pharmacy of a claim: its identifier, or its name.
 local function pharmacy_key(claim)
   return claim.pharmacy_npi or text.key(claim.pharmacy_name)
@@ -248,6 +283,7 @@ local function review(claims, person_id, typed, submitted)
 
   local known = pharmacies()
   local medications, medication_by = medications_of(claims, rows, person_id, typed, submitted)
+  leave_out_repeated(rows, medications, medication_by, person_id, typed, submitted)
   local pharmacy_list, pharmacy_by = pharmacies_of(claims, rows, typed, submitted, known)
   for _, row in ipairs(rows) do
     if row.can_add then
