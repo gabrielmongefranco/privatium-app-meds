@@ -85,18 +85,52 @@ function fills.read(form, pending)
   return row, errors
 end
 
+--- The form of a prescription number that two ways of writing it share.
+-- A label prints '1234-567', a portal prints '1234567', and a person types '1234 567'.
+-- Hyphens and spaces are left out, and letters are compared in capitals.
+-- @param rx_number any
+-- @return string|nil  The number to compare by, or nil when there is none.
+function fills.rx_key(rx_number)
+  local cleaned = text.clean(rx_number)
+  if not cleaned then return nil end
+  local key = cleaned:gsub('[%s%-]', ''):upper()
+  if key == '' then return nil end
+  return key
+end
+
 --- Whether a person already has a fill with a prescription number on a date.
 -- A portal lists the same fill on every visit, so this is what keeps a second paste
 -- from adding it again.
 -- @return boolean
 function fills.recorded(person_id, rx_number, filled_on)
-  if not rx_number then return false end
+  local key = fills.rx_key(rx_number)
+  if not key then return false end
   local found = pv.query1([[
     SELECT count(*) AS fills
       FROM fill
-     WHERE person_id = ? AND rx_number = ? AND filled_on = ?]],
-    { person_id, rx_number, filled_on })
+     WHERE person_id = ?
+       AND upper(replace(replace(rx_number, '-', ''), ' ', '')) = ?
+       AND filled_on = ?]],
+    { person_id, key, filled_on })
   return found.fills > 0
+end
+
+--- The medications a person filled under a prescription number.
+-- A prescription is for one medication, so a number that is known names it.
+-- @return table  A list of medication ids. Grain: one per medication, most often one.
+function fills.medications_of_rx(person_id, rx_number)
+  local key = fills.rx_key(rx_number)
+  if not key then return {} end
+  local ids = {}
+  for _, row in ipairs(pv.query([[
+      SELECT DISTINCT medication_id
+        FROM fill
+       WHERE person_id = ?
+         AND upper(replace(replace(rx_number, '-', ''), ' ', '')) = ?
+       ORDER BY medication_id]], { person_id, key })) do
+    ids[#ids + 1] = row.medication_id
+  end
+  return ids
 end
 
 -- The list entry that goes with a new fill: the one the person has, with the new

@@ -47,8 +47,13 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
         <li><a href="#<?= group.key ?>"><?= icon(group.icon) ?> <?= group.title ?>: <?= #group.rows ?></a></li>
       <? end ?>
     <? end ?>
-    <? if #ending > 0 then ?>
-      <li><a href="#authorizations"><?= icon('shield-exclamation') ?> Authorizations ending: <?= #ending ?></a></li>
+    <? if #asking > 0 then ?>
+      <li><a href="#asking"><?= icon('telephone') ?> New prescriptions to ask for: <?= #asking ?></a></li>
+    <? end ?>
+    <? for _, level in ipairs(levels) do ?>
+      <? if #level.rows > 0 then ?>
+        <li><a href="#authorizations"><?= icon(level.icon) ?> <?= level.title ?>: <?= #level.rows ?></a></li>
+      <? end ?>
     <? end ?>
   </ul>
 <? end ?>
@@ -61,24 +66,59 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
     <? if group.key == 'paused' then ?><p class="pv-help">On hold or not started. The dates are for reference and raise no alert.</p><? end ?>
     <?= render('_refills_table', { rows = group.rows, alert = group.alert, caption = group.title }) ?>
   <? end ?>
-  <? if group.key == 'due_soon' and #ending > 0 then ?>
-    <h2 id="authorizations">Authorizations ending</h2>
+  <? if group.key == 'due_soon' and #asking > 0 then ?>
+    <h2 id="asking">New prescriptions to ask for</h2>
+    <p class="pv-help">No refill is left, and the next fill is near. Ask the prescriber for a new prescription. Some prescribers take this request from the patient only.</p>
     <table class="pv-records" role="table">
-      <caption class="pv-visually-hidden">Prior authorizations that end soon or have ended</caption>
+      <caption class="pv-visually-hidden">Medications with no refill left whose next fill is near, soonest first</caption>
+      <thead role="rowgroup"><tr role="row">
+        <th scope="col" role="columnheader">Medication</th>
+        <th scope="col" role="columnheader">For</th>
+        <th scope="col" role="columnheader">Next fill</th>
+        <th scope="col" role="columnheader">Ask</th>
+      </tr></thead>
+      <tbody role="rowgroup">
+      <? for _, row in ipairs(asking) do ?>
+        <tr role="row">
+          <td role="cell"><span class="pv-cell-label" aria-hidden="true">Medication</span><a href="<?= url('/medications/' .. row.id) ?>"><?= row.medication_name ?></a>
+            <span class="pv-meta meds-line"><?= row.status_label ?></span></td>
+          <td role="cell"><span class="pv-cell-label" aria-hidden="true">For</span><?= row.person_name ?></td>
+          <td role="cell"><span class="pv-cell-label" aria-hidden="true">Next fill</span><span class="pv-badge pv-badge-warn"><?= icon('telephone') ?> No refills left</span>
+            <? if row.status == 'taking_as_needed' then ?>
+              <span class="pv-meta meds-line">The last fill lasts until <?= fmt.date(row.next_fill_on) ?></span>
+            <? else ?>
+              <span class="pv-meta meds-line"><?= row.phrase ?>, on <?= fmt.date(row.next_fill_on) ?></span>
+            <? end ?></td>
+          <td role="cell"><span class="pv-cell-label" aria-hidden="true">Ask</span><?= row.prescriber_name or 'The prescriber' ?><? if row.prescriber_href then ?>: <a href="tel:<?= row.prescriber_href ?>"><?= row.prescriber_phone ?></a><? end ?></td>
+        </tr>
+      <? end ?>
+      </tbody>
+    </table>
+  <? end ?>
+  <? if group.key == 'due_soon' and #ending > 0 then ?>
+    <h2 id="authorizations">Prior authorizations</h2>
+    <p class="pv-help">An authorization that is due needs a new request now, so the insurer has time to decide.</p>
+    <table class="pv-records" role="table">
+      <caption class="pv-visually-hidden">Prior authorizations that have expired, are due or are due soon, soonest first</caption>
       <thead role="rowgroup"><tr role="row">
         <th scope="col" role="columnheader">Medication</th>
         <th scope="col" role="columnheader">For</th>
         <th scope="col" role="columnheader">Authorization</th>
-        <th scope="col" role="columnheader">Last day</th>
+        <th scope="col" role="columnheader">Expires on</th>
+        <th scope="col" role="columnheader">Ask</th>
       </tr></thead>
       <tbody role="rowgroup">
-      <? for _, row in ipairs(ending) do ?>
+      <? for _, level in ipairs(levels) do ?>
+      <? for _, row in ipairs(level.rows) do ?>
         <tr role="row">
           <td role="cell"><span class="pv-cell-label" aria-hidden="true">Medication</span><a href="<?= url('/medications/' .. row.entry_id) ?>"><?= row.medication_name ?></a></td>
           <td role="cell"><span class="pv-cell-label" aria-hidden="true">For</span><?= row.person_name ?></td>
-          <td role="cell"><span class="pv-cell-label" aria-hidden="true">Authorization</span><span class="pv-badge pv-badge-warn"><?= icon('shield-exclamation') ?> <?= row.phrase ?></span></td>
-          <td role="cell"><span class="pv-cell-label" aria-hidden="true">Last day</span><?= fmt.date(row.valid_to) ?></td>
+          <td role="cell"><span class="pv-cell-label" aria-hidden="true">Authorization</span><span class="pv-badge <?= row.badge ?>"><?= icon(row.icon_name) ?> <? if row.level == 'due' then ?>Due<? elseif row.level == 'due_soon' then ?>Due soon<? else ?>Expired<? end ?></span>
+            <span class="pv-meta meds-line"><?= row.phrase ?></span></td>
+          <td role="cell"><span class="pv-cell-label" aria-hidden="true">Expires on</span><?= fmt.date(row.valid_to) ?></td>
+          <td role="cell"><span class="pv-cell-label" aria-hidden="true">Ask</span><?= row.prescriber_name or 'The prescriber' ?><? if row.prescriber_href then ?>: <a href="tel:<?= row.prescriber_href ?>"><?= row.prescriber_phone ?></a><? end ?></td>
         </tr>
+      <? end ?>
       <? end ?>
       </tbody>
     </table>

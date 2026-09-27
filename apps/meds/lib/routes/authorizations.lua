@@ -22,6 +22,7 @@
 -- with this program. If not, see <https://www.gnu.org/licenses/>.
 
 local pv              = require 'privatium'
+local clock           = require 'clock'
 local entries         = require 'entries'
 local medication_pick = require 'medication_pick'
 local page            = require 'page'
@@ -34,7 +35,7 @@ local validate        = require 'validate'
 
 --- Configuration ---
 local LIST   = '/authorizations'
-local FIELDS = { 'person_id', 'medication_id', 'valid_to', 'valid_from' }
+local FIELDS = { 'person_id', 'medication_id', 'valid_from', 'valid_to' }
 -- A medication with an approval and no list entry is one the person is about to start.
 local STATUS_OF_NEW_ENTRY = 'not_started'
 
@@ -46,11 +47,13 @@ local function everything(person_id)
     SELECT pa.id, pa.valid_from, pa.valid_to,
            p.display_name AS person_name,
            m.short_name   AS medication_name,
-           CASE WHEN pa.valid_to < date('now', 'localtime') THEN 'Ended'
+           CASE WHEN pa.valid_to < date('now', 'localtime') THEN 'Expired'
                 WHEN pa.valid_from > date('now', 'localtime') THEN 'Not started'
-                WHEN pa.valid_to = date('now', 'localtime') THEN 'Ends today'
+                WHEN pa.valid_to = date('now', 'localtime') THEN 'Due: expires today'
+                WHEN pa.valid_to <= date('now', 'localtime', '+' || r.authorization_due_within_days || ' days')
+                THEN 'Due: expires in ' || CAST(julianday(pa.valid_to) - julianday(date('now', 'localtime')) AS INTEGER) || ' days'
                 WHEN pa.valid_to <= date('now', 'localtime', '+' || r.authorization_notice_days || ' days')
-                THEN 'Ends in ' || CAST(julianday(pa.valid_to) - julianday(date('now', 'localtime')) AS INTEGER) || ' days'
+                THEN 'Due soon: expires in ' || CAST(julianday(pa.valid_to) - julianday(date('now', 'localtime')) AS INTEGER) || ' days'
                 ELSE 'Active' END AS state
       FROM prior_authorization pa
       JOIN person p     ON p.id = pa.person_id        -- many:1
@@ -73,11 +76,11 @@ local function read(form)
   errors.medication_id = adding.pick.problem
   row.person_id, row.medication_id = adding.person_id, adding.pick.id
 
-  -- Only the last day is required. A renewal notice often names no first day.
-  row.valid_to, errors.valid_to = validate.date(form.valid_to, 'the last day', true)
+  -- Only the expiration date is required. A renewal notice often names no first day.
   row.valid_from, errors.valid_from = validate.date(form.valid_from, 'the first day')
+  row.valid_to, errors.valid_to = validate.date(form.valid_to, 'the expiration date', true)
   if row.valid_from and row.valid_to and row.valid_to < row.valid_from then
-    errors.valid_from = 'Choose a first day that is the last day or earlier, or leave it empty.'
+    errors.valid_from = 'Choose a first day that is the expiration date or earlier, or leave it empty.'
   end
   return row, errors, adding
 end
@@ -136,6 +139,9 @@ pv.get(LIST .. '/new', function(req)
   return form_page('Add a prior authorization', url(LIST .. '/new'), {
     person_id     = entry and entry.person_id or text.clean(req.query.person),
     medication_id = entry and entry.medication_id,
+    -- Most approvals start with a month and run for a year, so the form starts there.
+    valid_from    = clock.month_start(),
+    valid_to      = clock.month_start_next_year(),
   }, {})
 end)
 
@@ -175,7 +181,7 @@ pv.get(LIST .. '/:id/remove', function(req)
   return pv.render('remove', {
     section = 'authorizations',
     heading = 'Remove a prior authorization',
-    name    = 'the prior authorization that ends on ' .. authorization.valid_to,
+    name    = 'the prior authorization that expires on ' .. authorization.valid_to,
     used_by = {},
     action  = url(LIST .. '/' .. authorization.id .. '/remove'),
     back    = url(LIST),

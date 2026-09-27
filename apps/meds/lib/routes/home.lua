@@ -23,6 +23,7 @@
 
 local pv       = require 'privatium'
 local authorization_watch = require 'authorization_watch'
+local authorization_words = require 'authorization_words'
 local clock    = require 'clock'
 local entries  = require 'entries'
 local people_filter = require 'people_filter'
@@ -41,7 +42,8 @@ local DAY_COUNTS = {
   { name = 'due_soon_within_days',           label = 'the days for due soon' },
   { name = 'specialty_due_within_days',      label = 'the days for due, specialty' },
   { name = 'specialty_due_soon_within_days', label = 'the days for due soon, specialty' },
-  { name = 'authorization_notice_days',      label = 'the days of notice' },
+  { name = 'authorization_due_within_days',  label = 'the days for due, prior authorizations' },
+  { name = 'authorization_notice_days',      label = 'the days for due soon, prior authorizations' },
 }
 
 -- The reminder settings of this node. At most one row exists, and none until the
@@ -50,7 +52,7 @@ local function profile()
   return pv.query1([[
     SELECT id, due_within_days, due_soon_within_days,
            specialty_due_within_days, specialty_due_soon_within_days,
-           authorization_notice_days
+           authorization_notice_days, authorization_due_within_days
       FROM profile
      LIMIT 1]])
 end
@@ -59,11 +61,19 @@ end
 local function defaults()
   return pv.query1([[
     SELECT due_within_days, due_soon_within_days, specialty_due_within_days,
-           specialty_due_soon_within_days, authorization_notice_days
+           specialty_due_soon_within_days, authorization_notice_days,
+           authorization_due_within_days
       FROM v_reminder_default]])
 end
 
 --- Home ---
+
+-- The medication that needs a fill soonest comes first.
+local function soonest_first(a, b)
+  local left, right = a.next_fill_on or '9999', b.next_fill_on or '9999'
+  if left ~= right then return left < right end
+  return a.id < b.id
+end
 
 -- The sentence that confirms a fill, read from the fill itself. The page address
 -- carries the id of the fill and nothing else.
@@ -96,23 +106,37 @@ pv.get('/', function(req)
     groups[#groups + 1], by_key[group.key] = copy, copy
   end
   local next_row
+  local asking = {}
   for _, row in ipairs(entries.list(filter.id)) do
     local group = by_key[row.group]
     if group then group.rows[#group.rows + 1] = row end
+    if refill.ask_for_more(row.status, row.refills_left, row.refill_status) then
+      asking[#asking + 1] = row
+    end
     if row.group == 'not_due' and (not next_row or row.next_fill_on < next_row.next_fill_on) then
       next_row = row
     end
   end
   -- Within a group, the medication that needs a fill soonest comes first.
   for _, group in ipairs(groups) do
-    table.sort(group.rows, function(a, b)
-      local left, right = a.next_fill_on or '9999', b.next_fill_on or '9999'
-      if left ~= right then return left < right end
-      return a.id < b.id
-    end)
+    table.sort(group.rows, soonest_first)
   end
 
+  table.sort(asking, soonest_first)
+
+  -- The prior authorizations that need attention, by level, most urgent first.
   local ending = authorization_watch.ending(filter.id)
+  local levels = {}
+  for _, level in ipairs(authorization_words.LEVELS) do
+    local copy = { key = level.key, title = level.title, icon = level.icon, rows = {} }
+    for _, row in ipairs(ending) do
+      if row.level == level.key then
+        row.prescriber_href = validate.tel_href(row.prescriber_phone)
+        copy.rows[#copy.rows + 1] = row
+      end
+    end
+    levels[#levels + 1] = copy
+  end
   return pv.render('refills', {
     section  = 'home',
     greeting = clock.greeting(clock.hour()),
@@ -120,7 +144,9 @@ pv.get('/', function(req)
     filter   = filter,
     groups   = groups,
     ending   = ending,
-    alerts   = #by_key.overdue.rows + #by_key.due.rows + #by_key.due_soon.rows + #ending,
+    levels   = levels,
+    asking   = asking,
+    alerts   = #by_key.overdue.rows + #by_key.due.rows + #by_key.due_soon.rows + #ending + #asking,
     next_row = next_row,
   })
 end)
@@ -134,7 +160,8 @@ local function reminders_page(typed, errors)
     errors   = errors,
     problems = page.problems(errors, {
       'due_within_days', 'due_soon_within_days', 'specialty_due_within_days',
-      'specialty_due_soon_within_days', 'authorization_notice_days',
+      'specialty_due_soon_within_days', 'authorization_due_within_days',
+      'authorization_notice_days',
     }),
     defaults = defaults(),
   })
@@ -163,6 +190,12 @@ pv.post('/setup/reminders', function(req)
   if not errors.specialty_due_soon_within_days
      and effective('specialty_due_soon_within_days') < effective('specialty_due_within_days') then
     errors.specialty_due_soon_within_days =
+      'Make the days for due soon the same as the days for due, or more.'
+  end
+
+  if not errors.authorization_notice_days
+     and effective('authorization_notice_days') < effective('authorization_due_within_days') then
+    errors.authorization_notice_days =
       'Make the days for due soon the same as the days for due, or more.'
   end
 

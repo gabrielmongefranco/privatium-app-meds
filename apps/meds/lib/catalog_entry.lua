@@ -99,6 +99,8 @@ local function read_choice(form, name, label, offered)
   if problem then return nil, problem end
   if not value then
     value, problem = validate.text(form[name], label, CHOICE_MAX)
+    -- The choice to add, with nothing typed, adds nothing.
+    if value == 'new' then value = nil end
     if not value then return nil, problem end
   end
   local key = text.key(value)

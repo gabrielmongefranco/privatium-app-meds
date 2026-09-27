@@ -36,6 +36,20 @@ function clock.today()
   return os.date('%Y-%m-%d')
 end
 
+--- The first day of the current month on the node's own clock.
+-- @return string  The date as YYYY-MM-DD.
+function clock.month_start()
+  return os.date('%Y-%m-01')
+end
+
+--- The same day one year after the first day of the current month.
+-- The first of a month exists in every year, so no date has to be corrected.
+-- @return string  The date as YYYY-MM-DD.
+function clock.month_start_next_year()
+  local year = math.tointeger(tonumber(os.date('%Y')))
+  return ('%04d-%s-01'):format(year + 1, os.date('%m'))
+end
+
 --- The current hour on the node's own clock.
 -- @return integer  0 to 23.
 function clock.hour()

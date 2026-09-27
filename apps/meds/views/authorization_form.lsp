@@ -35,12 +35,12 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
   <?= render('_medication_picker', { prefix = 'medication', typed = typed, options = in_use, pick = pick,
           err = errors.medication_id }) ?>
   <p class="pv-help">If the medication is not on the list of the person yet, saving adds it, with the status Not started.</p>
-  <?= render('_field', { name = 'valid_to', label = 'Last day', value = typed.valid_to,
-        err = errors.valid_to, required = true, input_type = 'date',
-        help = 'The last day the approval covers. The letter from the insurer shows it.' }) ?>
   <?= render('_field', { name = 'valid_from', label = 'First day', value = typed.valid_from,
         err = errors.valid_from, input_type = 'date',
-        help = 'Leave it empty if you do not know it.' }) ?>
+        help = 'The form starts with the first day of this month. Clear the field if you do not know the first day.' }) ?>
+  <?= render('_field', { name = 'valid_to', label = 'Expiration date', value = typed.valid_to,
+        err = errors.valid_to, required = true, input_type = 'date',
+        help = 'The last day the approval covers. The form starts with one year after the first day of this month. The letter from the insurer shows the date.' }) ?>
   <p class="pv-actions">
     <button type="submit" class="pv-btn pv-btn-primary"><?= icon('check-lg') ?> Save</button>
     <a class="pv-btn" href="<?= url('/authorizations') ?>">Cancel</a>

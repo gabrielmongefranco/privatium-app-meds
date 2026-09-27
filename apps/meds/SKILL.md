@@ -50,6 +50,8 @@ view, and must change in the same commit as `schema.sql`.
 | `lib/medication_pick.lua` | Reads the medication box of a form: a medication in use, a typed name, or a new medication |
 | `lib/catalog_entry.lua` | The checks of a catalog entry, shared by the catalog form and the medication box |
 | `lib/reference_words.lua` | Pure Lua: turns the route and the dose form of a drug reference into words of the catalog |
+| `lib/authorization_words.lua` | Pure Lua: the levels of a prior authorization that needs attention, and their words |
+| `static/forms.js` | Shows the fields of a new record when **-- Add new --** is chosen. Every form works without it. |
 | `static/medication_lookup.js` | The lookup of a new medication, in the browser: RxTerms, then the openFDA NDC Directory, then RxNorm |
 | `lib/quick_add.lua` | A person, a pharmacy or a prescriber that a form adds by name beside its own record |
 | `lib/suggestions.lua` | The values in use that text boxes offer while a person types |
@@ -97,6 +99,10 @@ view, and must change in the same commit as `schema.sql`.
   `quick_add.read`. A medication is the partial `_medication_picker`, read with
   `medication_pick.read`. The new records and the record of the form land in one batch.
 - A typed name that a record already has picks that record. No form adds a name twice.
+- A part of a form that a script may hide carries `data-show-when="<field>=<value>"`.
+  The server never relies on the script: the choice `new` with nothing typed is
+  refused, and without the script a typed name wins over the drop-down.
+- Prescription numbers are compared through `fills.rx_key`, without hyphens and spaces.
 - A text box whose values repeat gets `suggestions` in `_field`, which renders a
   `<datalist>`. It needs no script.
 - A row of `medication` that was copied from a drug reference keeps its `rxcui`,

@@ -102,9 +102,10 @@ that row. With no row, every default is in force.
 | `due_soon_within_days` | `BIGINT` | No | A refill is due soon when its next fill date is this many days away or fewer. Empty means 7. | No |
 | `specialty_due_within_days` | `BIGINT` | No | The due count for a specialty medication. Empty means 5. | No |
 | `specialty_due_soon_within_days` | `BIGINT` | No | The due soon count for a specialty medication. Empty means 10. | No |
-| `authorization_notice_days` | `BIGINT` | No | Days before a prior authorization ends when a warning starts. Empty means 30. | No |
+| `authorization_notice_days` | `BIGINT` | No | A prior authorization is due soon when it expires in this many days or fewer. Empty means 30. | No |
+| `authorization_due_within_days` | `BIGINT` | No | A prior authorization is due when it expires in this many days or fewer. Empty means 14. | No |
 
-The five day counts must be zero or more. The view `v_reminder_default` holds the
+The six day counts must be zero or more. The view `v_reminder_default` holds the
 defaults. The view `v_reminder_setting` returns the counts in force, with the defaults
 filled in.
 
@@ -239,9 +240,10 @@ Grain: one row per approval window for one person and one medication.
 | `person_id` | `VARCHAR` | Yes | The person the insurer approved | Health |
 | `medication_id` | `VARCHAR` | Yes | The medication | Health |
 | `valid_from` | `DATE` | No | First day the approval covers. Empty when the household does not know it. | Health |
-| `valid_to` | `DATE` | Yes | Last day the approval covers, on or after the first day | Health |
+| `valid_to` | `DATE` | Yes | The expiration date: the last day the approval covers, on or after the first day | Health |
 
-Only the last day drives the warnings, so an approval with no first day works the same.
+Only the expiration date drives the reminders, so an approval with no first day works
+the same.
 
 ### Status values
 
@@ -341,7 +343,7 @@ edits.
 ### Sample data
 
 `apps/meds/sample/seed.jsonl` holds a starter catalog and nothing else.
-The catalog has 2,214 medications and 562 other names for them. It holds the 200 drugs
+The catalog has 2,213 medications and 558 other names for them. It holds the 200 drugs
 most prescribed in the United States, and the drugs of the owner's list, at every strength
 that RxTerms lists. It also holds entries written by hand, such as continuous glucose
 monitors. [How to build the starter catalog](how-to/build-the-starter-catalog.md) names

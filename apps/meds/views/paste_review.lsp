@@ -58,6 +58,12 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
           <p><span class="pv-badge pv-badge-warn"><?= icon('question-circle') ?> New name</span>
              The catalog holds nothing like this name. The app filled in a new medication
              from it. Check the details, or type the name of the medication you mean.</p>
+        <? elseif subject.by_number and subject.candidates[1].sure then ?>
+          <p><span class="pv-badge pv-badge-ok"><?= icon('check-circle') ?> Matched</span>
+             An earlier fill has the same prescription number, and its medication has this name. It is chosen for you.</p>
+        <? elseif subject.by_number then ?>
+          <p><span class="pv-badge pv-badge-warn"><?= icon('question-circle') ?> Choose a medication</span>
+             An earlier fill has the same prescription number, under another name. Its medication comes first. Check it before you choose it.</p>
         <? elseif subject.candidates[1].sure then ?>
           <p><span class="pv-badge pv-badge-ok"><?= icon('check-circle') ?> Matched</span>
              One medication has the same name and the same strength. It is chosen for you.</p>

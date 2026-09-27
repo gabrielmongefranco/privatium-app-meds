@@ -41,4 +41,13 @@ return function(equal)
   equal('key ignores extra spaces', text.key('  Z   Pak '), 'z pak')
   equal('key of nil is empty', text.key(nil), '')
   equal('key tells different names apart', text.key('Examplol') == text.key('Examplal'), false)
+
+  --- A decimal number without the zeros that say nothing ---
+  equal('a whole quantity', text.plain_number('30.000'), '30')
+  equal('a part of a package', text.plain_number('2.500'), '2.5')
+  equal('three places that count', text.plain_number('0.125'), '0.125')
+  equal('a number with no point', text.plain_number('100'), '100')
+  equal('a whole number that ends in zero', text.plain_number('30'), '30')
+  equal('zero', text.plain_number('0.000'), '0')
+  equal('nothing', text.plain_number(nil), nil)
 end

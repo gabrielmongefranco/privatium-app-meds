@@ -41,7 +41,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
       <th scope="col" role="columnheader">Medication</th>
       <th scope="col" role="columnheader">For</th>
       <th scope="col" role="columnheader">First day</th>
-      <th scope="col" role="columnheader">Last day</th>
+      <th scope="col" role="columnheader">Expires on</th>
       <th scope="col" role="columnheader">State</th>
       <th scope="col" role="columnheader">Actions</th>
     </tr></thead>
@@ -51,7 +51,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
         <td role="cell"><span class="pv-cell-label" aria-hidden="true">Medication</span><?= row.medication_name ?></td>
         <td role="cell"><span class="pv-cell-label" aria-hidden="true">For</span><?= row.person_name ?></td>
         <td role="cell"><span class="pv-cell-label" aria-hidden="true">First day</span><? if row.valid_from then ?><?= fmt.date(row.valid_from) ?><? else ?>Not known<? end ?></td>
-        <td role="cell"><span class="pv-cell-label" aria-hidden="true">Last day</span><?= fmt.date(row.valid_to) ?></td>
+        <td role="cell"><span class="pv-cell-label" aria-hidden="true">Expires on</span><?= fmt.date(row.valid_to) ?></td>
         <td role="cell"><span class="pv-cell-label" aria-hidden="true">State</span><?= row.state ?></td>
         <td role="cell" class="meds-row-actions">
           <a class="pv-btn" href="<?= url('/authorizations/' .. row.id .. '/edit') ?>"><?= icon('pencil') ?> Change<span class="pv-visually-hidden"> the authorization of <?= row.medication_name ?></span></a>

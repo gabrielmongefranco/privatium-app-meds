@@ -52,9 +52,12 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
   </fieldset>
   <fieldset>
     <legend>Prior authorizations</legend>
-    <?= render('_field', { name = 'authorization_notice_days', label = 'Notice, in days', value = typed.authorization_notice_days,
+    <?= render('_field', { name = 'authorization_due_within_days', label = 'Due, in days', value = typed.authorization_due_within_days,
+          err = errors.authorization_due_within_days, inputmode = 'numeric', maxlength = 3,
+          help = 'A prior authorization is due when it expires in this many days or fewer. Ask for a new one by then. Empty means ' .. defaults.authorization_due_within_days .. '.' }) ?>
+    <?= render('_field', { name = 'authorization_notice_days', label = 'Due soon, in days', value = typed.authorization_notice_days,
           err = errors.authorization_notice_days, inputmode = 'numeric', maxlength = 3,
-          help = 'The app warns this many days before a prior authorization ends. Empty means ' .. defaults.authorization_notice_days .. '.' }) ?>
+          help = 'A prior authorization is due soon when it expires in this many days or fewer. Empty means ' .. defaults.authorization_notice_days .. '.' }) ?>
   </fieldset>
 
   <p class="pv-actions">

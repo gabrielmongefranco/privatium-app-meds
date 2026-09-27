@@ -112,6 +112,13 @@ expect_text() { if grep -qF -- "$2" "$BODY"; then pass; else fail "$1: the page 
 # expect_no_text <name> <text>: the last answer does not hold the text.
 expect_no_text() { if grep -qF -- "$2" "$BODY"; then fail "$1: the page holds: $2"; else pass; fi; }
 
+# expect_flat_text <name> <text>, expect_no_flat_text <name> <text>: the same, for a
+# text that the page breaks over several lines. Every run of spaces and line breaks of
+# the page counts as one space.
+flat_body() { tr -s ' \n\r\t' ' ' <"$BODY"; }
+expect_flat_text() { if flat_body | grep -qF -- "$2"; then pass; else fail "$1: the page lacks: $2"; fi; }
+expect_no_flat_text() { if flat_body | grep -qF -- "$2"; then fail "$1: the page holds: $2"; else pass; fi; }
+
 # count_of <table>: prints how many rows a table holds, read through the data API.
 count_of() {
   curl -s -m 10 "$APP/api/q/v_row_count" \
@@ -427,7 +434,18 @@ expect_text "the form suggests names while a person types" 'list="medication-nam
 expect_text "the suggestions hold the short names" 'value="Prinivil (Lisinopril) 10 mg"'
 expect_text "the suggestions hold the other names" 'value="Albuterol inhaler"'
 expect_text "the form can add a new medication" "Add a new medication"
-expect_text "the form can add a new prescriber" "Or add a new prescriber"
+expect_text "the form can add a new prescriber" "Name of the new prescriber"
+expect_text "a drop-down offers to add a new record" '<option value="new">-- Add new --</option>'
+expect_text "the fields of a new record wait for that choice" 'data-show-when="prescriber_id=new"'
+expect_text "the page loads the script that shows them" '/static/forms.js'
+expect_status "the script is served" 200 "$(get /static/forms.js)"
+expect_status "the choice to add with no name is refused" 200 "$(post /setup/people/new /medications/new \
+  "person_id=$alex" "medication_id=$glucophage" 'status=taking_regularly' 'refills_left=1' 'pharmacy_id=new')"
+expect_text "the choice to add with no name says why" "Type the name of the new pharmacy."
+expect_status "the choice to find a medication with no name is refused" 200 "$(post /setup/people/new /medications/new \
+  "person_id=$alex" 'medication_id=new' 'status=taking_regularly' 'refills_left=1')"
+expect_text "the choice to find a medication with no name says why" "Type the name of the medication to find it"
+expect_status "the form after the two refusals" 200 "$(get "/medications/new?person=$alex")"
 expect_status "an entry with no medication is refused" 200 "$(post /setup/people/new /medications/new \
   "person_id=$alex" 'status=taking_regularly' 'refills_left=1')"
 expect_text "an entry with no medication says why" "Choose a medication: pick one from the list, type its name, or add a new one."
@@ -547,7 +565,7 @@ expect_status "a days supply of 1000 is refused" 200 "$(post /setup/people/new /
   'days_supply=1000' 'refills_left=0')"
 expect_status "the fill form with no medication chosen" 200 "$(get "/fills/new?person=$alex")"
 expect_text "the fill form holds the medication box" 'name="medication_name"'
-expect_text "the fill form can add a pharmacy" "Or add a new pharmacy"
+expect_text "the fill form can add a pharmacy" "Name of the new pharmacy"
 expect_status "a fill with no pharmacy is refused" 200 "$(post /setup/people/new /fills/new \
   "person_id=$alex" "medication_id=$prinivil" "filled_on=$(day today)" 'refills_left=0')"
 expect_text "a fill with no pharmacy says why" "Choose a pharmacy, or type the name of a new one."
@@ -592,6 +610,9 @@ expect_text "the summary counts the group Due soon" "Due soon: "
 expect_text "no refills left asks for a new prescription" "for a new prescription"
 expect_text "a medication taken as needed has its own group" '<h2 id="as_needed">As needed</h2>'
 expect_no_text "a medication taken as needed is never overdue" "Overdue by 1"
+expect_text "no refills left and a fill that is near asks for a new prescription" '<h2 id="asking">New prescriptions to ask for</h2>'
+expect_text "the summary counts the new prescriptions" "New prescriptions to ask for: 2"
+expect_text "a medication taken as needed is asked for too" "The last fill lasts until"
 expect_status "a fill shows its confirmation" 200 "$(get '/?filled=01J8MEDS0000000000TEST0002')"
 expect_text "the confirmation names the medication" "Saved the fill for Lipitor (Atorvastatin) 20 mg."
 expect_status "a fill id that is not in the app shows nothing" 200 "$(get '/?filled=%3Cscript%3E')"
@@ -621,12 +642,15 @@ expect_text "a medication on hold is in the group Paused" '<h2 id="paused">Pause
 expect_status "authorizations page" 200 "$(get /authorizations)"
 expect_status "the authorization form" 200 "$(get "/authorizations/new?entry=$entry")"
 expect_text "the form asks for the person by itself" 'id="f-person_id-list"'
+expect_text "the first day starts with the first of this month" "name=\"valid_from\" type=\"date\" value=\"$(date +%Y-%m-01)\""
+expect_text "the expiration date starts one year later" "name=\"valid_to\" type=\"date\" value=\"$(($(date +%Y) + 1))-$(date +%m)-01\""
+if [ "$(grep -n 'name="valid_from"' "$BODY" | head -1 | cut -d: -f1)" -lt "$(grep -n 'name="valid_to"' "$BODY" | head -1 | cut -d: -f1)" ]; then pass; else fail "the first day comes before the expiration date"; fi
 expect_text "the form asks for the medication by itself" 'id="f-medication-list"'
 expect_text "the form starts with the person of the entry" "value=\"$alex\" selected"
 expect_text "the form starts with the medication of the entry" "value=\"$prinivil\" selected"
 expect_status "an authorization that ends before it starts is refused" 200 "$(post /setup/people/new /authorizations/new \
   "person_id=$alex" "medication_id=$prinivil" "valid_from=$(day today)" "valid_to=$(day yesterday)")"
-expect_text "an authorization that ends before it starts says why" "the last day or earlier"
+expect_text "an authorization that ends before it starts says why" "the expiration date or earlier"
 expect_status "an authorization for no medication is refused" 200 "$(post /setup/people/new /authorizations/new \
   "person_id=$alex" "valid_from=$(day today)" "valid_to=$(day tomorrow)")"
 expect_status "an authorization for nobody is refused" 200 "$(post /setup/people/new /authorizations/new \
@@ -634,7 +658,7 @@ expect_status "an authorization for nobody is refused" 200 "$(post /setup/people
 expect_text "an authorization for nobody says why" "Choose a person, or type the name of a new one."
 expect_status "an authorization with no last day is refused" 200 "$(post /setup/people/new /authorizations/new \
   "person_id=$alex" "medication_id=$prinivil" "valid_from=$(day today)")"
-expect_text "an authorization with no last day says why" "Enter the last day."
+expect_text "an authorization with no last day says why" "Enter the expiration date."
 expect_status "an authorization is added with no first day" 303 "$(post /setup/people/new /authorizations/new \
   "person_id=$alex" "medication_id=$prinivil" "valid_to=$(day '+10 days')")"
 expect_status "authorizations page with no first day" 200 "$(get /authorizations)"
@@ -647,10 +671,27 @@ expect_status "the medication is added to the list" "$((entries_before + 1))" "$
 curl -s -m 10 "$APP/api/q/v_active_medication" >"$BODY"
 if grep -o '"medication_name":"Ventolin[^}]*' "$BODY" | grep -q '"status":"not_started"'; then pass; else fail "the medication starts as not started"; fi
 expect_status "authorizations page after adding" 200 "$(get /authorizations)"
-expect_text "an authorization that ends soon says when" "Ends in 10 days"
+expect_text "an authorization that expires in 10 days is due" "Due: expires in 10 days"
 expect_status "refills page with an authorization ending" 200 "$(get /)"
-expect_text "the refills page warns of the authorization" "Authorization ends in 10 days"
-expect_text "only one authorization needs attention" "Authorizations ending: 1"
+expect_text "the refills page warns of the authorization" "Expires in 10 days"
+expect_text "only one authorization is due" "Authorizations due: 1"
+expect_no_text "no authorization is due soon yet" "Authorizations due soon"
+expect_status "an authorization that expires in 20 days" 303 "$(post /setup/people/new /authorizations/new \
+  "person_id=$alex" "medication_id=$glucophage" "valid_to=$(day '+20 days')")"
+expect_status "an authorization that expired" 303 "$(post /setup/people/new /authorizations/new \
+  "person_id=$alex" "medication_id=01J8MEDS0000000000MED00018" "valid_from=$(day '-400 days')" "valid_to=$(day '-3 days')")"
+expect_status "an authorization that expires in 40 days" 303 "$(post /setup/people/new /authorizations/new \
+  "person_id=$alex" "medication_id=$specimab" "valid_to=$(day '+40 days')")"
+expect_status "refills page with authorizations of every level" 200 "$(get "/?person=$alex")"
+expect_text "20 days away is due soon" "Authorizations due soon: 1"
+expect_text "an expired authorization is counted" "Authorizations expired: 1"
+expect_text "an expired authorization says since when" "Expired 3 days ago"
+expect_no_text "40 days away raises nothing" "Expires in 40 days"
+expect_status "due soon below due is refused for authorizations" 200 "$(post /setup/reminders /setup/reminders \
+  'authorization_due_within_days=20' 'authorization_notice_days=10')"
+expect_text "due soon below due says why for authorizations" "Make the days for due soon the same as the days for due, or more."
+curl -s -m 10 "$APP/api/q/v_reminder_setting" >"$BODY"
+expect_text "an authorization is due at 14 days unless changed" '"authorization_due_within_days":14'
 
 ### The List Made For Paper, And History ###
 expect_status "medication list for paper" 200 "$(get "/people/$alex/medication-list")"
@@ -660,6 +701,15 @@ expect_text "the list marks a medication taken as needed" "(as needed)"
 expect_status "the list of a person who does not exist" 303 "$(get /people/01J8MEDS0000000000N0NE0001/medication-list)"
 expect_status "history page" 200 "$(get "/fills?person=$alex")"
 expect_text "history shows an amount with its thousands" "1,012.50"
+expect_text "history has a column for the quantity" '<th scope="col" role="columnheader">Quantity</th>'
+expect_text "history has a column for the days supply" '<th scope="col" role="columnheader">Days supply</th>'
+expect_text "a whole quantity has no decimals" 'aria-hidden="true">Quantity</span>30</td>'
+expect_no_text "no quantity shows zeros that say nothing" "30.000"
+expect_status "a fill with a part of a package" 303 "$(post /setup/people/new /fills/new \
+  "person_id=$alex" "medication_id=$glucophage" "pharmacy_id=$pharmacy" "filled_on=$(day '-150 days')" \
+  'days_supply=30' 'quantity=2.50')"
+expect_status "history after the fill" 200 "$(get "/fills?person=$alex")"
+expect_text "a part of a package keeps the decimals that count" 'aria-hidden="true">Quantity</span>2.5</td>'
 expect_text "history totals the amounts exactly" "Total paid"
 expect_text "history shows what was paid by year" "Paid by year"
 expect_status "history for a year with no fill" 200 "$(get '/fills?year=1999')"
@@ -843,6 +893,49 @@ expect_status "the new medication is in the catalog" "$((medications_before + 1)
 expect_status "the name of the portal belongs to it" "$((names_before + 1))" "$(count_of medication_alias)"
 curl -s -m 10 "$APP/api/q/v_active_medication" >"$BODY"
 expect_text "the new medication is on the list" '"medication_name":"Pastedol ER (Pastedoline) 7.5 mg"'
+
+# A prescription number that an earlier fill has names the medication, however the
+# portal writes the number and the name.
+numbered="$(us '-1 day')LISINOPRIL (GENERIC) TABSEXAMPLE PHARMACY\$ 12.00\$ 5.00PaidLess Infosort Icon
+EXAMPLE PHARMACY
+
+PHARMACY ID
+1234567893
+
+RX NUMBER
+7000-02
+
+DAYS SUPPLY
+30
+$(us '-2 days')BLOOD PRESSURE PILLEXAMPLE PHARMACY\$ 12.00\$ 5.00PaidLess Infosort Icon
+EXAMPLE PHARMACY
+
+PHARMACY ID
+1234567893
+
+RX NUMBER
+700 002
+
+DAYS SUPPLY
+30
+$(us '-3 days')LISINOPRIL 10 MG TABLETEXAMPLE PHARMACY\$ 12.00\$ 5.00PaidLess Infosort Icon
+EXAMPLE PHARMACY
+
+PHARMACY ID
+1234567893
+
+RX NUMBER
+70-0002
+
+DAYS SUPPLY
+30"
+expect_status "a page with known prescription numbers is read" 200 "$(post /fills/paste /fills/paste/read "person_id=$alex" "pasted=$numbered")"
+expect_text "a number and a name that agree pick the medication" "Same prescription number and name"
+expect_flat_text "the medication that both name is marked" "name=\"medication_1_choice\" value=\"$prinivil\" checked"
+expect_text "a number alone puts the medication first and leaves the choice open" "Same prescription number</span>"
+expect_flat_text "a number alone offers the medication" "name=\"medication_2_choice\" value=\"$prinivil\""
+expect_no_flat_text "a number alone marks nothing" "name=\"medication_2_choice\" value=\"$prinivil\" checked"
+expect_text "a number written with a hyphen is the same number" "Already recorded"
 
 # A long page with many names is read inside the limits of one request.
 many="SERVICE DATEDRUG NAMEPHARMACYPLAN PAIDYOU PAIDCLAIM STATUS"

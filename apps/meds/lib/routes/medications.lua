@@ -70,13 +70,15 @@ end
 
 -- Grain: one row per fill of one medication for one person, newest first.
 local function fills_of(person_id, medication_id)
-  return pv.query([[
+  local rows = pv.query([[
     SELECT f.id, f.filled_on, f.quantity, f.days_supply, f.amount_paid, f.rx_number,
            ph.name AS pharmacy_name
       FROM fill f
       LEFT JOIN pharmacy ph ON ph.id = f.pharmacy_id   -- many:0..1
      WHERE f.person_id = ? AND f.medication_id = ?
      ORDER BY f.filled_on DESC, f.id DESC]], { person_id, medication_id })
+  for _, row in ipairs(rows) do row.quantity = text.plain_number(row.quantity) end
+  return rows
 end
 
 -- Grain: one row, the number of fills and the exact total paid.
@@ -92,7 +94,7 @@ end
 local function authorizations_of(person_id, medication_id)
   return pv.query([[
     SELECT id, valid_from, valid_to,
-           CASE WHEN valid_to < date('now', 'localtime') THEN 'Ended'
+           CASE WHEN valid_to < date('now', 'localtime') THEN 'Expired'
                 WHEN valid_from > date('now', 'localtime') THEN 'Not started'
                 ELSE 'Active' END AS state
       FROM prior_authorization
@@ -107,6 +109,8 @@ local function read_choice(form, name, label, list)
   if problem then return nil, problem end
   if not value then
     value, problem = validate.text(form[name], label, CHOICE_MAX)
+    -- The choice to add, with nothing typed, adds nothing.
+    if value == 'new' then value = nil end
     if not value then return nil, problem end
   end
   local key = text.key(value)
