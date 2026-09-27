@@ -115,6 +115,29 @@ function match.kind(typed, name)
   return kind
 end
 
+--- How many words of a typed text are found among the words of some names.
+-- A pharmacy or an insurer writes a name its own way, with a salt, a form or a package
+-- after the drug. Such a name matches no catalog name as a whole, so this counts the
+-- words that do match. The first typed word must be among them, because it is the drug.
+-- @param typed string  The name as the pharmacy or the insurer wrote it.
+-- @param names table   A list of strings: every name of one medication.
+-- @return integer  The number of typed words found, or 0 when the first is not.
+function match.overlap(typed, names)
+  local name_words = {}
+  for _, name in ipairs(names) do
+    for _, word in ipairs(words_of(text.key(name))) do name_words[#name_words + 1] = word end
+  end
+  local found = 0
+  for position, word in ipairs(words_of(text.key(typed))) do
+    if word_kind(word, name_words) then
+      found = found + 1
+    elseif position == 1 then
+      return 0
+    end
+  end
+  return found
+end
+
 --- The medications that a typed text matches, best match first.
 -- @param typed string  What the person typed.
 -- @param names table   A list of { medication_id = id, name = text }, one for each name

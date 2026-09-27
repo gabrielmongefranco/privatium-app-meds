@@ -33,6 +33,7 @@ local NOTICES = {
   missing = 'That record is not in the app. It may have been removed.',
   unnamed = 'Name your household first. The reminder settings are saved with it.',
   named   = 'Saved. The search now finds this medication by that name.',
+  unread  = 'The app found no fills in that text. Open the details of each fill in the portal, then copy the list again.',
   merged  = 'Merged. The fills, the list entries and the names now belong to this medication.',
 }
 

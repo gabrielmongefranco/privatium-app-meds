@@ -15,10 +15,8 @@ See <https://www.gnu.org/licenses/fdl-1.3.html>. See README for full license inf
 ## The `meds` app
 
 Tier 1, Lua. A personal prescription tracker for families with chronic conditions. This
-version has screens for the household name, the people, the contacts, the medication
-catalog and the reminder settings. The tables and views for what people take, fills and
-prior authorizations exist. Their screens are planned in
-[the app design](../../docs/design/README.md), which also gives the build order.
+version has every screen of [the app design](../../docs/design/README.md). The one-time
+import of the owner's legacy database is planned and lives outside this repository.
 
 ### Schema
 
@@ -49,6 +47,12 @@ view, and must change in the same commit as `schema.sql`.
 | `lib/match.lua` | Pure Lua: how well a typed name matches a name of a medication |
 | `lib/medication_search.lua` | The search that every screen uses to find a medication |
 | `lib/merge.lua` | The plan and the batch of a merge |
+| `lib/entries.lua` | Reads the medication lists with their refill dates, words and groups |
+| `lib/refill.lua` | Pure Lua: the group and the words of a refill status |
+| `lib/fills.lua` | Checks a fill and writes it, with the list entry that goes with it |
+| `lib/portal_reader.lua` | Pure Lua: takes the pasted text of a portal page apart into claims |
+| `lib/authorization_watch.lua` | Finds the prior authorizations that end soon or have ended |
+| `lib/people_filter.lua` | The person filter that list pages share |
 | `lib/store.lua` | The one place that writes and removes records |
 | `views/` | One template for each page. A name that starts with `_` is a partial. |
 
@@ -56,7 +60,7 @@ view, and must change in the same commit as `schema.sql`.
 
 | Route | Module | Handler |
 |---|---|---|
-| `GET /` | `home` | Greeting by the local hour, or an invitation when no profile exists |
+| `GET /` | `home` | The Refills page, or a welcome while the household has no people |
 | `GET /edit`, `POST /name` | `home` | The household name |
 | `GET /setup` | `home` | Links to the parts of Setup |
 | `GET`, `POST /setup/reminders` | `home` | The five day counts |
@@ -68,6 +72,13 @@ view, and must change in the same commit as `schema.sql`.
 | `GET /setup/catalog` | `catalog` | The catalog, narrowed by `?q=` |
 | `GET /setup/catalog/:id` | `catalog` | One medication with its other names |
 | `GET`, `POST /setup/catalog/new`, `/:id/edit`, `/:id/remove` | `catalog` | Add, change, remove |
+| `GET /medications`, `/medications/:id` | `medications` | The lists, and the page of one medication of one person |
+| `GET`, `POST /medications/new`, `/:id/edit`, `/:id/remove`, `POST /:id/status` | `medications` | Add, change, remove, change the status |
+| `GET /people/:id/medication-list` | `medications` | The list made for paper |
+| `GET`, `POST /fills/paste`, `/fills/paste/read`, `/fills/paste/add` | `paste` | Pasted fills: paste, review, add |
+| `GET /fills` | `fills` | History, with filters, totals and paid by year |
+| `GET`, `POST /fills/new`, `/:id/edit`, `/:id/remove` | `fills` | Record, change, remove |
+| `GET /authorizations`, `GET`, `POST /authorizations/new`, `/:id/edit`, `/:id/remove` | `authorizations` | Prior authorizations |
 | `POST /setup/catalog/:id/names`, `GET`, `POST /:id/names/:name_id/remove` | `catalog` | Other names |
 | `GET /setup/catalog/:id/merge`, `GET`, `POST /:id/merge/:target_id` | `catalog` | Merge two entries |
 
@@ -95,6 +106,8 @@ view, and must change in the same commit as `schema.sql`.
   it.
 - Every time and date on a screen is local. Read them from `lib/clock.lua`, and use
   `date('now', 'localtime')` in SQL.
+- Pasted text is untrusted. `portal_reader` only takes it apart; `fills.read` checks every
+  value, and the add step reads the text again instead of trusting the review form.
 - A close match in a search is a suggestion. Code never picks a medication from one.
 - A diagnostic message holds no field value. `page.masked` strips quoted values.
 - Templates use `<?= ?>` only. There is no `<?raw ?>` here and there should not be.

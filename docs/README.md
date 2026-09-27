@@ -17,13 +17,15 @@ detail.
 
 ### Guides
 
-- [Using the app](usage.md): how to use the screens the app has today.
+- [Using the app](usage.md): how to use every screen.
 - [Data model](data-model.md): every table the app stores, its grain, the meaning of each
   column, and which fields hold personal or health information.
 - [How to run the tests](how-to/run-the-tests.md): the lint, the unit tests and the smoke
   test.
-- [App design (proposed)](design/README.md): the planned screens, the refill status
-  rules, and the owner's decisions. It says which screens are built.
+- [App design](design/README.md): what each screen does, the refill status rules, and
+  the owner's decisions.
+- [Compliance](compliance.md): the security and accessibility controls in place, the
+  evidence for each, and what a person still has to check.
 - [Import plan (proposed)](design/import.md): how the records of a legacy database will
   reach the app.
 - [Documentation template](doc-template.md): starting structure for a knowledge base page.

@@ -4,7 +4,7 @@ apps/meds/views/index.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-26
 Last Modified: 2026-09-27
-Summary: The home page. Greets the household by name, or invites it to introduce itself.
+Summary: The home page of a household with no people yet. Greets it, or invites it to introduce itself.
          The output tag escapes by default, so a name containing markup is displayed, never run.
 Notes: See README file for documentation and full license information.
 
@@ -34,6 +34,10 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
   </a>
 <? else ?>
   <h1><?= greeting ?>, <?= me.display_name ?>.</h1>
+  <p>Add the first person, and this page will show the refills that need attention.</p>
+  <a class="pv-btn pv-btn-primary" href="<?= url('/setup/people/new') ?>">
+    <?= icon('plus-lg') ?> Add a person
+  </a>
   <a class="pv-btn" href="<?= url('/edit') ?>">
     <?= icon('pencil') ?> Change the name
   </a>

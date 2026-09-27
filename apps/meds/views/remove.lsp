@@ -41,6 +41,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
   <p class="pv-actions"><a class="pv-btn" href="<?= back ?>">Go back</a></p>
 <? else ?>
   <p>You are about to remove <strong><?= name ?></strong>.</p>
+  <? if note then ?><p><?= note ?></p><? end ?>
   <p>Removing hides the record in the app. Privatium keeps the original line in its log,
      so the record stays on the disk.</p>
   <form method="post" action="<?= action ?>">

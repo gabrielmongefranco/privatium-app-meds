@@ -47,7 +47,7 @@ the root of the repository.
    lua5.4 tests/lua/run.lua
    ```
 
-   The last line reads "107 passed, 0 failed", with the counts of the day. The command
+   The last line gives the counts, such as "202 passed, 0 failed". The command
    exits with code 1 when a test fails, and with code 2 when Lua is older than 5.4.
 
 3. Run the smoke test:
@@ -64,7 +64,7 @@ the root of the repository.
 | Check | Covers |
 |---|---|
 | Lint | The rules of Privatium for an app: bound SQL parameters, the `csrf()` token in every form, labels on every field, heading order, and more |
-| Unit tests | The Lua modules with no framework calls: cleaning text, checking dates, numbers, phone numbers, email and website addresses, building a short name, merging choices |
+| Unit tests | The Lua modules with no framework calls: cleaning text, checking dates, numbers, amounts, phone numbers, email and website addresses, building a short name, merging choices, matching names, refill words, and reading a pasted portal page |
 | Smoke test | The screens over HTTP, on a real node: adding, changing and removing records, empty and invalid input, the longest values, and requests that must be refused |
 
 The smoke test includes these checks of requests that must be refused:
@@ -74,6 +74,8 @@ The smoke test includes these checks of requests that must be refused:
 - SQL typed into a name or into the search box is treated as text.
 - A website address that starts with `javascript:` is refused.
 - A record that other records use is not removed, even by a hand-built request.
+- Markup in pasted portal text is shown as text.
+- A pasted fill that the review refused is not added, even when a hand-built request asks for it.
 
 ### How the smoke test keeps your data safe
 
@@ -85,7 +87,10 @@ temporary directory.
 ### What no test covers
 
 No test drives a browser. Keyboard use, a screen reader, zoom and small screens need a
-person. The [app design](../design/README.md) lists those checks.
+person. [The compliance page](../compliance.md) lists those checks.
+
+The smoke test works out its dates from today with `date -d`, which is the GNU form of
+the command. On macOS, install GNU coreutils first.
 
 ### Conclusion
 
@@ -95,6 +100,7 @@ documentation matches the change.
 ### Additional resources
 
 - [App design](../design/README.md)
+- [Compliance](../compliance.md)
 - [Data model](../data-model.md)
 - [Project preferences](../../skills/project-preferences/SKILL.md)
 - [Privatium's command-line interface](https://github.com/gabrielmongefranco/privatium/blob/main/spec/cli.md), which lists the lint rules.

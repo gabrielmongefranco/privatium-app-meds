@@ -26,10 +26,8 @@ what each column holds. It is for anyone who reads the app's data files or chang
 schema. It changes in the same commit as the schema, so what you read here matches the
 code.
 
-The household name, the people, the contacts, the catalog and the reminder settings have
-screens today, which [the usage page](usage.md) describes. The other tables exist and
-take records through Privatium's data API. Their screens are described in the
-[app design](design/README.md).
+Every table has screens, which [the usage page](usage.md) describes. The
+[app design](design/README.md) explains the rules behind them.
 
 ### How the app stores data
 

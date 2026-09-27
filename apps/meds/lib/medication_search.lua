@@ -71,6 +71,7 @@ function medication_search.find(typed)
     -- A name can outlive its medication for a moment while another device syncs.
     if medication then
       medication.matched_name = result.name
+      medication.exact = result.kind == match.EXACT
       if result.kind == match.CLOSE then
         found.close[#found.close + 1] = medication
       else
@@ -80,6 +81,54 @@ function medication_search.find(typed)
     end
   end
   return found
+end
+
+--- Suggest medications for a name as a pharmacy or an insurer wrote it.
+-- @param written string  The name as written, such as 'EXAMPLINE HCL 10 MG TABLET'.
+-- @param limit integer   The most suggestions to return.
+-- @return table, table|nil  The suggestions, best first, as rows of v_medication. The
+--         second value is the one medication that answers to exactly this name, when
+--         there is exactly one; only that one may be chosen without asking.
+function medication_search.suggest(written, limit)
+  local exact = {}
+  for _, medication in ipairs(medication_search.find(medication_search.typed(written)).matches) do
+    if medication.exact then exact[#exact + 1] = medication end
+  end
+
+  -- Grain: one row per medication per distinct name.
+  local names, order = {}, {}
+  for _, row in ipairs(pv.query([[
+      SELECT medication_id, name
+        FROM v_medication_name
+       ORDER BY name COLLATE NOCASE, medication_id]])) do
+    if not names[row.medication_id] then
+      names[row.medication_id] = {}
+      order[#order + 1] = row.medication_id
+    end
+    table.insert(names[row.medication_id], row.name)
+  end
+
+  local scored = {}
+  for position, id in ipairs(order) do
+    local overlap = match.overlap(written, names[id])
+    if overlap > 0 then
+      scored[#scored + 1] = { medication_id = id, overlap = overlap, position = position }
+    end
+  end
+  table.sort(scored, function(a, b)
+    if a.overlap ~= b.overlap then return a.overlap > b.overlap end
+    return a.position < b.position
+  end)
+
+  local suggestions = {}
+  for index = 1, math.min(limit, #scored) do
+    local medication = pv.query1([[
+      SELECT medication_id, short_name, full_name, is_specialty
+        FROM v_medication
+       WHERE medication_id = ?]], { scored[index].medication_id })
+    if medication then suggestions[#suggestions + 1] = medication end
+  end
+  return suggestions, #exact == 1 and exact[1] or nil
 end
 
 return medication_search

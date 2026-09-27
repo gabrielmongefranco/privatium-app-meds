@@ -68,6 +68,23 @@ return function(equal)
   equal('whole_number refuses a number too long to hold', refused(validate.whole_number('99999999999999999999999', 'the days', 0, 365)), true)
   equal('whole_number accepts an empty optional field', refused(validate.whole_number('', 'the days', 0, 365)), false)
 
+  --- decimal ---
+  equal('decimal keeps a plain amount', value_of(validate.decimal('12.50', 'the amount', 2, 9)), '12.50')
+  equal('decimal drops a currency sign', value_of(validate.decimal('$ 12.50', 'the amount', 2, 9)), '12.50')
+  equal('decimal drops the commas of thousands', value_of(validate.decimal('$1,234,567.89', 'the amount', 2, 9)), '1234567.89')
+  equal('decimal accepts a whole number', value_of(validate.decimal('30', 'the quantity', 3, 9)), '30')
+  equal('decimal accepts zero', value_of(validate.decimal('0', 'the amount', 2, 9)), '0')
+  equal('decimal fills in a missing zero', value_of(validate.decimal('.5', 'the quantity', 3, 9)), '0.5')
+  equal('decimal accepts three places where allowed', value_of(validate.decimal('0.125', 'the quantity', 3, 9)), '0.125')
+  equal('decimal refuses a third place for money', refused(validate.decimal('12.505', 'the amount', 2, 9)), true)
+  equal('decimal refuses a minus sign', refused(validate.decimal('-1.00', 'the amount', 2, 9)), true)
+  equal('decimal refuses words', refused(validate.decimal('free', 'the amount', 2, 9)), true)
+  equal('decimal refuses a point alone', refused(validate.decimal('.', 'the amount', 2, 9)), true)
+  equal('decimal refuses a comma in the wrong place', refused(validate.decimal('12,5', 'the amount', 2, 9)), true)
+  equal('decimal refuses two points', refused(validate.decimal('1.2.3', 'the amount', 2, 9)), true)
+  equal('decimal refuses more digits than the column holds', refused(validate.decimal('1234567890', 'the amount', 2, 9)), true)
+  equal('decimal accepts an empty optional field', refused(validate.decimal('', 'the amount', 2, 9)), false)
+
   --- npi ---
   equal('npi accepts ten digits', value_of(validate.npi('1234567893')), '1234567893')
   equal('npi refuses nine digits', refused(validate.npi('123456789')), true)

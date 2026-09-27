@@ -26,7 +26,10 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 <link rel="stylesheet" href="<?= url('/static/meds.css') ?>">
 <nav aria-label="Prescription Tracker">
   <ul class="pv-subnav meds-nav">
-    <li><a href="<?= url('/') ?>"<? if section == 'home' then ?> aria-current="page"<? end ?>><?= icon('house') ?> Home</a></li>
+    <li><a href="<?= url('/') ?>"<? if section == 'home' then ?> aria-current="page"<? end ?>><?= icon('capsule') ?> Refills</a></li>
+    <li><a href="<?= url('/medications') ?>"<? if section == 'medications' then ?> aria-current="page"<? end ?>><?= icon('list-ul') ?> Medications</a></li>
+    <li><a href="<?= url('/fills') ?>"<? if section == 'history' then ?> aria-current="page"<? end ?>><?= icon('clock-history') ?> History</a></li>
+    <li><a href="<?= url('/authorizations') ?>"<? if section == 'authorizations' then ?> aria-current="page"<? end ?>><?= icon('shield-check') ?> Authorizations</a></li>
     <li><a href="<?= url('/contacts') ?>"<? if section == 'contacts' then ?> aria-current="page"<? end ?>><?= icon('telephone') ?> Contacts</a></li>
     <li><a href="<?= url('/setup') ?>"<? if section == 'setup' then ?> aria-current="page"<? end ?>><?= icon('gear') ?> Setup</a></li>
   </ul>

@@ -24,13 +24,12 @@ repository holds the documentation, the license and the assistant guides.
 
 ### What it does today
 
-The app greets your household by name. It keeps the people of the household, the
-pharmacies and prescribers, the medication catalog and the reminder settings.
-[The usage page](../../docs/usage.md) shows how to use those screens.
+The app shows which refills are due, keeps the medication list of each person, records
+fills by hand or from the pasted text of a portal, and tracks prior authorizations.
+[The usage page](../../docs/usage.md) shows how to use every screen.
 
-The tables for what people take, fills and prior authorizations exist, and
-[the data model page](../../docs/data-model.md) describes each one. Their screens come
-next. [The app design](../../docs/design/README.md) describes them.
+[The data model page](../../docs/data-model.md) describes each table, and
+[the app design](../../docs/design/README.md) explains the rules behind the screens.
 
 ### Files
 

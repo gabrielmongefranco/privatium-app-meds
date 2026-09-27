@@ -4,7 +4,7 @@ docs/design/README.md
 Author(s): Gabriel Mongefranco
 Created: 2026-09-26
 Last Modified: 2026-09-27
-Summary: Proposed design of the app's screens: tasks, medication search, pasting fills from
+Summary: Design of the app's screens: tasks, medication search, pasting fills from
          a portal, refill status rules, accessibility and privacy plans, what was checked,
          and the owner's decisions.
 Notes: See README file for documentation and full license information.
@@ -17,20 +17,17 @@ See <https://www.gnu.org/licenses/fdl-1.3.html>. See README for full license inf
 
 # Prescription Tracker
 
-## App design (proposed)
+## App design
 
 [Back to project README](../../README.md)
 
-This page describes the planned screens of the Prescription Tracker app. It covers the
-tasks the app serves, what each screen does, and how the app decides that a refill is
-due. It is for the owner who reviews the design and for the developer who builds it. The
-[data model](../data-model.md) describes the tables and views, which exist. The
-[import plan](import.md) covers the owner's legacy database.
+This page describes the design of the Prescription Tracker app: the tasks it serves,
+what each screen does, and how the app decides that a refill is due. It is for the owner
+and for developers who change the app. [The usage page](../usage.md) shows how to use the
+screens. The [data model](../data-model.md) describes the tables and views.
 
-> **Planned.** Most screens on this page do not exist yet. Built so far: the household
-> name, Contacts, and Setup with People, the Medication catalog with its search, and
-> the Reminder settings. [The usage page](../usage.md) describes them. The build order below says
-> what comes next.
+Every screen on this page is built, except where a note marked **Planned** says
+otherwise. The [import plan](import.md) for the owner's legacy database is planned.
 
 ### Goals
 
@@ -62,8 +59,6 @@ A prior authorization is an insurer's approval to cover a medication for a set p
 The app has six sections. One navigation bar lists them on every page, in this order:
 **Refills**, **Medications**, **History**, **Authorizations**, **Contacts**, **Setup**.
 The bar marks the current section with `aria-current="page"` and an underline.
-
-Until the other sections are built, the bar shows **Home**, **Contacts** and **Setup**.
 
 Pages that list records for several people show a person filter under the heading. The
 filter is a row of links: **Everyone**, then one link per person. The app hides the
@@ -199,7 +194,7 @@ $5.00
 | Portal label | Goes to |
 |---|---|
 | SERVICE DATE | The fill date. This layout writes month, day, year. |
-| DRUG NAME | The medication, found with the medication search |
+| DRUG NAME | The medication. The app suggests the medications whose names share the most words with it. |
 | PHARMACY ID | The pharmacy, matched by its National Provider Identifier (NPI) |
 | PHARMACY | The pharmacy, matched by name when no identifier matches |
 | RX NUMBER | The prescription number |
@@ -215,12 +210,13 @@ read, what it matched, and a result.
 |---|---|---|
 | Ready | Every value was read and matched | Nothing |
 | Already recorded | The person has a fill with the same prescription number and date | Nothing. The row is left out. |
-| Choose a medication | The portal's name matches no medication yet | Pick one with the medication search. The app saves the portal's name as another name. |
+| Choose a medication | No medication answers to exactly the portal's name | Pick one of the suggested medications. The app saves the portal's name as another name. |
 | Choose a pharmacy | No pharmacy matches | Pick one, or add the pharmacy from the pasted name, address and phone number |
 | Not on the list | The person's list lacks the medication | Nothing. Adding the fill also adds the medication to the list, with the status Taking regularly. |
 | Not paid | The claim status is not Paid | Include the row only if the fill took place |
-| Details missing | The fill was not opened in the portal before copying | Type the missing values, or copy the page again |
-| Could not read | A value is not a date or a number | Correct it in the row |
+| Not in the catalog | No medication is close to the portal's name | Add the medication to the catalog, then read the text again |
+| Details missing | The fill was not opened in the portal before copying | Open the details in the portal and copy the page again |
+| Could not read | A value is not a date or a number | Correct it in the portal's text and read it again |
 
 The prescription number and the date together tell the app that a fill is already
 recorded. So pasting the same page twice adds nothing the second time.
@@ -301,11 +297,10 @@ The page has three actions: **Record fill**, **Edit** and **Remove**.
 
 #### Printable medication list
 
-Each person has one such page, made for paper. It shows the person's name, the birth
-date when one is stored, and the date of printing. A table follows, with five columns:
-medication, how to take it, when, what it is for, and prescriber. The table holds the
-medications with the status Taking regularly or Taking as needed. A second table holds
-the ones on hold.
+One page per person, made for paper. It shows the person's name, the birth date when one
+is stored, and the date of printing. A table follows, with five columns: medication, how
+to take it, when, what it is for, and prescriber. The table holds the medications with
+the status Taking regularly or Taking as needed. A second table holds the ones on hold.
 
 A print stylesheet hides the navigation and the buttons. The page tells you to use the
 browser's own print command. A print button would need a script, and the app ships none
@@ -517,22 +512,19 @@ rows.
 | Check | Result |
 |---|---|
 | `privatium lint apps/meds` | 0 findings |
-| Unit tests of the Lua modules | 107 passed |
-| Smoke test of the built screens over HTTP | 140 passed |
-| `privatium lint` on prototypes of the Refills page and the fill form | 0 findings |
+| Unit tests of the Lua modules | All passed |
+| Smoke test of every screen over HTTP | All passed |
 | Both dates against the legacy view, on the owner's data, with an empty days supply counted as zero | Every row matched |
 | The same, with an empty days supply counted as 1 day | Every row matched |
 | Conversion of every legacy row under the schema's constraints | Every row converted. The total amount paid was unchanged. |
-| Refill status for invented ordinary and specialty medications at each day count | As the rules table says |
 | `date('now', 'localtime')` inside the node | Returned the local time |
 | Loading invented rows through the data API on the node's own address | Accepted |
 | Loading the same rows a second time | Nothing appended |
 | Loading a row that had changed since the first load | Refused with status 409. Nothing appended. |
 | Reading the views with a SQLite library that lacks the decimal extension | Every view ran except the spending view |
 
-No check drove a browser. Nothing here checked a screen with a keyboard, a screen
-reader, zoom or a printer. The medication search, the merge, the reader for pasted fills
-and the import script do not exist yet.
+No check drove a browser. [The compliance page](../compliance.md) lists what a person
+still has to check by hand. The import script does not exist yet.
 
 ### Decisions made
 
@@ -564,24 +556,25 @@ The owner made these decisions on 2026-09-27.
 
 ### Build order
 
-Each step ends with a clean `privatium lint` and with its documentation updated.
+Each step ended with a clean `privatium lint`, passing tests and updated documentation.
 
-1. Tables, views and the starter catalog, with the data model page. This step is done.
-2. Setup screens for people, pharmacies, prescribers and the catalog. This step is done.
-3. The medication search, the other names and the merge. This step is done.
-4. The one-time import.
-5. Medications and the medication page.
-6. Record a fill, and History.
-7. Paste fills.
-8. Refills, as the home page.
-9. Authorizations.
-10. The printable medication list and the spending table.
-11. The manual accessibility checks, recorded in a compliance page.
+1. Tables, views and the starter catalog, with the data model page. Done.
+2. Setup screens for people, pharmacies, prescribers and the catalog. Done.
+3. The medication search, the other names and the merge. Done.
+4. The one-time import. **Planned.** See the [import plan](import.md).
+5. Medications and the medication page. Done.
+6. Record a fill, and History. Done.
+7. Paste fills. Done, for one layout of portal page.
+8. Refills, as the home page. Done.
+9. Authorizations. Done.
+10. The printable medication list and the spending table. Done.
+11. The manual accessibility checks. **Planned.** [The compliance page](../compliance.md)
+    lists them.
 
 ### Conclusion
 
-You now know what the app will show, how it decides that a refill is due, and what is
-built so far. Read the [data model](../data-model.md) next, then the
+You now know what the app shows, how it decides that a refill is due, and what is
+still planned. Read the [data model](../data-model.md) next, then the
 [import plan](import.md).
 
 ### Additional resources
@@ -590,6 +583,7 @@ built so far. Read the [data model](../data-model.md) next, then the
 - [Data model](../data-model.md)
 - [Import plan](import.md)
 - [How to run the tests](../how-to/run-the-tests.md)
+- [Compliance](../compliance.md)
 - [The schema, as SQL](../../apps/meds/schema.sql)
 - [Project instructions](../../AGENTS.md)
 - [Privatium accessibility guide](../../skills/privatium-accessibility/SKILL.md)

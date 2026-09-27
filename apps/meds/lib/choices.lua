@@ -45,6 +45,37 @@ choices.PACKAGE_TYPES = {
   'Bottle', 'Box', 'Blister Pack', 'Tube', 'Vial', 'Pen', 'Packet', 'Inhaler', 'Other',
 }
 
+choices.MEDICATION_TYPES = {
+  'Prescription Medication - Long Term', 'Prescription Medication - Short Term',
+  'Prescription Medication - As Needed', 'Over-the-Counter Medication - Long Term',
+  'Over-the-Counter Medication - Short Term', 'Over-the-Counter Medication - As Needed',
+  'Medical Supplies and Consumables', 'Medical Equipment and Accessories', 'Other',
+}
+
+choices.TIMES_TO_TAKE = {
+  'Anytime', 'Morning', 'Noon', 'Evening', 'Night - At Bedtime', 'Morning and Evening',
+  'Before Meals', 'With Meals', 'After Meals', 'As Needed',
+}
+
+-- The five statuses of the schema, in the order the screens show them.
+choices.STATUSES = {
+  { value = 'taking_regularly', label = 'Taking regularly' },
+  { value = 'taking_as_needed', label = 'Taking as needed' },
+  { value = 'on_hold',          label = 'On hold' },
+  { value = 'not_started',      label = 'Not started' },
+  { value = 'not_taking',       label = 'No longer taking' },
+}
+
+--- The words for a status.
+-- @param status string  A status as stored.
+-- @return string|nil  The words, or nil for a value that is not a status.
+function choices.status_label(status)
+  for _, entry in ipairs(choices.STATUSES) do
+    if entry.value == status then return entry.label end
+  end
+  return nil
+end
+
 --- Merge a starter list with the values in use.
 -- A value in use that differs from a starter choice only by case or punctuation is
 -- the same choice, and the spelling of the starter list wins. Values in use that are

@@ -3,8 +3,8 @@
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
 -- Last Modified: 2026-09-27
--- Summary: The home page, the household name and the reminder settings. All three read
---          and write the one profile row.
+-- Summary: The home page, which is the Refills page once the household has people, and
+--          the household name and the reminder settings, which share the one profile row.
 -- Notes: See README file for documentation and full license information.
 --
 -- Copyright © 2026 Gabriel Mongefranco
@@ -22,7 +22,11 @@
 -- with this program. If not, see <https://www.gnu.org/licenses/>.
 
 local pv       = require 'privatium'
+local authorization_watch = require 'authorization_watch'
 local clock    = require 'clock'
+local entries  = require 'entries'
+local people_filter = require 'people_filter'
+local refill   = require 'refill'
 local page     = require 'page'
 local store    = require 'store'
 local validate = require 'validate'
@@ -61,11 +65,67 @@ end
 
 --- Home ---
 
-pv.get('/', function()
-  return pv.render('index', {
+-- The sentence that confirms a fill, read from the fill itself. The page address
+-- carries the id of the fill and nothing else.
+local function fill_notice(fill_id)
+  if type(fill_id) ~= 'string' then return nil end
+  local saved = pv.query1([[
+    SELECT m.short_name AS medication_name, s.next_fill_on
+      FROM fill f
+      JOIN medication m ON m.id = f.medication_id          -- many:1
+      JOIN person_medication pm                            -- many:1; the list entry of the pair
+        ON pm.person_id = f.person_id AND pm.medication_id = f.medication_id
+      JOIN v_supply s ON s.person_medication_id = pm.id    -- 1:1
+     WHERE f.id = ?
+     LIMIT 1]], { fill_id })
+  if not saved then return nil end
+  return 'Saved the fill for ' .. saved.medication_name .. '. The next fill date is '
+    .. tostring(fmt.date(saved.next_fill_on)) .. '.'
+end
+
+pv.get('/', function(req)
+  local me = profile()
+  local filter = people_filter.read(req)
+  if #filter.people == 0 then
+    return pv.render('index', {
+      section = 'home', me = me, greeting = clock.greeting(clock.hour()),
+    })
+  end
+
+  local groups, by_key = {}, {}
+  for _, group in ipairs(refill.GROUPS) do
+    local copy = { key = group.key, title = group.title, alert = group.alert,
+                   icon = group.icon, rows = {} }
+    groups[#groups + 1], by_key[group.key] = copy, copy
+  end
+  local next_row
+  for _, row in ipairs(entries.list(filter.id)) do
+    local group = by_key[row.group]
+    if group then group.rows[#group.rows + 1] = row end
+    if row.group == 'not_due' and (not next_row or row.next_fill_on < next_row.next_fill_on) then
+      next_row = row
+    end
+  end
+  -- Within a group, the medication that needs a fill soonest comes first.
+  for _, group in ipairs(groups) do
+    table.sort(group.rows, function(a, b)
+      local left, right = a.next_fill_on or '9999', b.next_fill_on or '9999'
+      if left ~= right then return left < right end
+      return a.id < b.id
+    end)
+  end
+
+  local ending = authorization_watch.ending(filter.id)
+  return pv.render('refills', {
     section  = 'home',
-    me       = profile(),
+    me       = me,
     greeting = clock.greeting(clock.hour()),
+    notice   = fill_notice(req.query.filled) or page.notice(req.query.notice),
+    filter   = filter,
+    groups   = groups,
+    ending   = ending,
+    alerts   = #by_key.overdue.rows + #by_key.due.rows + #by_key.due_soon.rows + #ending,
+    next_row = next_row,
   })
 end)
 

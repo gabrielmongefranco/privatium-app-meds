@@ -102,6 +102,38 @@ function validate.whole_number(raw, label, min, max, required)
   return number
 end
 
+--- An amount or a quantity, zero or more, as exact decimal text.
+-- People type amounts as they see them, so a leading currency sign and the commas
+-- between thousands are dropped before the check. The value is never turned into a
+-- floating-point number, which could not hold it exactly.
+-- @param raw any
+-- @param label string     The field, with its article.
+-- @param places integer   The most digits allowed after the point.
+-- @param whole integer    The most digits allowed before the point.
+-- @return string|nil, string|nil  Digits with an optional point, or nil and a message.
+function validate.decimal(raw, label, places, whole, required)
+  local value = text.clean(raw)
+  if not value then return missing(label, required) end
+
+  local digits = value:gsub('^[$€£]%s*', '')
+  -- Commas are dropped only where they separate thousands: between a digit and three
+  -- digits. Each pass drops one comma of 1,234,567, so the passes repeat until none is left.
+  local dropped
+  repeat
+    digits, dropped = digits:gsub('(%d),(%d%d%d)', '%1%2', 1)
+  until dropped == 0
+
+  local before, after = digits:match('^(%d*)%.?(%d*)$')
+  local example = places == 0 and '30' or ('12.' .. ('50'):rep(places):sub(1, places))
+  if not before or (before == '' and after == '') or #after > places or #before > whole then
+    return nil, 'Write ' .. label .. ' as a number with up to ' .. places
+      .. ' decimal places, such as ' .. example .. '.'
+  end
+  if before == '' then before = '0' end
+  if after == '' then return before end
+  return before .. '.' .. after
+end
+
 --- A National Provider Identifier.
 -- @return string|nil, string|nil
 function validate.npi(raw)

@@ -27,3 +27,7 @@ require 'routes.home'       -- The home page, the household name, Setup, reminde
 require 'routes.people'     -- The people of the household
 require 'routes.contacts'   -- Pharmacies and prescribers
 require 'routes.catalog'    -- The medication catalog
+require 'routes.medications'     -- What each person takes, and the list made for paper
+require 'routes.paste'           -- Fills pasted from a portal; before fills, so 'paste' is never read as an id
+require 'routes.fills'           -- The history of fills, and the form for one fill
+require 'routes.authorizations'  -- Prior authorizations
