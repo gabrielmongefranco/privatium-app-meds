@@ -1,0 +1,37 @@
+/*
+ * This file is part of Prescription Tracker
+ * apps/meds/static/meds.css
+ * Author(s): Gabriel Mongefranco
+ * Created: 2026-09-26
+ * Last Modified: 2026-09-26
+ * Summary: Styles for the Prescription Tracker pages, using the shell's accessible color tokens.
+ * Notes: See README file for documentation and full license information.
+ *
+ * Copyright © 2026 Gabriel Mongefranco
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+.meds {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: clamp(1.25rem, 5vw, 3rem);
+  border: 1px solid var(--pv-line);
+  border-top: .35rem solid var(--pv-accent);
+  border-radius: .75rem;
+  background: var(--pv-panel);
+}
+.meds-mark { color: var(--pv-accent); font-size: 3rem; margin: 0 0 1.5rem; }
+.meds h1 { max-width: 24ch; }
+.meds form input { display: block; }
+.meds .pv-help { margin: .5rem 0 1.25rem; }
