@@ -74,13 +74,16 @@ local function as_new(form, prefix)
     generic_name = form[prefix .. '_generic'],
     strength     = form[prefix .. '_strength'],
     is_specialty = form[prefix .. '_specialty'],
+    package_size = form[prefix .. '_package_size'],
+    package_type = form[prefix .. '_package_type'],
     rxcui        = form[prefix .. '_rxcui'],
     source       = form[prefix .. '_source'],
     route        = route,
     dose_form    = reference_words.form(form[prefix .. '_dose_form'], route),
   }, nil, NO_CHOICES)
   if same_as then return { id = same_as } end
-  for _, field in ipairs({ 'brand_name', 'generic_name', 'strength', 'short_name', 'rxcui' }) do
+  for _, field in ipairs({ 'brand_name', 'generic_name', 'strength', 'package_size',
+                           'package_type', 'short_name', 'rxcui' }) do
     if errors[field] then return { problem = errors[field], open_new = true } end
   end
   return { new_row = row }
@@ -117,7 +120,8 @@ end
 --- Read the medication box of a form.
 -- The box holds a drop-down (`prefix`_id), a name to type (`prefix`_name), choices
 -- (`prefix`_choice) and the fields of a new medication (`prefix`_brand, _generic,
--- _strength, _specialty). A choice wins. Without one, the fields of a new medication
+-- _strength, _package_size, _package_type, _specialty). A choice wins. Without one,
+-- the fields of a new medication
 -- win over a typed name, and a typed name wins over the drop-down.
 -- @param form table     The values of the form.
 -- @param prefix string  The start of the field names, such as 'medication'.

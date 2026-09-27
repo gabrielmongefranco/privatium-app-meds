@@ -147,6 +147,15 @@ seed_names="$(grep -c '"tbl": *"medication_alias"' "$SEED")"
 expect_status "catalog rows after the sample data" "$seed_medications" "$(count_of medication)"
 expect_status "other names after the sample data" "$seed_names" "$(count_of medication_alias)"
 expect_status "no person in the sample data" 0 "$(count_of person)"
+curl -s -m 20 "$APP/api/q/v_medication?limit=10000" >"$BODY"
+expect_text "a product that comes by the carton has an entry for each carton" '"short_name":"Otrexup (Methotrexate) 10 mg/0.4 mL Auto-Injector 1 Pack"'
+expect_text "the larger carton is an entry of its own" '"short_name":"Otrexup (Methotrexate) 10 mg/0.4 mL Auto-Injector 4 Pack"'
+expect_text "a device shows the strength of its label" '"short_name":"Auvi-Q (Epinephrine) 0.3 mg/0.3 mL Auto-Injector 2 Pack"'
+expect_text "a brand filed under a salt is in the catalog" '"short_name":"Januvia (Sitagliptin) 100 mg"'
+expect_text "a syringe with its needle is in the catalog" '"short_name":"Syringe with Needle, Insulin, 0.5 mL, 31G x 5/16\""'
+expect_text "a needle for a pen is in the catalog" '"short_name":"Needle, Pen Tip, 32G x 4 mm"'
+expect_text "an entry of a carton holds its size" '"package_size":"4"'
+expect_text "an entry of a carton holds its type" '"package_type":"Pack"'
 
 ### Greeting ###
 # The greeting follows the local hour, so the expected words come from the local clock.
@@ -528,6 +537,21 @@ expect_status "the same identifier picks the medication that has it" 200 "$(post
   "person_id=$alex" 'medication_choice=new' 'medication_generic=Another Name' \
   'medication_rxcui=99999901' 'medication_source=rxterms' 'status=on_hold' 'refills_left=0')"
 expect_text "the medication that has the identifier is on the list already" "already on the list"
+# One product in two cartons is two entries with one identifier.
+expect_status "a carton of a product that the catalog holds is added" 303 "$(post /setup/people/new /medications/new \
+  "person_id=$alex" 'medication_choice=new' 'medication_brand=Lookupol' 'medication_generic=Lookupine' \
+  'medication_strength=5 mg' 'medication_package_size=6' 'medication_package_type=Pack' \
+  'medication_rxcui=99999901' 'medication_source=rxterms' 'status=on_hold' 'refills_left=0')"
+curl -s -m 20 "$APP/api/q/v_medication?limit=10000" >"$BODY"
+expect_text "the package is part of the short name" '"short_name":"Lookupol (Lookupine) 5 mg 6 Pack"'
+expect_status "the carton is a medication of its own" "$((medications_before + 1))" "$(count_of medication)"
+expect_status "the same carton again picks the entry that has it" 200 "$(post /setup/people/new /medications/new \
+  "person_id=$alex" 'medication_choice=new' 'medication_generic=Another Name' \
+  'medication_package_size=6' 'medication_package_type=Pack' \
+  'medication_rxcui=99999901' 'medication_source=rxterms' 'status=on_hold' 'refills_left=0')"
+expect_text "the carton is on the list already" "already on the list"
+expect_status "the same carton again adds nothing" "$((medications_before + 1))" "$(count_of medication)"
+medications_before="$(count_of medication)"
 expect_status "an identifier with letters is refused" 200 "$(post /setup/people/new /medications/new \
   "person_id=$alex" 'medication_choice=new' 'medication_generic=Badcode' 'medication_rxcui=12<x>' \
   'status=on_hold' 'refills_left=0')"
@@ -966,7 +990,7 @@ expect_text "every fill of the long page is found" "60 fills found."
 ### Setup ###
 expect_status "setup page" 200 "$(get /setup)"
 expect_text "setup page counts the people" "The members of the household. 5 in the app"
-expect_text "setup page counts the medications" "with its other names. $((seed_medications + 4)) in the app"
+expect_text "setup page counts the medications" "with its other names. $((seed_medications + 5)) in the app"
 expect_no_text "setup page asks for no household name" "Household name"
 
 ### Report ###

@@ -42,7 +42,7 @@ choices.FORMS = {
 }
 
 choices.PACKAGE_TYPES = {
-  'Bottle', 'Box', 'Blister Pack', 'Tube', 'Vial', 'Pen', 'Packet', 'Inhaler', 'Other',
+  'Pack', 'Bottle', 'Box', 'Blister Pack', 'Tube', 'Vial', 'Pen', 'Packet', 'Inhaler', 'Other',
 }
 
 choices.MEDICATION_TYPES = {

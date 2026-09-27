@@ -47,7 +47,7 @@ the root of the repository.
    lua5.4 tests/lua/run.lua
    ```
 
-   The last line gives the counts, such as "285 passed, 0 failed". The command
+   The last line gives the counts, such as "290 passed, 0 failed". The command
    exits with code 1 when a test fails, and with code 2 when Lua is older than 5.4.
 
 3. Run the smoke test:

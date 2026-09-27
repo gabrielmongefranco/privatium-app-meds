@@ -111,6 +111,18 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
     <input id="f-<?= prefix ?>-strength" name="<?= prefix ?>_strength" data-lookup-field="strength" type="text" value="<?= typed_in('_strength') ?>"
            autocomplete="off" maxlength="60" aria-describedby="f-<?= prefix ?>-strength-help">
     <p id="f-<?= prefix ?>-strength-help" class="pv-help">As the label prints it, with the unit, such as 10 mg.</p>
+    <label for="f-<?= prefix ?>-package_size">Package size <span class="meds-optional">(optional)</span></label>
+    <input id="f-<?= prefix ?>-package_size" name="<?= prefix ?>_package_size" type="text"
+           value="<?= typed_in('_package_size') ?>" autocomplete="off" maxlength="40"
+           aria-describedby="f-<?= prefix ?>-package-help">
+    <label for="f-<?= prefix ?>-package_type">Package type <span class="meds-optional">(optional)</span></label>
+    <input id="f-<?= prefix ?>-package_type" name="<?= prefix ?>_package_type" type="text"
+           value="<?= typed_in('_package_type') ?>" autocomplete="off" maxlength="60" list="f-<?= prefix ?>-package-types">
+    <datalist id="f-<?= prefix ?>-package-types">
+      <option value="Pack"></option><option value="Box"></option><option value="Bottle"></option>
+      <option value="Tube"></option><option value="Vial"></option><option value="Pen"></option>
+    </datalist>
+    <p id="f-<?= prefix ?>-package-help" class="pv-help">For a product that comes by the carton, such as 2 and Pack for a carton of two pens. A carton of 2 and a carton of 6 are two entries.</p>
     <label class="meds-option" for="f-<?= prefix ?>-specialty">
       <input id="f-<?= prefix ?>-specialty" name="<?= prefix ?>_specialty" type="checkbox" value="yes"<? if typed_in('_specialty') == 'yes' then ?> checked<? end ?>>
       <span>This is a specialty medication</span>

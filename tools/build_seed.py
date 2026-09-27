@@ -2,7 +2,8 @@
 """
 Summary: Builds apps/meds/sample/seed.jsonl, the starter catalog. It reads lists of
          drugs by ingredient, asks RxTerms for every strength of each drug, asks RxNorm
-         for the brand names, and adds the entries that were written by hand.
+         for the brand names, and adds the entries that were written by hand and the
+         syringes and needles.
 
 This file is part of Prescription Tracker
 tools/build_seed.py
@@ -68,7 +69,17 @@ SEARCH_RESULTS_MAX = 500           # The most results one RxTerms search returns
 SOURCE_NAME = "rxterms"            # The value of medication.source for a copied entry
 ALIASES_MAX = 5                    # A drug with more brands than this gets none as other names
 ID_PREFIX_MEDICATION = "01J8MEDS0000RX"   # 14 characters; the RxNorm identifier fills the rest
+ID_PREFIX_PACK = "01J8MEDS0000RP"         # For an entry of one package; the identifier and the count follow
 ID_PREFIX_ALIAS = "01J8MEDS0000AK"
+ID_PREFIX_SUPPLY = "01J8MEDS0000SP"       # The family, volume, gauge and length follow
+SUPPLY_FORM = "Supplies"           # The value of medication.form for a syringe or a needle
+SUPPLY_PARTS = 5                   # The parts of one line of the list of supplies
+NONE_OF_IT = "-"                   # In the list of supplies: the family has no such part
+MILLIMETRES_IN_AN_INCH = decimal.Decimal("25.4")
+RXCUI_DIGITS_IN_PACK_ID = 9        # The rest of the id of a package holds the count
+PACK_MAX = 12                      # A carton of more units than this is made for clinics
+PACK_TYPE = "Pack"                 # The package type of an entry of one package
+NEAR = decimal.Decimal("0.03")     # Two amounts this close are the same; labels round
 ID_LENGTH = 26                     # A ULID
 
 # The units a strength is written in. A number followed by one of these opens the text
@@ -86,6 +97,36 @@ LISTED_STRENGTH = re.compile(r"^(0?\.\d+|1(?:\.0+)?) mg((?:/.*)?)$")
 
 # The amount and the unit that open a strength of openFDA: '50 ug/1', '.05 mg/1'.
 LABEL_STRENGTH = re.compile(r"^\s*([\d.]+)\s*(mg|ug|mcg)\b", re.IGNORECASE)
+
+# A strength of openFDA: '20 ug/.5mL', '3 mg/1', '100 [iU]/mL'. The amount, its unit, and
+# what it is in: a volume in mL, or 1 for one tablet or one device.
+FDA_STRENGTH = re.compile(
+    r"^\s*([\d.]+)\s*(mg|ug|mcg|g|meq|\[iu\])\s*/\s*([\d.]*)\s*(ml|1)?\s*$", re.IGNORECASE)
+FDA_UNITS = {"ug": "mcg", "mcg": "mcg", "mg": "mg", "g": "g", "meq": "meq", "[iu]": "units"}
+
+# A strength of the catalog that is an amount in each mL: '5 mg/mL', '100 units/mL'.
+PER_ML = re.compile(r"^([\d.,]+) (mg|mcg|g|meq|units)/mL$")
+# A strength of the catalog that is an amount alone: '3 mg'.
+AMOUNT = re.compile(r"^([\d.,]+) (mg|mcg|g|meq|units)$")
+# The volume that ends the text RxTerms prints for a device: 'Auto-Injector 0.2 mL'.
+VOLUME = re.compile(r"\s*([\d.]+) mL$")
+# The first level of a package of openFDA: '2 SYRINGE in 1 CARTON'.
+OUTER_PACKAGE = re.compile(r"^(\d+) [A-Z][A-Z ,\-]* in 1 (?:CARTON|PACKAGE|BOX|KIT)\b")
+# Words that RxTerms shortens in the text it prints for a product.
+PACKAGE_WORDS = {"Pwdr": "Powder", "Sol": "Solution", "Susp": "Suspension"}
+
+# The last level of a package of openFDA: '3 mL in 1 SYRINGE'.
+INNER_PACKAGE = re.compile(r"([\d.]+) mL in 1 ([A-Z][A-Z ,\-]*?)\s*(?:\(|$)")
+# A package that holds these is counted in tablets, not in devices.
+LOOSE_UNITS = ("TABLET", "CAPSULE")
+# In micrograms, so that 'mg' and 'mcg' compare.
+IN_MICROGRAMS = {"mcg": 1, "mg": 1000, "g": 1000000}
+
+# The salts that end an ingredient in RxNorm. A generic name of the catalog leaves
+# them out, as the ClinCalc list does.
+SALT_WORDS = {"phosphate", "hydrochloride", "sodium", "potassium", "sulfate", "calcium",
+              "succinate", "tartrate", "fumarate", "maleate", "mesylate", "acetate",
+              "furoate", "propionate", "bromide"}
 
 # Words RxTerms adds to a drug name for a release form. They are not part of the name.
 RELEASE_WORDS = {"xr", "dr", "ec"}
@@ -159,6 +200,77 @@ def requests_of():
             by_key[key] = request
             distinct.append(request)
     return distinct
+
+
+def numbers_of(text):
+    """The gauges of one line of the list of supplies: one number, or a range like 27-34."""
+    if text == NONE_OF_IT:
+        return [None]
+    first, _, last = text.partition("-")
+    return list(range(int(first), int(last or first) + 1))
+
+
+def listed(text):
+    """The parts between the commas of one line of the list of supplies."""
+    if text == NONE_OF_IT:
+        return [None]
+    return [part.strip() for part in text.split(",")]
+
+
+def millimetres(length):
+    """A length of the list of supplies in millimetres: '4 mm', '1/2' or '1 1/2' inches."""
+    if length.endswith(" mm"):
+        return decimal.Decimal(length[:-len(" mm")])
+    inches = decimal.Decimal(0)
+    for part in length.split():
+        above, _, below = part.partition("/")
+        inches += decimal.Decimal(above) / decimal.Decimal(below or 1)
+    return inches * MILLIMETRES_IN_AN_INCH
+
+
+def supplies_of():
+    """The syringes and needles of the catalog.
+
+    Returns a list of rows of the seed. Grain: one row per family, volume, gauge and
+    length, in the order of the list. The id holds those four, so it stays the same when
+    the list grows: two digits of the family, four of the volume in hundredths of a
+    millilitre, two of the gauge, and four of the length in hundredths of a millimetre.
+    """
+    rows, seen = [], set()
+    for line in read_list("supplies.txt"):
+        parts = [part.strip() for part in line.split(" | ")]
+        if len(parts) != SUPPLY_PARTS or not re.fullmatch(r"\d\d", parts[0]):
+            print("build_seed: cannot read this line of supplies.txt:", line)
+            sys.exit(2)
+        code, name = parts[0], parts[1]
+        for volume in listed(parts[2]):
+            for gauge in numbers_of(parts[3]):
+                for length in listed(parts[4]):
+                    size = []
+                    if volume:
+                        size.append(volume + " mL")
+                    if gauge:
+                        inch = "" if length.endswith(" mm") else '"'
+                        size.append("%dG x %s%s" % (gauge, length, inch))
+                    number = "%s%04d%02d%04d" % (
+                        code,
+                        decimal.Decimal(volume or 0) * 100,
+                        gauge or 0,
+                        (millimetres(length) * 100).to_integral_value() if length else 0)
+                    if number in seen:
+                        print("build_seed: supplies.txt lists this size twice:", line)
+                        sys.exit(2)
+                    seen.add(number)
+                    strength = ", ".join(size)
+                    if not gauge:
+                        strength += " (without needle)"
+                    rows.append({
+                        "op": "put", "tbl": "medication",
+                        "id": ID_PREFIX_SUPPLY + number,
+                        "d": {"short_name": name + ", " + strength, "generic_name": name,
+                              "strength": strength, "form": SUPPLY_FORM,
+                              "is_specialty": False}})
+    return rows
 
 
 ### Compare Names ###
@@ -237,6 +349,32 @@ class Reference:
                                  answer[2]["STRENGTHS_AND_FORMS"][position]))
         return found
 
+    def products_named(self, brand):
+        """Every strength and form that RxTerms files under a brand name.
+
+        Returns pairs like products_of. Grain: one pair per product of the brand.
+        """
+        query = urllib.parse.urlencode({
+            "terms": brand, "ef": "STRENGTHS_AND_FORMS,RXCUIS", "maxList": SEARCH_RESULTS_MAX})
+        answer = self.get(RXTERMS_SEARCH + "?" + query)
+        found = []
+        for position, display_name in enumerate(answer[1]):
+            if plain(display_name.rsplit(" (", 1)[0]) == plain(brand):
+                found.extend(zip(answer[2]["RXCUIS"][position],
+                                 answer[2]["STRENGTHS_AND_FORMS"][position]))
+        return found
+
+    def labels_of(self, rxcui):
+        """The products of openFDA that name an RxNorm identifier.
+
+        One product of openFDA names the identifiers of every strength of its label, so
+        the caller still has to pick the products of the strength it means.
+        Grain: one row per product and maker.
+        """
+        query = urllib.parse.urlencode({
+            "search": 'openfda.rxcui:"' + rxcui + '"', "limit": LABELS_MAX})
+        return self.get(OPENFDA_NDC + "?" + query, empty_status=404).get("results", [])
+
     def details_of(self, rxcui):
         """What RxTerms says about one product, or None when it says nothing."""
         answer = self.get(RXNAV + "/RxTerms/rxcui/" + rxcui + "/allinfo.json")
@@ -262,11 +400,8 @@ class Reference:
         identifier and hold the same amount are counted by their unit.
         Returns 'mcg', 'mg', or None when no label holds the amount or the count is a tie.
         """
-        query = urllib.parse.urlencode({
-            "search": 'openfda.rxcui:"' + rxcui + '"', "limit": LABELS_MAX})
-        answer = self.get(OPENFDA_NDC + "?" + query, empty_status=404)
         counts = {"mg": 0, "mcg": 0}
-        for product in answer.get("results", []):
+        for product in self.labels_of(rxcui):
             for ingredient in product.get("active_ingredients", []):
                 found = LABEL_STRENGTH.match(ingredient.get("strength") or "")
                 if not found:
@@ -328,6 +463,11 @@ def strength_and_package(printed, details):
     'Cartridge 1 mL', which tells two products with one strength apart. A text that
     does not open with a strength gives the strength of the details, and itself.
     """
+    # RxTerms tells two products with one name apart by the number of their approval or
+    # by their rating. Neither is printed on a label, so neither goes into a name.
+    printed = re.sub(r"\b(?:A?NDA\d+|BX Rating)\s*", "", printed)
+    for short, whole in PACKAGE_WORDS.items():
+        printed = re.sub(r"\b%s\b" % short, whole, printed)
     found = STRENGTH.match(printed)
     if found:
         return as_strength(found.group(1)), as_strength(found.group(2))
@@ -370,6 +510,13 @@ def short_name(brand, generic, strength):
     return name + " " + strength if strength else name
 
 
+def pack_words(entry):
+    """' 2 Pack' for an entry of one package, '' for any other."""
+    if not entry.get("package_size"):
+        return ""
+    return " " + entry["package_size"] + " " + entry["package_type"]
+
+
 def entry_of(request, details, printed, brands, preferred):
     """One catalog entry from one product of RxTerms."""
     generic = request["generic"]
@@ -398,6 +545,151 @@ def entry_of(request, details, printed, brands, preferred):
     }
 
 
+def generic_without_salt(details, fallback):
+    """The ingredients as RxNorm names them, without the salt that ends each one.
+
+    'formoterol fumarate 0.005 MG/ACTUAT / mometasone furoate 0.1 MG/ACTUAT ...' gives
+    'Formoterol / Mometasone'.
+    """
+    full = re.sub(r"^\d[\d.]*\s+\S+\s+", "", details.get("fullGenericName") or "")
+    names = []
+    for part in full.split(" / "):
+        words = []
+        for word in part.split():
+            if re.match(r"\d", word):
+                break
+            words.append(word)
+        while len(words) > 1 and words[-1].lower() in SALT_WORDS:
+            words.pop()
+        if words:
+            names.append(as_name(" ".join(words)))
+    return " / ".join(names) if names else fallback
+
+
+def number(text):
+    return decimal.Decimal(text.replace(",", ""))
+
+
+def near(one, other):
+    """Whether two amounts are the same, give or take what a label rounds."""
+    return abs(one - other) <= NEAR * max(one, other)
+
+
+def label_of(product, entry):
+    """What the label of one product of openFDA says about an entry of the catalog.
+
+    Returns None when the product is another brand or another strength. Otherwise
+    returns the strength as the label prints it for one device, such as
+    '20 mcg/0.5 mL', or '' when the label prints the strength the way the catalog
+    already does.
+    """
+    brand, generic = plain(product.get("brand_name") or ""), plain(product.get("generic_name") or "")
+    if entry["brand_name"]:
+        if not brand.startswith(plain(entry["brand_name"])):
+            return None
+    elif brand != generic:
+        return None
+    ingredients = product.get("active_ingredients") or []
+    if len(ingredients) != 1:
+        return None
+    found = FDA_STRENGTH.match(ingredients[0].get("strength") or "")
+    if not found:
+        return None
+    amount, unit = decimal.Decimal(found.group(1)), FDA_UNITS[found.group(2).lower()]
+    in_volume = (found.group(4) or "").lower() == "ml"
+    volume = decimal.Decimal(found.group(3)) if found.group(3) else decimal.Decimal(1)
+
+    per_ml, alone = PER_ML.match(entry["strength"] or ""), AMOUNT.match(entry["strength"] or "")
+    mine = per_ml or alone
+    if not mine:
+        return None
+    my_amount, my_unit = number(mine.group(1)), mine.group(2)
+    if my_unit in IN_MICROGRAMS and unit in IN_MICROGRAMS:
+        my_amount, amount = my_amount * IN_MICROGRAMS[my_unit], amount * IN_MICROGRAMS[unit]
+    elif my_unit != unit:
+        return None
+
+    if alone:
+        return "" if near(amount, my_amount) else None
+    if not in_volume or not near(amount / volume, my_amount):
+        return None
+    device = VOLUME.search(entry["package"] or "")
+    if volume == 1 or not device or not near(volume, number(device.group(1))):
+        # The label prints the strength for each mL, as the catalog does.
+        return "" if volume == 1 else None
+    shown = decimal.Decimal(found.group(1)).normalize()
+    return "%s %s/%s mL" % (format(shown, "f"), unit, format(volume.normalize(), "f"))
+
+
+def container_of(text):
+    """The kind of device that a text names: 'cartridge', 'vial', 'device' or ''."""
+    text = text.lower()
+    if "cartridge" in text:
+        return "cartridge"
+    if "vial" in text or text.strip() in ("solution", "suspension"):
+        return "vial"
+    if any(word in text for word in ("syringe", "pen", "injector")):
+        return "device"
+    return ""
+
+
+def packs_of(product, entry):
+    """How many devices the cartons of one product of openFDA hold: {2, 6}.
+
+    One label covers the pens and the vials of a drug, so only the cartons of the
+    device that the entry names are counted: the same kind, and the same volume.
+    """
+    mine = container_of(entry["package"] or "")
+    volume = VOLUME.search(entry["package"] or "")
+    counts = set()
+    for package in product.get("packaging") or []:
+        description = package.get("description") or ""
+        outer = OUTER_PACKAGE.match(description)
+        if package.get("sample") or not outer or any(word in description for word in LOOSE_UNITS):
+            continue
+        inner = INNER_PACKAGE.search(description)
+        if mine and inner and container_of(inner.group(2)) not in ("", mine):
+            continue
+        if volume and inner and not near(decimal.Decimal(inner.group(1)), number(volume.group(1))):
+            continue
+        if int(outer.group(1)) <= PACK_MAX:
+            counts.add(int(outer.group(1)))
+    return counts
+
+
+def by_package(entry, reference):
+    """The entries of one product, one for each size of carton.
+
+    A product that comes in a device, such as a pen or a nasal spray, is dispensed by
+    the carton, and a carton of 2 is another thing to refill than a carton of 6. The
+    labels of openFDA say which cartons there are. The strength becomes the strength of
+    one device where the label prints it so. A product with one size of carton that
+    holds one device stays as it is.
+    """
+    if entry["form"] != "Injection" and entry["route"] != "Nasal":
+        return [entry]
+    strengths, packs = {}, set()
+    for product in reference.labels_of(entry["rxcui"]):
+        label = label_of(product, entry)
+        if label is None:
+            continue
+        packs |= packs_of(product, entry)
+        if label:
+            strengths[label] = strengths.get(label, 0) + 1
+    if strengths:
+        entry["strength"] = max(sorted(strengths), key=strengths.get)
+        # The strength names the volume now, so the package does not repeat it.
+        entry["package"] = VOLUME.sub("", entry["package"] or "")
+    if not packs or packs == {1}:
+        return [entry]
+    variants = []
+    for count in sorted(packs):
+        variant = dict(entry, package_size=str(count), package_type=PACK_TYPE)
+        variant["aliases"] = entry["aliases"] if count == min(packs) else []
+        variants.append(variant)
+    return variants
+
+
 def same_product(entry, row):
     """Whether an entry from RxTerms is an entry that was written by hand."""
     written = row["d"]
@@ -418,17 +710,20 @@ def name_entries(entries, taken):
         groups = {}
         for entry in entries:
             if detail == "package":
-                entry["short_name"] = (entry["base_name"] + " " + entry["package"]).strip()
+                entry["short_name"] = (entry["base_name"] + " " + entry["package"]).strip() \
+                    + pack_words(entry)
             elif detail == "route":
                 entry["short_name"] = " ".join(
                     part for part in (entry["base_name"], entry["reference_route"], entry["package"])
-                    if part)
+                    if part) + pack_words(entry)
             elif detail == "rxcui":
                 entry["short_name"] += ", RxNorm " + entry["rxcui"]
             else:
                 entry["base_name"] = short_name(
                     entry["brand_name"], entry["generic_name"], entry["strength"])
-                entry["short_name"] = entry["base_name"]
+                # A carton is a carton of something, so its entry names the device.
+                device = " " + entry["package"] if entry.get("package_size") and entry["package"] else ""
+                entry["short_name"] = entry["base_name"] + device + pack_words(entry)
             groups.setdefault(plain(entry["short_name"]), []).append(entry)
         entries = [entry for key, group in groups.items()
                    if len(group) > 1 or key in taken for entry in group]
@@ -486,18 +781,43 @@ def main():
             else:
                 entries.append(entry)
 
+    # A preferred brand that no entry names yet has products of its own in RxTerms. They
+    # are filed under an ingredient that the lists above do not reach, such as a salt.
+    named = {(entry["brand_name"] or "").lower() for entry in entries}
+    named |= {(row["d"].get("brand_name") or "").lower() for row in hand_medications}
+    named |= {alias.lower() for entry in entries for alias in entry["aliases"]}
+    added_brands = []
+    for brand in sorted(preferred.values(), key=str.lower):
+        if brand.lower() in named:
+            continue
+        for rxcui, printed in reference.products_named(brand):
+            details = reference.details_of(rxcui)
+            if rxcui in seen or not details or details.get("suppress"):
+                continue
+            seen.add(rxcui)
+            request = {"generic": generic_without_salt(details, brand), "keep_salt": False}
+            entry = entry_of(request, details, printed, [brand], preferred)
+            entry["strength"] = as_label_prints(entry, reference, in_micrograms)
+            entries.append(entry)
+            added_brands.append(brand)
+
+    entries = [variant for entry in entries for variant in by_package(entry, reference)]
     name_entries(entries, {plain(row["d"]["short_name"]) for row in hand_medications})
     entries.sort(key=lambda entry: (entry["short_name"].lower(), int(entry["rxcui"])))
 
-    lines = [json.dumps(row, ensure_ascii=False) for row in by_hand]
+    supplies = supplies_of()
+    lines = [json.dumps(row, ensure_ascii=False) for row in by_hand + supplies]
     alias_number = 0
     for entry in entries:
         medication_id = padded_id(ID_PREFIX_MEDICATION, entry["rxcui"])
+        if entry.get("package_size"):
+            medication_id = padded_id(
+                ID_PREFIX_PACK + entry["rxcui"].zfill(RXCUI_DIGITS_IN_PACK_ID), entry["package_size"])
         row = {"short_name": entry["short_name"], "generic_name": entry["generic_name"]}
         if entry["brand_name"]:
             row["brand_name"] = entry["brand_name"]
-        for column in ("strength", "route", "form"):
-            if entry[column]:
+        for column in ("strength", "route", "form", "package_size", "package_type"):
+            if entry.get(column):
                 row[column] = entry[column]
         row.update({"is_specialty": False, "rxcui": entry["rxcui"], "source": SOURCE_NAME})
         lines.append(json.dumps(
@@ -514,7 +834,11 @@ def main():
 
     print("build_seed: asked the services", reference.asked, "times")
     print("build_seed:", len(hand_medications), "entries written by hand,",
+          len(supplies), "syringes and needles,",
           len(entries), "entries from RxTerms,", alias_number, "brand names as other names")
+    if added_brands:
+        print("build_seed: brands added from their own products:",
+              "; ".join(sorted(set(added_brands), key=str.lower)))
     if not_found:
         print("build_seed: RxTerms has nothing under:", "; ".join(not_found))
 

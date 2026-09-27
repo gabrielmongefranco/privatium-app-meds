@@ -50,9 +50,12 @@ under the heading narrows the list to one person.
 2. Choose **Setup**, then **People**, and add the first person. A first name is enough.
    The birth date is optional.
 
-The starter catalog holds about 2,213 medications: the 200 drugs most prescribed in the
-United States at every strength, and common supplies such as glucose monitor sensors. It
+The starter catalog holds about 2,507 medications: the 200 drugs most prescribed in the
+United States at every strength, and common supplies such as glucose monitor sensors, syringes and needles. It
 adds no person and no record about anyone.
+
+A product that comes by the carton has one catalog entry for each size of carton, such
+as "2 Pack" and "6 Pack". Pick the one on your box, so a fill counts the right carton.
 
 You do not have to add everyone and everything first. Every form lets you add what it
 needs. The next section shows how.
@@ -79,7 +82,7 @@ a name twice.
 |---|---|
 | **Choose one that is already in use** | Someone in the household takes it, or has filled it. Choose **-- Find another or add new --** to see the two other parts. |
 | **Type a name to search the catalog** | It is in the catalog. Type a few letters of any of its names, then pick it from the suggestions. |
-| **Add a new medication** | It is not in the catalog. Look it up, or type the brand name, the generic name, or both, and the strength. |
+| **Add a new medication** | It is not in the catalog. Look it up, or type the brand name, the generic name, or both, and the strength. For a product that comes by the carton, type the package too, such as 2 and Pack. |
 
 The catalog is the list of products the app knows. It says nothing about who takes them.
 
@@ -318,7 +321,8 @@ shows. The catalog page has the full form, with every field.
 6. For the route, the form and the package type, pick from the list or type a new choice
    in the box under it. A choice that you type appears in the list from then on.
 7. Tick **This is a specialty medication** if it is one.
-8. Leave the short name empty. The app builds it, such as "Examplol (Exampline) 10 mg".
+8. Leave the short name empty. The app builds it, such as "Examplol (Exampline) 10 mg",
+   or "Examplol (Exampline) 10 mg 2 Pack" when you gave a package.
    Type a short name only if you want a different one.
 9. Choose **Save**.
 

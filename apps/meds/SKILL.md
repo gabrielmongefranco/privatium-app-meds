@@ -113,7 +113,8 @@ view, and must change in the same commit as `schema.sql`.
   Lua.
 - The two refill dates follow the rules in the data model page. Explain any change to
   those rules to the owner before coding it.
-- A medication's short name is `Brand (Generic) strength` unless the owner typed another.
+- A medication's short name is `Brand (Generic) strength package` unless the owner typed
+  another. One product in two packages is two medications with one RxCUI.
   A second spelling of a product is a `medication_alias` row, never a second medication.
 - A view that must run in any SQLite tool leaves out the `DECIMAL` columns.
 - Every link goes through `url()`, so the app works unchanged in solo mode.

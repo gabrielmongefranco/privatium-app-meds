@@ -4,7 +4,8 @@
 # Created: 2026-09-27
 # Last Modified: 2026-09-27
 # Summary: Brand names the starter catalog shows in a short name when a drug has several
-#          brands. The brands of the entries written by hand count too.
+#          brands. The brands of the entries written by hand count too. A brand of this
+#          list that no entry names is added with its own products from RxTerms.
 # Format: one brand per line, as RxNorm writes it.
 # Notes: See README file for documentation and full license information.
 #
@@ -34,3 +35,9 @@ AndroGel
 NovoLog
 Humalog
 Lantus
+Januvia
+Mounjaro
+Concerta
+Flonase
+Dulera
+ProAir

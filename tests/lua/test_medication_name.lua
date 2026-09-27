@@ -29,4 +29,13 @@ return function(equal)
   equal('no strength', medication_name.short('Examplol', 'Exampline', nil), 'Examplol (Exampline)')
   equal('brand only', medication_name.short('Examplol', nil, nil), 'Examplol')
   equal('neither name', medication_name.short(nil, nil, '10 mg'), nil)
+
+  --- The package is part of the name ---
+  equal('a carton of two', medication_name.short('Examplol', 'Exampline', '10 mg', '2', 'Pack'),
+        'Examplol (Exampline) 10 mg 2 Pack')
+  equal('a package with no strength', medication_name.short('Examplol', nil, nil, '60 mL', 'Bottle'),
+        'Examplol 60 mL Bottle')
+  equal('a size with no type', medication_name.short(nil, 'Exampline', '10 mg', '30'), 'Exampline 10 mg 30')
+  equal('a type with no size', medication_name.short(nil, 'Exampline', '10 mg', nil, 'Vial'), 'Exampline 10 mg Vial')
+  equal('a package with no name is no name', medication_name.short(nil, nil, nil, '2', 'Pack'), nil)
 end

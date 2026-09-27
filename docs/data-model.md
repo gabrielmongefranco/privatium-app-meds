@@ -132,8 +132,8 @@ second row here.
 | `strength` | `VARCHAR` | No | Strength as the label prints it, with the unit | No |
 | `route` | `VARCHAR` | No | How it is given, such as `Oral` | No |
 | `form` | `VARCHAR` | No | The form, such as `Tablet` | No |
-| `package_size` | `VARCHAR` | No | Package size as text | No |
-| `package_type` | `VARCHAR` | No | The package, such as `Bottle` | No |
+| `package_size` | `VARCHAR` | No | How much one package holds, as text, such as `2` or `60 mL` | No |
+| `package_type` | `VARCHAR` | No | The package, such as `Pack` or `Bottle` | No |
 | `is_specialty` | `BOOLEAN` | Yes | Whether this is a specialty medication, which takes longer to arrive and is due earlier | No |
 | `rxcui` | `VARCHAR` | No | The RxNorm concept unique identifier (RxCUI) of the product: digits, kept as text | No |
 | `source` | `VARCHAR` | No | The drug reference the row was copied from: `rxterms`, `rxnorm` or `openfda_ndc`. Empty when the owner typed the row. | No |
@@ -142,13 +142,17 @@ second row here.
 A medication needs a generic name or a brand name.
 
 RxNorm is the drug list of the United States National Library of Medicine. It gives every
-product a number, the RxCUI. Two medications never share an RxCUI, and the forms check
-that. [The app design](design/README.md#the-catalog-and-the-drug-references)
+product a number, the RxCUI. Two medications never share an RxCUI and a package, and the
+forms check that. Two packages of one product share the RxCUI. [The app design](design/README.md#the-catalog-and-the-drug-references)
 explains how the catalog gets entries from the drug references.
 
 The short name follows one pattern unless the owner types another: the brand name, the
-generic name in brackets, then the strength. An example is
-`Lipitor (Atorvastatin) 20 mg`. A medication with no brand name leaves out the brackets.
+generic name in brackets, the strength, then the package. Examples are
+`Lipitor (Atorvastatin) 20 mg` and `Examplol (Exampline) 10 mcg/mL 2 Pack`. A medication
+with no brand name leaves out the brackets.
+
+One product in two packages is two medications. A carton of 2 is another thing to refill
+than a carton of 6, and a pharmacy bills them apart.
 
 The strength is text because the app never calculates with it. One field holds a single
 strength such as `10 mg`, a concentration such as `100 units/mL`, or the strengths of a
@@ -343,10 +347,10 @@ edits.
 ### Sample data
 
 `apps/meds/sample/seed.jsonl` holds a starter catalog and nothing else.
-The catalog has 2,213 medications and 558 other names for them. It holds the 200 drugs
+The catalog has 2,507 medications and 524 other names for them. It holds the 200 drugs
 most prescribed in the United States, and the drugs of the owner's list, at every strength
 that RxTerms lists. It also holds entries written by hand, such as continuous glucose
-monitors. [How to build the starter catalog](how-to/build-the-starter-catalog.md) names
+monitors, and syringes and needles in many sizes. [How to build the starter catalog](how-to/build-the-starter-catalog.md) names
 the sources and their licenses. It holds no person, no fill and no other record about anyone.
 
 A Privatium node offers to load the file from its settings page only while the app's log

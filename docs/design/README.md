@@ -287,7 +287,7 @@ to find a medication or to add one. The box has three parts:
 |---|---|
 | **Choose one that is already in use** | A drop-down of the medications that are on a list or have a fill |
 | **Type a name to search the catalog** | A text box that suggests names while you type. It offers every short name and every other name. |
-| **Add a new medication** | Fields for the brand name, the generic name, the strength and the specialty mark. The app builds the short name. |
+| **Add a new medication** | Fields for the brand name, the generic name, the strength, the package and the specialty mark. The app builds the short name. |
 
 The typed name is compared with the short name, the generic name, the brand name and the
 other names. Capital letters, punctuation and extra spaces do not matter.
@@ -312,7 +312,8 @@ The suggestions come from the `<datalist>` element of the browser. The box needs
 script.
 
 Every page shows the short name. It has the brand name, the generic name in brackets,
-and the strength, such as "Examplol (Exampline) 10 mg". You can type another short name
+the strength, and the package when there is one, such as "Examplol (Exampline) 10 mg" or
+"Examplol (Exampline) 10 mcg/mL 2 Pack". You can type another short name
 for a medication. The medication page also shows the full name and the other names.
 
 #### Medications
@@ -473,7 +474,7 @@ The catalog gets its entries in three ways.
 
 | Way | What it adds |
 |---|---|
-| The starter catalog | About 2,213 entries, loaded once into an empty app |
+| The starter catalog | About 2,507 entries, loaded once into an empty app |
 | The lookup in a form | One entry at a time, when you add a medication the catalog lacks |
 | Your own typing | Anything else |
 
@@ -487,6 +488,7 @@ it copies only the entry you pick.
 - The drugs of the owner's list that ClinCalc does not rank, at every strength too.
 - Entries written by hand for products that no drug reference holds, such as continuous
   glucose monitors, alcohol prep pads and compounded mixes.
+- Syringes and needles, one entry for each volume, gauge and length.
 
 RxTerms is a drug vocabulary of the United States National Library of Medicine, made for
 entering prescriptions. [How to build the starter catalog](../how-to/build-the-starter-catalog.md)
@@ -530,8 +532,10 @@ Three columns of the `medication` table record where an entry came from.
 
 These rules hold for every entry:
 
-- Two catalog entries never share an RxCUI. Picking a product that the catalog already
-  holds uses the entry that is there.
+- Two catalog entries never share an RxCUI and a package. Picking a product and a
+  package that the catalog already holds uses the entry that is there.
+- One product in two packages is two entries. A carton of 2 is another thing to refill
+  than a carton of 6.
 - The three columns stay with the entry through every change. A merge keeps the columns
   of the entry that stays.
 - A copied entry is an ordinary entry. You can change its short name, give it other
@@ -551,6 +555,24 @@ This table shows where the fields of each reference go.
 | Route | `route` | `route` | The same as RxTerms |
 | Form | `rxnormDoseForm` | `dosage_form` | The same as RxTerms |
 | RxCUI | `RXCUIS` | `openfda.rxcui`, when the product lists exactly one | `rxcui` |
+
+**Packages and the strength of a device.** A product that comes in a device, such as a
+pen, a prefilled syringe or a nasal spray, is dispensed by the carton. For the
+injections and the nasal products of the starter catalog, the script reads the labels
+that makers filed with openFDA:
+
+- It makes one entry for each size of carton, such as "2 Pack" and "6 Pack". A product
+  whose only carton holds one device gets no package.
+- It counts only the cartons of the same device and the same volume, because one label
+  covers the pens and the vials of a drug.
+- It shows the strength of one device where the label prints it so. RxTerms prints a
+  prefilled syringe of 20 mcg in 0.5 mL as "40 mcg/mL". The catalog shows
+  "20 mcg/0.5 mL", as the box does.
+- It leaves out samples, and cartons of more than 12, which are made for clinics.
+
+**Brands filed under a salt.** RxTerms files some brands under the salt of the drug, which
+the lists of ingredients do not reach. Every brand of `tools/seed/preferred_brands.txt`
+that no entry names is added with its own products.
 
 Three limits are known:
 
@@ -778,6 +800,8 @@ The owner made these decisions on 2026-09-27.
 | Prescription numbers in pasted fills | A number that an earlier fill has names the medication. A name that fits too makes it the choice. Hyphens and spaces do not count. |
 | Fields that add a record | Hidden until **-- Add new --** is chosen in the drop-down. |
 | Strength units | Micrograms where the label prints micrograms. |
+| Packages | The package is part of the short name. One product in two packages is two catalog entries. |
+| Strength of a device | The strength that the box prints for one device, not the amount in each mL. |
 | Lookup order | The catalog first. A drug reference only when the catalog lacks the name. |
 | Text boxes | They suggest the values that records already hold. |
 | Household name | Removed. |
