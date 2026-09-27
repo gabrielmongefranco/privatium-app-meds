@@ -28,7 +28,7 @@ Prescription Tracker is a personal prescription tracker for families with chroni
 
 It is a Privatium app: a folder of Lua, SQL and HTML templates that a Privatium node runs on hardware you control. Your records live as plain text in a folder on your disk, with no account, no cloud, and no database server. Backing up is copying a folder.
 
-This is the app that Privatium was built for. It shows which refills are due, keeps each person's medication list, records fills by hand or from the pasted text of an insurer's portal, and tracks prior authorizations. The [documentation](./docs) describes every screen and table.
+This is the app that Privatium was built for. It shows which refills are due, keeps each person's medication list, records fills by hand or from the pasted text of an insurer's portal, and tracks prior authorizations. It starts with a catalog of the most prescribed medications in the United States, and looks up any other medication by name in the public drug references RxTerms, openFDA and RxNorm. The [documentation](./docs) describes every screen and table.
 
 Tested with Privatium v0.3.
 

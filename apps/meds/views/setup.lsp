@@ -42,9 +42,4 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
     <span>Reminder settings</span>
     <small>How many days ahead a refill counts as due.</small>
   </a></li>
-  <li><a href="<?= url('/edit') ?>">
-    <?= icon('house') ?>
-    <span>Household name</span>
-    <small><? if me then ?>The app calls you <?= me.display_name ?>.<? else ?>The household has no name yet.<? end ?></small>
-  </a></li>
 </ul>

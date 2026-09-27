@@ -43,6 +43,8 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
     <? if medication.form then ?><dt>Form</dt><dd><?= medication.form ?></dd><? end ?>
     <? if medication.package_size then ?><dt>Package size</dt><dd><?= medication.package_size ?></dd><? end ?>
     <? if medication.package_type then ?><dt>Package type</dt><dd><?= medication.package_type ?></dd><? end ?>
+    <? if medication.rxcui then ?><dt>RxNorm identifier</dt><dd><?= medication.rxcui ?></dd><? end ?>
+    <? if source_name then ?><dt>Copied from</dt><dd><?= source_name ?><? if medication.retrieved_on then ?>, on <?= fmt.date(medication.retrieved_on) ?><? end ?></dd><? end ?>
   </dl>
 </div>
 

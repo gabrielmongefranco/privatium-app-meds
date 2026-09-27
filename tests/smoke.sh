@@ -133,8 +133,12 @@ seed_token="$(curl -s -m 10 "$BASE/settings/apps" \
   | grep -o 'name="_csrf" value="[^"]*"' | head -1 | sed 's/.*value="//; s/"$//')"
 expect_status "sample data loads" 303 "$(curl -s -m 20 -o /dev/null -w '%{http_code}' -X POST \
   --data-urlencode "_csrf=$seed_token" "$BASE/settings/apps/meds/seed")"
-expect_status "catalog rows after the sample data" 41 "$(count_of medication)"
-expect_status "other names after the sample data" 38 "$(count_of medication_alias)"
+# The expected counts are read from the sample data, so a rebuilt catalog needs no change here.
+SEED="$REPOSITORY/apps/meds/sample/seed.jsonl"
+seed_medications="$(grep -c '"tbl": *"medication"' "$SEED")"
+seed_names="$(grep -c '"tbl": *"medication_alias"' "$SEED")"
+expect_status "catalog rows after the sample data" "$seed_medications" "$(count_of medication)"
+expect_status "other names after the sample data" "$seed_names" "$(count_of medication_alias)"
 expect_status "no person in the sample data" 0 "$(count_of person)"
 
 ### Greeting ###
@@ -143,13 +147,9 @@ hour="$(date +%H | sed 's/^0//')"
 if [ "$hour" -lt 12 ]; then greeting="Good morning"
 elif [ "$hour" -lt 18 ]; then greeting="Good afternoon"
 else greeting="Good evening"; fi
-expect_status "home page with a name" 200 "$(get /)"
-expect_text "greeting follows the local hour" "$greeting, The Example Family."
-
-### Household Name ###
-expect_status "empty household name is refused" 200 "$(post /edit /name 'display_name=   ')"
-expect_text "empty household name says why" "Enter a name."
-expect_status "household name is saved" 303 "$(post /edit /name 'display_name=The Sample Household')"
+expect_status "home page after the sample data" 200 "$(get /)"
+expect_text "greeting follows the local hour" "$greeting."
+expect_status "no page asks for a household name" 404 "$(get /edit)"
 
 ### Reminder Settings ###
 expect_status "reminder settings page" 200 "$(get /setup/reminders)"
@@ -170,9 +170,9 @@ expect_status "reminder settings are saved" 303 "$(post /setup/reminders /setup/
 curl -s -m 10 "$APP/api/q/v_reminder_setting" >"$BODY"
 expect_text "saved count is in force" '"due_within_days":4'
 expect_text "empty count takes its default" '"specialty_due_within_days":5'
-expect_status "household name is saved again" 303 "$(post /edit /name 'display_name=The Example Household')"
-curl -s -m 10 "$APP/api/q/v_reminder_setting" >"$BODY"
-expect_text "saving the name keeps the day counts" '"due_soon_within_days":8'
+expect_status "reminder settings are saved a second time" 303 "$(post /setup/reminders /setup/reminders \
+  'due_within_days=4' 'due_soon_within_days=8' 'authorization_notice_days=30')"
+expect_status "the settings stay one record" 1 "$(count_of profile)"
 
 ### People ###
 expect_status "people page" 200 "$(get /setup/people)"
@@ -284,7 +284,8 @@ expect_text "the same pharmacy name says why" "already in the app"
 
 ### Medication Catalog ###
 expect_status "catalog page" 200 "$(get /setup/catalog)"
-expect_text "catalog page counts the medications" "41 medications"
+expect_text "catalog page counts the medications" "The catalog holds $seed_medications medications."
+expect_text "a long catalog shows its first page" "This page shows the first 100"
 expect_status "catalog filtered by another name" 200 "$(get '/setup/catalog?q=apap')"
 expect_text "two medications answer to the other name" "2 medications"
 expect_status "catalog filtered by a percent sign" 200 "$(get '/setup/catalog?q=%25')"
@@ -292,7 +293,7 @@ expect_text "a percent sign alone finds nothing" "No medication answers"
 expect_status "catalog filtered by an underscore" 200 "$(get '/setup/catalog?q=_')"
 expect_text "an underscore alone finds nothing" "No medication answers"
 expect_status "catalog filtered by SQL" 200 "$(get "/setup/catalog?q=%27%20OR%201%3D1%20--")"
-expect_text "SQL in the filter matches nothing" "No medication answers"
+expect_no_text "SQL in the filter is compared as text and lists no catalog" "The catalog holds"
 expect_status "catalog filtered by markup" 200 "$(get '/setup/catalog?q=%3Cimg%20src%3Dx%3E')"
 expect_no_text "markup in the filter is never sent as markup" "<img src=x>"
 
@@ -322,7 +323,7 @@ expect_status "a typed short name is kept" 303 "$(post "/setup/catalog/$examplol
 expect_status "medication page after the typed name" 200 "$(get "/setup/catalog/$examplol")"
 expect_text "the typed short name is the heading" "<h1>exm</h1>"
 expect_status "a medication with no records is removed" 303 "$(post "/setup/catalog/$examplol/remove" "/setup/catalog/$examplol/remove")"
-expect_status "the catalog is back to the sample data" 41 "$(count_of medication)"
+expect_status "the catalog is back to the sample data" "$seed_medications" "$(count_of medication)"
 
 expect_status "medication page of the sample data" 200 "$(get /setup/catalog/01J8MEDS0000000000MED00003)"
 expect_text "a medication shows its other names" "Z-Pak"
@@ -330,8 +331,9 @@ expect_status "removal page for a medication with a fill" 200 "$(get /setup/cata
 expect_text "a medication with a fill cannot be removed" "cannot be removed yet"
 expect_status "a medication goes with its other names" 303 "$(post /setup/catalog/01J8MEDS0000000000MED00003/remove \
   /setup/catalog/01J8MEDS0000000000MED00003/remove)"
-expect_status "one medication fewer" 40 "$(count_of medication)"
-expect_status "one other name fewer" 37 "$(count_of medication_alias)"
+expect_status "one medication fewer" "$((seed_medications - 1))" "$(count_of medication)"
+names_of_removed="$(grep -c '"medication_id": *"01J8MEDS0000000000MED00003"' "$SEED")"
+expect_status "its other names are gone with it" "$((seed_names - names_of_removed))" "$(count_of medication_alias)"
 
 ### Medication Search, Other Names And Merge ###
 expect_status "search by a misspelled name" 200 "$(get '/setup/catalog?q=Lipitro')"
@@ -339,7 +341,7 @@ expect_text "a close name is offered as a question" "Did you mean one of these?"
 expect_text "the close medication is named" "Lipitor (Atorvastatin) 20 mg"
 expect_text "a close name says to check it" "names that look alike"
 expect_status "search by the start of a generic name" 200 "$(get '/setup/catalog?q=atorva')"
-expect_text "the start of a name finds the medication" "1 medication"
+expect_text "the start of a name finds the medication" "Lipitor (Atorvastatin) 40 mg"
 expect_no_text "a contained name is not a question" "Did you mean one of these?"
 expect_text "an unknown name can be taught" "Teach the app this name"
 expect_status "search by an exact other name" 200 "$(get '/setup/catalog?q=PEG%203350')"
@@ -420,9 +422,33 @@ glucophage=01J8MEDS0000000000MED00017
 
 expect_status "medications page" 200 "$(get "/medications?person=$alex")"
 expect_text "medications page lists an entry" "Lipitor (Atorvastatin) 20 mg"
-expect_status "adding to a list starts with a search" 200 "$(get "/medications/new?person=$alex&q=lisinopril")"
-expect_text "the search offers the medication" "Prinivil (Lisinopril) 10 mg"
-expect_status "the entry form opens for the chosen medication" 200 "$(get "/medications/new?person=$alex&medication=$prinivil")"
+expect_status "the form that adds to a list" 200 "$(get "/medications/new?person=$alex")"
+expect_text "the form suggests names while a person types" 'list="medication-names"'
+expect_text "the suggestions hold the short names" 'value="Prinivil (Lisinopril) 10 mg"'
+expect_text "the suggestions hold the other names" 'value="Albuterol inhaler"'
+expect_text "the form can add a new medication" "Add a new medication"
+expect_text "the form can add a new prescriber" "Or add a new prescriber"
+expect_status "an entry with no medication is refused" 200 "$(post /setup/people/new /medications/new \
+  "person_id=$alex" 'status=taking_regularly' 'refills_left=1')"
+expect_text "an entry with no medication says why" "Choose a medication: pick one from the list, type its name, or add a new one."
+expect_status "a medication id that names nothing is refused" 200 "$(post /setup/people/new /medications/new \
+  "person_id=$alex" 'medication_id=01J8MEDS0000000000N0NE0001' 'status=taking_regularly' 'refills_left=1')"
+expect_text "a medication id that names nothing says why" "Choose a medication from the list."
+expect_status "a name that fits two medications asks which one" 200 "$(post /setup/people/new /medications/new \
+  "person_id=$alex" 'medication_name=albuterol' 'status=taking_regularly' 'refills_left=1')"
+expect_text "a name that fits two medications says so" "Choose the medication you mean"
+expect_text "a name that fits two medications offers the first" "Ventolin HFA (Albuterol) 90 mcg/actuation"
+expect_text "a name that fits two medications offers the second" "Albuterol 2.5 mg/3 mL (0.083%)"
+expect_text "the form keeps the typed name" 'value="albuterol"'
+expect_status "a misspelled name picks nothing" 200 "$(post /setup/people/new /medications/new \
+  "person_id=$alex" 'medication_name=Prinivl' 'status=taking_regularly' 'refills_left=1')"
+expect_text "a misspelled name offers the close medication" "Prinivil (Lisinopril) 10 mg"
+expect_status "a name nobody knows is refused" 200 "$(post /setup/people/new /medications/new \
+  "person_id=$alex" 'medication_name=zzzqqq' 'status=taking_regularly' 'refills_left=1')"
+expect_text "a name nobody knows says what to do" "No medication answers to this name."
+expect_status "markup as a name is refused" 200 "$(post /setup/people/new /medications/new \
+  "person_id=$alex" 'medication_name=<script>alert(7)</script>' 'status=taking_regularly' 'refills_left=1')"
+expect_no_text "markup as a name is never sent as markup" "<script>alert(7)</script>"
 expect_status "an entry with no status is refused" 200 "$(post /setup/people/new /medications/new \
   "person_id=$alex" "medication_id=$prinivil" 'status=' 'refills_left=1')"
 expect_text "an entry with no status says why" "Choose a status."
@@ -445,6 +471,63 @@ expect_text "the page shows the instructions" "Take one tablet by mouth every da
 expect_text "the page shows a typed choice" "with breakfast"
 expect_text "markup in a field is shown escaped" "&lt;i&gt;blood pressure&lt;/i&gt;"
 expect_text "a medication with no fill says so" "No fill recorded"
+# One form adds the medication, the person, the prescriber and the pharmacy it names.
+before="$(count_of medication) $(count_of person) $(count_of prescriber) $(count_of pharmacy) $(count_of person_medication)"
+expect_status "an entry with everything new is added" 303 "$(post /setup/people/new /medications/new \
+  'person_id_new=Robin Example' 'medication_brand=Quickadd' 'medication_generic=Quickaddine' \
+  'medication_strength=15 mg' 'status=taking_regularly' 'refills_left=2' \
+  'prescriber_id_new=Dr. Quick' 'pharmacy_id_new=Quick Pharmacy')"
+after="$(count_of medication) $(count_of person) $(count_of prescriber) $(count_of pharmacy) $(count_of person_medication)"
+expect_status "everything new is added once" "$(echo "$before" | awk '{print $1+1, $2+1, $3+1, $4+1, $5+1}')" "$after"
+curl -s -m 10 "$APP/api/q/v_active_medication" >"$BODY"
+expect_text "the new medication has its built short name" '"medication_name":"Quickadd (Quickaddine) 15 mg"'
+expect_text "the new entry names the new prescriber" '"prescriber_name":"Dr. Quick"'
+# A typed name that a record already has picks that record.
+expect_status "typed names that exist pick the records they name" 200 "$(post /setup/people/new /medications/new \
+  'person_id_new=robin  EXAMPLE' 'medication_generic=Quickaddine' 'medication_brand=quickadd' \
+  'medication_strength=15 MG' 'status=on_hold' 'refills_left=2' 'pharmacy_id_new=quick pharmacy')"
+expect_text "the same person and medication are found" "already on the list"
+expect_status "typed names that exist add nothing" "$after" \
+  "$(count_of medication) $(count_of person) $(count_of prescriber) $(count_of pharmacy) $(count_of person_medication)"
+# The lookup in the browser fills in fields of the form. They are checked like any other.
+expect_text "the form holds the lookup, hidden until a script shows it" 'data-lookup="medication" hidden'
+expect_text "the page loads the lookup script" '/static/medication_lookup.js'
+expect_status "the lookup script is served" 200 "$(get /static/medication_lookup.js)"
+expect_status "a medication from a drug reference is added" 303 "$(post /setup/people/new /medications/new \
+  "person_id=$alex" 'medication_choice=new' 'medication_brand=Lookupol' 'medication_generic=Lookupine' \
+  'medication_strength=5 mg' 'medication_rxcui=99999901' 'medication_source=rxterms' \
+  'medication_route=Oral Pill' 'medication_dose_form=Extended Release Oral Tablet' \
+  'status=on_hold' 'refills_left=0')"
+get '/setup/catalog?q=lookupol' >/dev/null
+lookupol="$(id_in_link /setup/catalog)"
+expect_status "page of the medication from a drug reference" 200 "$(get "/setup/catalog/$lookupol")"
+expect_text "the identifier of the reference is kept" "<dd>99999901</dd>"
+expect_text "the reference is named" "RxTerms"
+expect_text "the route takes the word of the catalog" "<dd>Oral</dd>"
+expect_text "the form takes the word of the catalog" "<dd>Tablet</dd>"
+medications_before="$(count_of medication)"
+expect_status "the same identifier picks the medication that has it" 200 "$(post /setup/people/new /medications/new \
+  "person_id=$alex" 'medication_choice=new' 'medication_generic=Another Name' \
+  'medication_rxcui=99999901' 'medication_source=rxterms' 'status=on_hold' 'refills_left=0')"
+expect_text "the medication that has the identifier is on the list already" "already on the list"
+expect_status "an identifier with letters is refused" 200 "$(post /setup/people/new /medications/new \
+  "person_id=$alex" 'medication_choice=new' 'medication_generic=Badcode' 'medication_rxcui=12<x>' \
+  'status=on_hold' 'refills_left=0')"
+expect_text "an identifier with letters says why" "digits only"
+expect_status "a reference that is not known is left out" 303 "$(post /setup/people/new /medications/new \
+  "person_id=$alex" 'medication_choice=new' 'medication_generic=Nosourcine' 'medication_source=<b>evil</b>' \
+  'medication_route=<script>' 'medication_dose_form=<script>' 'status=on_hold' 'refills_left=0')"
+get '/setup/catalog?q=nosourcine' >/dev/null
+expect_status "page of the medication with no reference" 200 "$(get "/setup/catalog/$(id_in_link /setup/catalog)")"
+expect_no_text "a reference that is not known is never shown" "evil"
+expect_no_text "a route that is not known is never stored" "&lt;script&gt;"
+expect_status "only the two medications were added" "$((medications_before + 1))" "$(count_of medication)"
+expect_status "a new medication with no name is refused" 200 "$(post /setup/people/new /medications/new \
+  "person_id=$alex" 'medication_choice=new' 'medication_strength=15 mg' 'status=taking_regularly' 'refills_left=1')"
+expect_text "a new medication with no name says why" "Enter a brand name or a generic name."
+expect_status "a new person with a name that is too long is refused" 200 "$(post /setup/people/new /medications/new \
+  "person_id_new=$(printf 'a%.0s' $(seq 1 121))" "medication_id=$glucophage" 'status=taking_regularly' 'refills_left=1')"
+expect_text "a name that is too long says why" "120 characters or fewer"
 expect_status "an entry for a second medication, taken as needed" 303 "$(post /setup/people/new /medications/new \
   "person_id=$alex" "medication_id=$glucophage" 'status=taking_as_needed' 'refills_left=0')"
 
@@ -462,9 +545,12 @@ expect_text "an amount with three decimal places says why" "up to 2 decimal plac
 expect_status "a days supply of 1000 is refused" 200 "$(post /setup/people/new /fills/new \
   "person_id=$alex" "medication_id=$prinivil" "pharmacy_id=$pharmacy" "filled_on=$(day today)" \
   'days_supply=1000' 'refills_left=0')"
+expect_status "the fill form with no medication chosen" 200 "$(get "/fills/new?person=$alex")"
+expect_text "the fill form holds the medication box" 'name="medication_name"'
+expect_text "the fill form can add a pharmacy" "Or add a new pharmacy"
 expect_status "a fill with no pharmacy is refused" 200 "$(post /setup/people/new /fills/new \
   "person_id=$alex" "medication_id=$prinivil" "filled_on=$(day today)" 'refills_left=0')"
-expect_text "a fill with no pharmacy says why" "Choose a pharmacy."
+expect_text "a fill with no pharmacy says why" "Choose a pharmacy, or type the name of a new one."
 fills_before="$(count_of fill)"
 expect_status "a fill is recorded" 303 "$(post /setup/people/new /fills/new \
   "person_id=$alex" "medication_id=$prinivil" "pharmacy_id=$pharmacy" "filled_on=$(day '-28 days')" \
@@ -479,6 +565,19 @@ expect_status "a fill for a medication taken as needed, long ago" 303 "$(post /s
 expect_status "a fill for a medication that is on no list" 303 "$(post /setup/people/new /fills/new \
   "person_id=$alex" "medication_id=01J8MEDS0000000000MED00018" "pharmacy_id=$pharmacy" \
   "filled_on=$(day '-25 days')" 'days_supply=30' 'refills_left=3')"
+pharmacies_before="$(count_of pharmacy)"; fills_before="$(count_of fill)"
+expect_status "a fill by a typed name, at a new pharmacy" 303 "$(post /setup/people/new /fills/new \
+  "person_id=$alex" 'medication_name=quickadd (quickaddine) 15 mg' 'pharmacy_id_new=Corner Pharmacy' \
+  "filled_on=$(day '-10 days')" 'days_supply=30' 'insurance_plan=Example Plan')"
+expect_status "the fill is added" "$((fills_before + 1))" "$(count_of fill)"
+expect_status "the pharmacy is added with it" "$((pharmacies_before + 1))" "$(count_of pharmacy)"
+expect_status "a refused fill adds no pharmacy" 200 "$(post /setup/people/new /fills/new \
+  "person_id=$alex" 'medication_name=quickadd (quickaddine) 15 mg' 'pharmacy_id_new=Never Pharmacy' \
+  "filled_on=$(day tomorrow)")"
+expect_status "no pharmacy from a refused fill" "$((pharmacies_before + 1))" "$(count_of pharmacy)"
+expect_text "a refused fill keeps the typed pharmacy" 'value="Never Pharmacy"'
+get "/fills/new?person=$alex" >/dev/null
+expect_text "a plan that a fill names is suggested" '<option value="Example Plan">'
 norvasc="$(entry_of Norvasc)"
 curl -s -m 10 "$APP/api/row/person_medication/$norvasc" >"$BODY"
 expect_text "the fill adds the medication to the list" '"status":"taking_regularly"'
@@ -520,13 +619,33 @@ expect_text "a medication on hold is in the group Paused" '<h2 id="paused">Pause
 
 ### Prior Authorizations ###
 expect_status "authorizations page" 200 "$(get /authorizations)"
+expect_status "the authorization form" 200 "$(get "/authorizations/new?entry=$entry")"
+expect_text "the form asks for the person by itself" 'id="f-person_id-list"'
+expect_text "the form asks for the medication by itself" 'id="f-medication-list"'
+expect_text "the form starts with the person of the entry" "value=\"$alex\" selected"
+expect_text "the form starts with the medication of the entry" "value=\"$prinivil\" selected"
 expect_status "an authorization that ends before it starts is refused" 200 "$(post /setup/people/new /authorizations/new \
-  "entry_id=$entry" "valid_from=$(day today)" "valid_to=$(day yesterday)")"
-expect_text "an authorization that ends before it starts says why" "the first day or later"
+  "person_id=$alex" "medication_id=$prinivil" "valid_from=$(day today)" "valid_to=$(day yesterday)")"
+expect_text "an authorization that ends before it starts says why" "the last day or earlier"
 expect_status "an authorization for no medication is refused" 200 "$(post /setup/people/new /authorizations/new \
-  'entry_id=' "valid_from=$(day today)" "valid_to=$(day tomorrow)")"
-expect_status "an authorization is added" 303 "$(post /setup/people/new /authorizations/new \
-  "entry_id=$entry" "valid_from=$(day '-300 days')" "valid_to=$(day '+10 days')")"
+  "person_id=$alex" "valid_from=$(day today)" "valid_to=$(day tomorrow)")"
+expect_status "an authorization for nobody is refused" 200 "$(post /setup/people/new /authorizations/new \
+  "medication_id=$prinivil" "valid_to=$(day tomorrow)")"
+expect_text "an authorization for nobody says why" "Choose a person, or type the name of a new one."
+expect_status "an authorization with no last day is refused" 200 "$(post /setup/people/new /authorizations/new \
+  "person_id=$alex" "medication_id=$prinivil" "valid_from=$(day today)")"
+expect_text "an authorization with no last day says why" "Enter the last day."
+expect_status "an authorization is added with no first day" 303 "$(post /setup/people/new /authorizations/new \
+  "person_id=$alex" "medication_id=$prinivil" "valid_to=$(day '+10 days')")"
+expect_status "authorizations page with no first day" 200 "$(get /authorizations)"
+expect_text "a first day that is not known says so" "Not known"
+entries_before="$(count_of person_medication)"
+expect_status "an authorization for a medication that is on no list" 303 "$(post /setup/people/new /authorizations/new \
+  'person_id_new=Jamie Example' 'medication_name=Ventolin HFA (Albuterol) 90 mcg/actuation' \
+  "valid_from=$(day '-300 days')" "valid_to=$(day '+200 days')")"
+expect_status "the medication is added to the list" "$((entries_before + 1))" "$(count_of person_medication)"
+curl -s -m 10 "$APP/api/q/v_active_medication" >"$BODY"
+if grep -o '"medication_name":"Ventolin[^}]*' "$BODY" | grep -q '"status":"not_started"'; then pass; else fail "the medication starts as not started"; fi
 expect_status "authorizations page after adding" 200 "$(get /authorizations)"
 expect_text "an authorization that ends soon says when" "Ends in 10 days"
 expect_status "refills page with an authorization ending" 200 "$(get /)"
@@ -616,27 +735,49 @@ expect_status "a paste that is too long is refused" 200 "$(post /fills/paste /fi
   "pasted=$(printf 'x%.0s' $(seq 1 60001))")"
 expect_text "a paste that is too long says why" "Paste fewer fills at a time"
 expect_status "the pasted text is read" 200 "$(post /fills/paste /fills/paste/read "person_id=$alex" "pasted=$pasted")"
-expect_text "the review counts the fills" "4 fills found. 0 ready to add."
-expect_text "a name that is new to the app asks for the medication" "Choose a medication"
-expect_text "the medication is suggested, not chosen" '<option value="">Choose a medication</option>'
-expect_text "a name the catalog lacks says so" "Not in the catalog"
+expect_text "the review counts the fills" "4 fills found. 2 ready to add. 3 names are new to the app."
+expect_text "a name with the same drug and strength is matched" "One medication has the same name and the same strength."
+expect_text "the matched medication is marked" "value=\"$prinivil\" checked"
+expect_text "a second name is matched too" "name=\"medication_4_choice\""
+expect_text "a name the catalog lacks starts as a new medication" 'name="medication_2_choice" value="new" checked'
+expect_text "the strength of a new medication is read from the name" 'name="medication_2_strength" data-lookup-field="strength" type="text" value="5 mg"'
+expect_text "every name can be linked to another medication" 'name="medication_1_name"'
+expect_no_text "a fill that cannot be added asks for no choice" 'name="medication_3_choice"'
 expect_text "a fill with closed details says so" "Details missing"
 expect_text "markup in the pasted text is shown escaped" "&lt;script&gt;alert(9)&lt;/script&gt;"
 expect_no_text "markup in the pasted text is never sent as markup" "<script>alert(9)</script>"
 expect_text "the amounts that are not stored say so" "not stored"
-expect_text "a pharmacy that is not known can be added" "Add SAMPLE DRUGS from the pasted details"
+expect_text "a pharmacy that is known says so" "Known pharmacy"
+expect_text "a pharmacy that is not known can be added" "Add SAMPLE DRUGS, with the address and phone number that were pasted"
+expect_text "a fill that was not paid starts unmarked" 'name="include_4" type="checkbox" value="yes">'
+expect_text "a fill that is ready starts marked" 'name="include_1" type="checkbox" value="yes" checked>'
 
 fills_before="$(count_of fill)"; names_before="$(count_of medication_alias)"; pharmacies_before="$(count_of pharmacy)"
+medications_before="$(count_of medication)"
 expect_status "adding without the token is refused" 403 "$(curl -s -m 10 -o /dev/null -w '%{http_code}' -X POST \
   --data-urlencode "person_id=$alex" --data-urlencode "pasted=$pasted" --data-urlencode 'include_1=yes' "$APP/fills/paste/add")"
+expect_status "a fill whose medication is not chosen is not added" 200 "$(post /fills/paste /fills/paste/add \
+  "person_id=$alex" "pasted=$pasted" 'include_1=yes' 'include_4=yes' "medication_4_choice=$lipitor" 'pharmacy_4=new')"
+expect_text "an open choice says so" "Nothing was added yet. 1 choice is still open."
+expect_text "an open choice keeps the marks" 'name="include_4" type="checkbox" value="yes" checked>'
+expect_status "a choice that names nothing is not added" 200 "$(post /fills/paste /fills/paste/add \
+  "person_id=$alex" "pasted=$pasted" 'include_1=yes' 'medication_1_choice=01J8MEDS0000000000N0NE0001')"
+expect_status "a pharmacy that names nothing is not added" 200 "$(post /fills/paste /fills/paste/add \
+  "person_id=$alex" "pasted=$pasted" 'include_4=yes' "medication_4_choice=$lipitor" \
+  'pharmacy_4=01J8MEDS0000000000N0NE0001')"
+expect_text "a pharmacy that names nothing says why" "Choose a pharmacy from the list."
+expect_status "nothing was added by the refused requests" "$fills_before" "$(count_of fill)"
+# Fill 3 cannot be added, so marking it changes nothing. Fill 2 is left out, so the
+# medication that was filled in for it is not added.
 expect_status "the fills are added" 303 "$(post /fills/paste /fills/paste/add "person_id=$alex" "pasted=$pasted" \
-  'include_1=yes' "medication_1=$prinivil" "pharmacy_1=$pharmacy" \
-  'include_2=yes' "medication_2=$prinivil" "pharmacy_2=$pharmacy" \
-  'include_3=yes' "medication_3=$prinivil" "pharmacy_3=$pharmacy" \
-  'include_4=yes' "medication_4=$lipitor" 'pharmacy_4=new')"
+  'include_1=yes' "medication_1_choice=$prinivil" \
+  'medication_2_choice=new' 'medication_2_generic=Never Added' \
+  'include_3=yes' "medication_3_choice=$prinivil" \
+  'include_4=yes' "medication_4_choice=$lipitor" 'pharmacy_4=new')"
 expect_status "only the fills that can be added are added" "$((fills_before + 2))" "$(count_of fill)"
 expect_status "the names of the portal are remembered" "$((names_before + 2))" "$(count_of medication_alias)"
 expect_status "the new pharmacy is added once" "$((pharmacies_before + 1))" "$(count_of pharmacy)"
+expect_status "a medication no fill uses is not added" "$medications_before" "$(count_of medication)"
 expect_status "history after the paste" 200 "$(get "/fills?person=$alex&added=2")"
 expect_text "history confirms the paste" "2 fills added."
 expect_text "a pasted fill has its prescription number" "Rx 700002"
@@ -648,15 +789,18 @@ expect_text "the new pharmacy has its identifier" "1245319599"
 
 expect_status "the same text is read again" 200 "$(post /fills/paste /fills/paste/read "person_id=$alex" "pasted=$pasted")"
 expect_text "a fill that was added is already recorded" "Already recorded"
-expect_text "nothing is ready the second time" "0 ready to add."
+expect_text "only the fill that was left out is ready the second time" "4 fills found. 1 ready to add. 1 name is new to the app."
 fills_before="$(count_of fill)"
 expect_status "the same text is added again" 303 "$(post /fills/paste /fills/paste/add "person_id=$alex" "pasted=$pasted" \
-  'include_1=yes' "medication_1=$prinivil" "pharmacy_1=$pharmacy" 'include_4=yes' "medication_4=$lipitor" 'pharmacy_4=new')"
+  'include_1=yes' 'include_4=yes')"
 expect_status "pasting the same page twice adds nothing" "$fills_before" "$(count_of fill)"
 
 # The names of the portal are known now, so a later page needs no choices.
 later="$(us '-1 day')LISINOPRIL 10 MG TABLETEXAMPLE PHARMACY\$ 12.00\$ 5.00PaidLess Infosort Icon
 EXAMPLE PHARMACY
+
+PHARMACY ID
+1234567893
 
 RX NUMBER
 700009
@@ -670,18 +814,67 @@ PHARMACY ID
 1245319599
 
 RX NUMBER
-700010"
+700010
+$(us '-2 days')PASTEDOL ER 7.5 MG CAPSULESAMPLE DRUGS\$ 3.00\$ 2.25PaidLess Infosort Icon
+SAMPLE DRUGS
+
+PHARMACY ID
+1245319599
+
+RX NUMBER
+700011
+
+DAYS SUPPLY
+30"
 expect_status "a later page is read" 200 "$(post /fills/paste /fills/paste/read "person_id=$alex" "pasted=$later")"
-expect_text "a fill with a known name and pharmacy is ready" "2 fills found. 1 ready to add."
+expect_text "a fill with a known name and pharmacy is ready" "3 fills found. 2 ready to add. 1 name is new to the app."
 expect_text "a claim that was not paid says so" "Not paid"
 expect_text "a claim that was not paid names its status" "Reversed"
-expect_no_text "a known name asks for no choice" '<option value="">Choose a medication</option>'
+expect_text "a name that was chosen once is known" "Known name"
+expect_no_text "a known name asks for no choice" 'name="medication_1_choice"'
+expect_text "the new name is taken apart" 'name="medication_3_generic" data-lookup-field="generic" type="text" value="Pastedol ER"'
+
+# A medication that the catalog lacks is added from the review page, with its fill.
+medications_before="$(count_of medication)"; names_before="$(count_of medication_alias)"
+expect_status "a fill with a new medication is added" 303 "$(post /fills/paste /fills/paste/add \
+  "person_id=$alex" "pasted=$later" 'include_1=yes' 'include_3=yes' 'medication_3_choice=new' \
+  'medication_3_brand=Pastedol ER' 'medication_3_generic=Pastedoline' 'medication_3_strength=7.5 mg')"
+expect_status "the new medication is in the catalog" "$((medications_before + 1))" "$(count_of medication)"
+expect_status "the name of the portal belongs to it" "$((names_before + 1))" "$(count_of medication_alias)"
+curl -s -m 10 "$APP/api/q/v_active_medication" >"$BODY"
+expect_text "the new medication is on the list" '"medication_name":"Pastedol ER (Pastedoline) 7.5 mg"'
+
+# A long page with many names is read inside the limits of one request.
+many="SERVICE DATEDRUG NAMEPHARMACYPLAN PAIDYOU PAIDCLAIM STATUS"
+number=0
+for drug in LISINOPRIL METFORMIN ATORVASTATIN ACETAMINOPHEN AMOXICILLIN LEVOTHYROXINE ALBUTEROL \
+            FLUTICASONE OMEPRAZOLE SERTRALINE LOSARTAN GABAPENTIN AMLODIPINE SIMVASTATIN MONTELUKAST \
+            ESCITALOPRAM ROSUVASTATIN BUPROPION FUROSEMIDE PANTOPRAZOLE TRAZODONE FLUOXETINE \
+            TAMSULOSIN MELOXICAM PREDNISONE CITALOPRAM CARVEDILOL DULOXETINE CLONAZEPAM ZZQXOL; do
+  for strength in '10 MG TABLET' '20 MG CAPSULE'; do
+    number=$((number + 1))
+    many="$many
+$(us "-$number days")$drug $strength""EXAMPLE PHARMACY\$ 1.00\$ 1.00PaidLess Infosort Icon
+EXAMPLE PHARMACY
+
+PHARMACY ID
+1234567893
+
+RX NUMBER
+80$number
+
+DAYS SUPPLY
+30"
+  done
+done
+expect_status "a page with 60 names is read" 200 "$(post /fills/paste /fills/paste/read "person_id=$alex" "pasted=$many")"
+expect_text "every fill of the long page is found" "60 fills found."
 
 ### Setup ###
 expect_status "setup page" 200 "$(get /setup)"
-expect_text "setup page counts the people" "3 in the app"
-expect_text "setup page counts the medications" "41 in the app"
-expect_text "setup page shows the household name" "The Example Household"
+expect_text "setup page counts the people" "The members of the household. 5 in the app"
+expect_text "setup page counts the medications" "with its other names. $((seed_medications + 4)) in the app"
+expect_no_text "setup page asks for no household name" "Household name"
 
 ### Report ###
 echo "$passed passed, $failed failed"

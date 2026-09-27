@@ -42,7 +42,8 @@ fills by hand or from the pasted text of a portal, and tracks prior authorizatio
 | `schema.sql` | Tables and views, rebuilt from the event log on every start |
 | `views/` | One template for each page. A name that starts with `_` is a part that pages share. |
 | `static/meds.css` | Styles, using the shell's color tokens |
-| `sample/seed.jsonl` | An invented household name and a starter catalog of common medications, which an owner can load into an empty app |
+| `sample/seed.jsonl` | A starter catalog of common medications, which an owner can load into an empty app. `tools/build_seed.py` writes it. |
+| `static/medication_lookup.js` | The lookup of a new medication in public drug references. Every form works without it. |
 | `SKILL.md` | Context an AI assistant loads before extending this app |
 
 ### Run it

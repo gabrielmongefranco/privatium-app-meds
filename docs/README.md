@@ -22,6 +22,8 @@ detail.
   column, and which fields hold personal or health information.
 - [How to run the tests](how-to/run-the-tests.md): the lint, the unit tests and the smoke
   test.
+- [How to build the starter catalog](how-to/build-the-starter-catalog.md): the script
+  that writes the sample data, its sources and their licenses.
 - [App design](design/README.md): what each screen does, the refill status rules, and
   the owner's decisions.
 - [Compliance](compliance.md): the security and accessibility controls in place, the

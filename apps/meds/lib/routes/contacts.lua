@@ -23,6 +23,7 @@
 local pv       = require 'privatium'
 local page     = require 'page'
 local store    = require 'store'
+local suggestions = require 'suggestions'
 local text     = require 'text'
 local validate = require 'validate'
 
@@ -146,6 +147,7 @@ local function routes(kind)
       typed    = typed,
       errors   = errors,
       problems = page.problems(errors, kind.fields),
+      clinics  = suggestions.clinics(),
     })
   end
 

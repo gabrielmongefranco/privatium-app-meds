@@ -85,3 +85,17 @@ details > summary { cursor: pointer; min-height: 44px; display: flex; align-item
 /* The box for pasted text is wide and tall enough to show a few fills. */
 main form textarea.meds-paste { width: 100%; min-height: 14rem; font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: .9em; }
 .meds-claim { margin: 0 0 1rem; }
+
+/* One choice among several: a radio button or a check box with its words, as one
+   target of 44 pixels. */
+main form label.meds-option { display: flex; align-items: flex-start; gap: .5rem; min-height: 44px; margin: .25rem 0; padding: .5rem 0; font-weight: 400; }
+main form label.meds-option input { flex: none; margin-top: .2rem; }
+.meds-options { margin: .75rem 0; }
+/* The medication box: a drop-down, a name to type, and the fields of a new medication. */
+.meds-picker details { margin: .5rem 0 0; }
+.meds-picker input[type="text"], .meds-choice input[type="text"] { display: block; }
+/* The lookup of a new medication: its results are a list of buttons, one to a line. */
+.meds-lookup { margin: 0 0 1rem; padding: 0 0 .5rem; border-bottom: 1px solid var(--pv-line); }
+.meds-lookup input[type="search"] { display: block; margin: 0 0 .5rem; }
+.meds-lookup-results { list-style: none; padding: 0; margin: .5rem 0; display: grid; gap: .4rem; }
+.meds-lookup-results .pv-btn { width: 100%; justify-content: flex-start; text-align: left; white-space: normal; }

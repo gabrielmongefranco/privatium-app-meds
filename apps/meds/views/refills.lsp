@@ -25,7 +25,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 
 <?= render('_nav', { section = section }) ?>
 <h1>Refills</h1>
-<? if me then ?><p class="pv-meta"><?= greeting ?>, <?= me.display_name ?>.</p><? end ?>
+<p class="pv-meta"><?= greeting ?>.</p>
 <? if notice then ?>
   <p class="pv-notice pv-notice-info" role="status"><?= icon('check-circle') ?> <?= notice ?></p>
 <? end ?>

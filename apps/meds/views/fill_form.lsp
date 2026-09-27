@@ -29,26 +29,33 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 
 <form method="post" action="<?= action ?>" novalidate>
   <?= csrf() ?>
-  <div class="pv-card"><dl>
-    <dt>Medication</dt><dd><?= medication and medication.short_name or 'Not in the catalog' ?></dd>
-  </dl></div>
-  <input type="hidden" name="medication_id" value="<?= medication and medication.medication_id ?>">
-  <? if errors.medication_id then ?>
-    <p id="f-medication_id" class="pv-error" role="alert"><?= icon('exclamation-triangle') ?> <?= errors.medication_id ?></p>
+  <? if medication then ?>
+    <div class="pv-card"><dl>
+      <dt>Medication</dt><dd><?= medication.short_name ?></dd>
+    </dl></div>
+    <? if errors.medication_id then ?>
+      <p id="f-medication_id" class="pv-error" role="alert"><?= icon('exclamation-triangle') ?> <?= errors.medication_id ?></p>
+    <? end ?>
+    <? if is_new and typed.person_id and not on_list then ?>
+      <p class="pv-notice pv-notice-info"><?= icon('info-circle') ?>
+        <span>This medication is not on the list of this person. Saving the fill adds it, with the status Taking regularly.</span></p>
+    <? end ?>
+  <? else ?>
+    <?= render('_medication_names', { names = names }) ?>
+    <?= render('_medication_picker', { prefix = 'medication', typed = typed, options = in_use, pick = pick,
+          err = errors.medication_id }) ?>
+    <p class="pv-help">If the medication is not on the list of the person yet, saving the fill adds it, with the status Taking regularly.</p>
   <? end ?>
-  <? if is_new and typed.person_id and not on_list then ?>
-    <p class="pv-notice pv-notice-info"><?= icon('info-circle') ?>
-      <span>This medication is not on the list of this person. Saving the fill adds it, with the status Taking regularly.</span></p>
-  <? end ?>
-
-  <?= render('_select', { name = 'person_id', label = 'Who is it for', value = typed.person_id,
-        options = people, required = true, err = errors.person_id, empty_label = 'Choose a person' }) ?>
+  <?= render('_select_or_new', { name = 'person_id', legend = 'Who is it for', noun = 'person',
+        value = typed.person_id, typed_new = typed.person_id_new, options = people, required = true,
+        err = errors.person_id, empty_label = 'Choose a person' }) ?>
   <?= render('_field', { name = 'filled_on', label = 'Date filled', value = typed.filled_on,
         err = errors.filled_on, required = true, input_type = 'date', max = today,
         help = 'The date on the pharmacy label.' }) ?>
-  <?= render('_select', { name = 'pharmacy_id', label = 'Pharmacy', value = typed.pharmacy_id,
-        options = pharmacies, required = true, err = errors.pharmacy_id,
-        empty_label = 'Choose a pharmacy' }) ?>
+  <?= render('_select_or_new', { name = 'pharmacy_id', legend = 'Pharmacy', noun = 'pharmacy',
+        value = typed.pharmacy_id, typed_new = typed.pharmacy_id_new, options = pharmacies,
+        required = true, err = errors.pharmacy_id, empty_label = 'Choose a pharmacy',
+        help = 'Type the name. Saving adds the pharmacy, and you can add its phone number and address under Contacts.' }) ?>
   <?= render('_field', { name = 'days_supply', label = 'Days supply', value = typed.days_supply,
         err = errors.days_supply, inputmode = 'numeric', maxlength = 3,
         help = 'How many days this fill should last. The pharmacy label shows it.' }) ?>
@@ -59,15 +66,15 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
         help = 'Such as 12.50. A currency sign is fine.' }) ?>
   <? if is_new then ?>
     <?= render('_field', { name = 'refills_left', label = 'Refills left after this fill',
-          value = typed.refills_left, err = errors.refills_left, required = true,
+          value = typed.refills_left, err = errors.refills_left,
           inputmode = 'numeric', maxlength = 2,
-          help = 'The number on the label. Type 0 when none is left.' }) ?>
+          help = 'The number on the label. Type 0 when none is left. Leave it empty, and the app lowers the count by one.' }) ?>
   <? end ?>
   <?= render('_field', { name = 'rx_number', label = 'Prescription number', value = typed.rx_number,
         err = errors.rx_number, maxlength = 40,
         help = 'The Rx number on the label. A new prescription has a new number.' }) ?>
   <?= render('_field', { name = 'insurance_plan', label = 'Insurance plan', value = typed.insurance_plan,
-        err = errors.insurance_plan, maxlength = 80 }) ?>
+        err = errors.insurance_plan, maxlength = 80, suggestions = plans }) ?>
 
   <details<? if errors.insurance_claim_number or errors.notes then ?> open<? end ?>>
     <summary>More details</summary>

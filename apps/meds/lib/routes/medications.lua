@@ -25,10 +25,12 @@ local pv                = require 'privatium'
 local choices           = require 'choices'
 local clock             = require 'clock'
 local entries           = require 'entries'
-local medication_search = require 'medication_search'
+local medication_pick   = require 'medication_pick'
 local page              = require 'page'
 local people_filter     = require 'people_filter'
+local quick_add         = require 'quick_add'
 local store             = require 'store'
+local suggestions       = require 'suggestions'
 local text              = require 'text'
 local validate          = require 'validate'
 
@@ -50,21 +52,14 @@ local function values_of(rows)
   return values
 end
 
-local function as_options(rows)
-  local options = {}
-  for _, row in ipairs(rows) do options[#options + 1] = { value = row.id, label = row.label } end
-  return options
-end
-
 -- Everything the entry form offers to choose from.
 local function offered()
   return {
-    people = as_options(pv.query(
-      'SELECT id, display_name AS label FROM person ORDER BY display_name COLLATE NOCASE, id')),
-    pharmacies = as_options(pv.query(
-      'SELECT id, name AS label FROM pharmacy ORDER BY name COLLATE NOCASE, id')),
-    prescribers = as_options(pv.query(
-      'SELECT id, name AS label FROM prescriber ORDER BY name COLLATE NOCASE, id')),
+    people      = quick_add.options(quick_add.PERSON),
+    pharmacies  = quick_add.options(quick_add.PHARMACY),
+    prescribers = quick_add.options(quick_add.PRESCRIBER),
+    purposes     = suggestions.purposes(),
+    instructions = suggestions.instructions(),
     statuses = choices.STATUSES,
     medication_type = choices.merge(choices.MEDICATION_TYPES, values_of(pv.query(
       'SELECT DISTINCT medication_type AS value FROM person_medication WHERE medication_type IS NOT NULL'))),
@@ -121,27 +116,22 @@ local function read_choice(form, name, label, list)
   return value
 end
 
--- An id from a form must name a record of its table. An empty optional id is nil.
-local function read_id(form, name, tbl, label, required)
-  local id = text.clean(form[name])
-  if not id then
-    if required then return nil, 'Choose ' .. label .. '.' end
-    return nil
-  end
-  if not pv.get_row(tbl, id) then return nil, 'Choose ' .. label .. ' from the list.' end
-  return id
-end
-
+-- Reads an entry with the records it may add beside it: a person, a medication, a
+-- pharmacy and a prescriber.
+-- @return table, table, table  The row, the problems, and what to add in the batch.
 local function read(form, existing, lists)
-  local row, errors = {}, {}
+  local row, errors, adding = {}, {}, {}
   if existing then
     -- The person and the medication of an entry never change. To move an entry, remove
     -- it and add another.
     row.person_id, row.medication_id = existing.person_id, existing.medication_id
+    adding.person_id, adding.pick = existing.person_id, { id = existing.medication_id }
   else
-    row.person_id, errors.person_id = read_id(form, 'person_id', 'person', 'a person', true)
-    row.medication_id, errors.medication_id =
-      read_id(form, 'medication_id', 'medication', 'a medication', true)
+    adding.person_id, adding.person, errors.person_id =
+      quick_add.read(form, 'person_id', quick_add.PERSON, true)
+    adding.pick = medication_pick.read(form, 'medication', true)
+    errors.medication_id = adding.pick.problem
+    row.person_id, row.medication_id = adding.person_id, adding.pick.id
   end
 
   row.status = text.clean(form.status)
@@ -152,9 +142,11 @@ local function read(form, existing, lists)
     read_choice(form, 'medication_type', 'the type', lists.medication_type)
   row.when_to_take, errors.when_to_take =
     read_choice(form, 'when_to_take', 'when to take it', lists.when_to_take)
-  row.pharmacy_id, errors.pharmacy_id = read_id(form, 'pharmacy_id', 'pharmacy', 'a pharmacy')
-  row.prescriber_id, errors.prescriber_id =
-    read_id(form, 'prescriber_id', 'prescriber', 'a prescriber')
+  adding.pharmacy_id, adding.pharmacy, errors.pharmacy_id =
+    quick_add.read(form, 'pharmacy_id', quick_add.PHARMACY)
+  adding.prescriber_id, adding.prescriber, errors.prescriber_id =
+    quick_add.read(form, 'prescriber_id', quick_add.PRESCRIBER)
+  row.pharmacy_id, row.prescriber_id = adding.pharmacy_id, adding.prescriber_id
   row.prescribed_for, errors.prescribed_for =
     validate.text(form.prescribed_for, 'what it is for', PURPOSE_MAX)
   row.instructions, errors.instructions =
@@ -166,10 +158,33 @@ local function read(form, existing, lists)
      and entries.of(row.person_id, row.medication_id) then
     errors.medication_id = 'Choose another medication. This one is already on the list of this person.'
   end
-  return row, errors
+  return row, errors, adding
 end
 
-local function form_page(heading, action, typed, errors, medication, fixed_person)
+-- Writes an entry and the new records beside it in one batch.
+-- @return string|nil, string|nil  The id of the entry, or nil and a message.
+local function save(id, row, adding)
+  local entry_id
+  local saved, refusal = store.together('person_medication', function(tx)
+    row.person_id     = quick_add.write(tx, quick_add.PERSON, adding.person_id, adding.person)
+    row.medication_id = medication_pick.write(tx, adding.pick)
+    row.pharmacy_id   = quick_add.write(tx, quick_add.PHARMACY, adding.pharmacy_id, adding.pharmacy)
+    row.prescriber_id =
+      quick_add.write(tx, quick_add.PRESCRIBER, adding.prescriber_id, adding.prescriber)
+    if id then
+      tx.append('person_medication', id, row)
+      entry_id = id
+    else
+      entry_id = tx.append('person_medication', row)
+    end
+  end)
+  if not saved then return nil, refusal end
+  return entry_id
+end
+
+-- The form of an entry. `medication` is set when the form is about a stored entry;
+-- without it, the form holds the medication box, and `pick` is what the box answered.
+local function form_page(heading, action, typed, errors, medication, fixed_person, pick)
   return pv.render('entry_form', {
     section      = 'medications',
     heading      = heading,
@@ -180,6 +195,9 @@ local function form_page(heading, action, typed, errors, medication, fixed_perso
     offered      = offered(),
     medication   = medication,
     fixed_person = fixed_person,
+    pick         = pick,
+    in_use       = not medication and medication_pick.in_use(text.clean(typed.medication_id)) or {},
+    names        = not medication and suggestions.medication_names() or {},
   })
 end
 
@@ -206,38 +224,22 @@ pv.get(LIST, function(req)
   })
 end)
 
--- Adding an entry takes two pages: find the medication, then fill in the rest.
+-- Registered before the routes that take an id, so 'new' is never read as one.
 pv.get(LIST .. '/new', function(req)
-  local medication = req.query.medication
-    and pv.query1('SELECT medication_id, short_name, full_name FROM v_medication WHERE medication_id = ?',
-                  { req.query.medication })
-  if medication then
-    return form_page('Add a medication to a list', url(LIST .. '/new'),
-      { person_id = req.query.person, medication_id = medication.medication_id,
-        status = 'taking_regularly', refills_left = 0 }, {}, medication)
-  end
-  local typed = medication_search.typed(req.query.q)
-  return pv.render('entry_choose', {
-    section = 'medications',
-    person  = text.clean(req.query.person) or '',
-    filter  = typed,
-    found   = medication_search.find(typed),
-  })
+  return form_page('Add a medication to a list', url(LIST .. '/new'),
+    { person_id = text.clean(req.query.person), medication_id = text.clean(req.query.medication),
+      status = 'taking_regularly', refills_left = 0 }, {})
 end)
 
 pv.post(LIST .. '/new', function(req)
-  local lists = offered()
-  local row, errors = read(req.form, nil, lists)
+  local row, errors, adding = read(req.form, nil, offered())
   if not next(errors) then
-    local saved, refusal = store.save('person_medication', nil, row)
+    local saved, refusal = save(nil, row, adding)
     if saved then return pv.redirect(url(LIST .. '/' .. saved .. '?notice=saved')) end
     errors.status = refusal
   end
-  local medication = pv.query1(
-    'SELECT medication_id, short_name, full_name FROM v_medication WHERE medication_id = ?',
-    { text.clean(req.form.medication_id) or '' })
-  if not medication then return pv.redirect(url(LIST .. '/new')) end
-  return form_page('Add a medication to a list', url(LIST .. '/new'), req.form, errors, medication)
+  return form_page('Add a medication to a list', url(LIST .. '/new'), req.form, errors, nil, nil,
+    adding.pick)
 end)
 
 pv.get(LIST .. '/:id', function(req)
@@ -272,9 +274,9 @@ pv.post(LIST .. '/:id/edit', function(req)
   local stored = pv.get_row('person_medication', req.params.id)
   local entry = stored and entries.one(stored.id)
   if not entry then return pv.redirect(url(LIST .. '?notice=missing')) end
-  local row, errors = read(req.form, stored, offered())
+  local row, errors, adding = read(req.form, stored, offered())
   if not next(errors) then
-    local saved, refusal = store.save('person_medication', stored.id, row)
+    local saved, refusal = save(stored.id, row, adding)
     if saved then return pv.redirect(url(LIST .. '/' .. saved .. '?notice=saved')) end
     errors.status = refusal
   end

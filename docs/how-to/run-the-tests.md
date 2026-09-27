@@ -47,7 +47,7 @@ the root of the repository.
    lua5.4 tests/lua/run.lua
    ```
 
-   The last line gives the counts, such as "202 passed, 0 failed". The command
+   The last line gives the counts, such as "255 passed, 0 failed". The command
    exits with code 1 when a test fails, and with code 2 when Lua is older than 5.4.
 
 3. Run the smoke test:
@@ -64,7 +64,7 @@ the root of the repository.
 | Check | Covers |
 |---|---|
 | Lint | The rules of Privatium for an app: bound SQL parameters, the `csrf()` token in every form, labels on every field, heading order, and more |
-| Unit tests | The Lua modules with no framework calls: cleaning text, checking dates, numbers, amounts, phone numbers, email and website addresses, building a short name, merging choices, matching names, refill words, and reading a pasted portal page |
+| Unit tests | The Lua modules with no framework calls: cleaning text, checking dates, numbers, amounts, phone numbers, email and website addresses, building a short name, merging choices, matching names, refill words, reading a pasted portal page, taking apart a name as a portal wrote it, and the words of a drug reference |
 | Smoke test | The screens over HTTP, on a real node: adding, changing and removing records, empty and invalid input, the longest values, and requests that must be refused |
 
 The smoke test includes these checks of requests that must be refused:
@@ -76,6 +76,8 @@ The smoke test includes these checks of requests that must be refused:
 - A record that other records use is not removed, even by a hand-built request.
 - Markup in pasted portal text is shown as text.
 - A pasted fill that the review refused is not added, even when a hand-built request asks for it.
+- A medication, a person or a pharmacy id that names nothing is refused.
+- A form that is refused adds none of the new records it named.
 
 ### How the smoke test keeps your data safe
 
@@ -86,7 +88,8 @@ temporary directory.
 
 ### What no test covers
 
-No test drives a browser. Keyboard use, a screen reader, zoom and small screens need a
+No test drives a browser, so no test runs the lookup of a new medication as a person
+would. The smoke test checks what the server does with the fields the lookup fills in. Keyboard use, a screen reader, zoom and small screens need a
 person. [The compliance page](../compliance.md) lists those checks.
 
 The smoke test works out its dates from today with `date -d`, which is the GNU form of

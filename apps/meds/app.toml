@@ -23,7 +23,7 @@
 [app]
 slug        = "meds"
 title       = "Prescription Tracker"
-version     = "0.2.0"
+version     = "0.3.0"
 api         = 1
 tier        = "lua"
 description = "A personal prescription tracker for families with chronic conditions."
@@ -34,3 +34,13 @@ license     = "GPL-3.0-or-later"
 [nav]
 order     = 10
 advertise = true
+
+[permissions]
+# The lookup of a new medication runs in the browser and asks three public drug
+# references, in this order: RxTerms, then the openFDA NDC Directory, then RxNorm.
+# It sends the name that was typed into the lookup box, and nothing else.
+remote = [
+  "https://clinicaltables.nlm.nih.gov",
+  "https://api.fda.gov",
+  "https://rxnav.nlm.nih.gov",
+]

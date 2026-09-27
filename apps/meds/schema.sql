@@ -25,12 +25,11 @@
 -- Money and quantities are exact decimal text. No table declares UNIQUE or a default
 -- value, because Privatium refuses the first and does not apply the second on write.
 
---- profile: the household using this node, and its reminder settings ---
--- Grain: one row per node, at most one row ever.
+--- profile: the reminder settings of this node ---
+-- Grain: one row per node, at most one row ever. No row means every default is in force.
 -- A day count left empty uses the default written in v_reminder_default.
 CREATE TABLE profile (
     id                             VARCHAR PRIMARY KEY,  -- ULID, minted by the framework
-    display_name                   VARCHAR NOT NULL,     -- A name or nickname; it need not be a real name
     due_within_days                BIGINT,               -- A refill is due when its next fill date is this many days away or fewer
     due_soon_within_days           BIGINT,               -- A refill is due soon when its next fill date is this many days away or fewer
     specialty_due_within_days      BIGINT,               -- The same two counts for a specialty medication, which takes longer to arrive
@@ -54,6 +53,8 @@ CREATE TABLE person (
 --- medication: the catalog of products ---
 -- Grain: one row per product: a drug at one strength and form, or one supply item.
 -- The same product under another spelling is a medication_alias row, never a second row here.
+-- A row is typed by the owner or copied from a drug reference. A copied row keeps the
+-- reference's identifier, so copying the same product again finds this row.
 CREATE TABLE medication (
     id            VARCHAR PRIMARY KEY,
     short_name    VARCHAR NOT NULL,  -- The name the app shows everywhere: 'Brand (Generic) strength' unless the owner types another
@@ -65,6 +66,9 @@ CREATE TABLE medication (
     package_size  VARCHAR,
     package_type  VARCHAR,
     is_specialty  BOOLEAN NOT NULL,  -- A specialty medication takes longer to arrive, so its refill is due earlier
+    rxcui         VARCHAR,           -- RxNorm concept identifier of the product, digits kept as text; NULL when not known
+    source        VARCHAR,           -- The drug reference the row was copied from, such as 'rxterms'; NULL when the owner typed it
+    retrieved_on  DATE,              -- Local calendar date the row was copied or refreshed; NULL when the owner typed it
     CHECK (generic_name IS NOT NULL OR brand_name IS NOT NULL)
 );
 
@@ -148,15 +152,16 @@ CREATE TABLE prior_authorization (
     id            VARCHAR PRIMARY KEY,
     person_id     VARCHAR NOT NULL,   -- person.id; an insurer approves a medication for one member
     medication_id VARCHAR NOT NULL,   -- medication.id
-    valid_from    DATE NOT NULL,
+    valid_from    DATE,               -- The first day the approval covers; NULL when the household does not know it
     valid_to      DATE NOT NULL,      -- The last day the approval covers
-    CHECK (valid_to >= valid_from)
+    CHECK (valid_from IS NULL OR valid_to >= valid_from)
 );
 
 CREATE INDEX ix_fill_person_medication ON fill (person_id, medication_id, filled_on);
 CREATE INDEX ix_person_medication_person ON person_medication (person_id);
 CREATE INDEX ix_prior_authorization_medication ON prior_authorization (medication_id);
 CREATE INDEX ix_medication_alias_medication ON medication_alias (medication_id);
+CREATE INDEX ix_medication_rxcui ON medication (rxcui);
 
 --- v_reminder_default: the day counts the app uses until the household sets its own ---
 -- Grain: exactly one row. Every number is a count of days.
@@ -205,7 +210,10 @@ SELECT m.id AS medication_id,
        m.form,
        m.package_size,
        m.package_type,
-       m.is_specialty
+       m.is_specialty,
+       m.rxcui,
+       m.source,
+       m.retrieved_on
   FROM medication m;
 
 --- v_medication_name: every name a medication answers to ---
@@ -358,4 +366,5 @@ UNION ALL SELECT 'pharmacy', count(*) FROM pharmacy
 UNION ALL SELECT 'prescriber', count(*) FROM prescriber
 UNION ALL SELECT 'person_medication', count(*) FROM person_medication
 UNION ALL SELECT 'fill', count(*) FROM fill
-UNION ALL SELECT 'prior_authorization', count(*) FROM prior_authorization;
+UNION ALL SELECT 'prior_authorization', count(*) FROM prior_authorization
+UNION ALL SELECT 'profile', count(*) FROM profile;

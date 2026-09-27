@@ -23,39 +23,43 @@
 -- with this program. If not, see <https://www.gnu.org/licenses/>.
 
 local pv              = require 'privatium'
-local choices         = require 'choices'
-local medication_name = require 'medication_name'
+local catalog_entry   = require 'catalog_entry'
 local medication_search = require 'medication_search'
 local merge           = require 'merge'
 local page            = require 'page'
 local store           = require 'store'
+local suggestions     = require 'suggestions'
 local text            = require 'text'
 local validate        = require 'validate'
 
 --- Configuration ---
-local LIST         = '/setup/catalog'
-local NAME_MAX     = 200   -- Generic names of products with several drugs run long
-local STRENGTH_MAX = 60
-local CHOICE_MAX   = 60
-local PACKAGE_MAX  = 40
-local FIELDS       = { 'brand_name', 'generic_name', 'strength', 'route', 'dose_form',
-                       'package_size', 'package_type', 'short_name' }
+local LIST     = '/setup/catalog'
+local PAGE_SIZE = 100   -- Medications shown before a search narrows the catalog
+local NAME_MAX = catalog_entry.NAME_MAX
+local FIELDS   = { 'brand_name', 'generic_name', 'strength', 'route', 'dose_form',
+                   'package_size', 'package_type', 'short_name', 'rxcui' }
+local options  = catalog_entry.options
+local read     = catalog_entry.read
 
 --- Reads ---
 
--- Grain: one row per medication.
-local function everything()
+-- The medications a household uses come first, because a catalog can hold thousands.
+-- Grain: one row per medication, one page of them.
+local function first_page()
   return pv.query([[
-    SELECT medication_id, short_name, full_name, is_specialty
-      FROM v_medication
-     ORDER BY short_name COLLATE NOCASE, medication_id]])
+    SELECT m.medication_id, m.short_name, m.full_name, m.is_specialty
+      FROM v_medication m
+     ORDER BY (EXISTS (SELECT 1 FROM person_medication pm WHERE pm.medication_id = m.medication_id)
+               OR EXISTS (SELECT 1 FROM fill f WHERE f.medication_id = m.medication_id)) DESC,
+              m.short_name COLLATE NOCASE, m.medication_id
+     LIMIT ?]], { PAGE_SIZE })
 end
 
 -- Grain: one row, the medication with its built full name, or nil.
 local function one(id)
   return pv.query1([[
     SELECT medication_id, short_name, full_name, generic_name, brand_name, strength,
-           route, form, package_size, package_type, is_specialty
+           route, form, package_size, package_type, is_specialty, rxcui, source, retrieved_on
       FROM v_medication
      WHERE medication_id = ?]], { id })
 end
@@ -67,33 +71,6 @@ local function other_names(id)
       FROM medication_alias
      WHERE medication_id = ?
      ORDER BY alias COLLATE NOCASE, id]], { id })
-end
-
-local function values_of(rows)
-  local values = {}
-  for _, row in ipairs(rows) do values[#values + 1] = row.value end
-  return values
-end
-
--- The choices of each drop-down: the starter list, then every value already in use.
-local function options()
-  return {
-    route = choices.merge(choices.ROUTES, values_of(pv.query(
-      'SELECT DISTINCT route AS value FROM medication WHERE route IS NOT NULL'))),
-    dose_form = choices.merge(choices.FORMS, values_of(pv.query(
-      'SELECT DISTINCT form AS value FROM medication WHERE form IS NOT NULL'))),
-    package_type = choices.merge(choices.PACKAGE_TYPES, values_of(pv.query(
-      'SELECT DISTINCT package_type AS value FROM medication WHERE package_type IS NOT NULL'))),
-  }
-end
-
--- The schema cannot declare a short name unique, so the check happens here.
-local function short_name_taken(name, except_id)
-  local key = text.key(name)
-  for _, row in ipairs(pv.query('SELECT id, short_name FROM medication')) do
-    if row.id ~= except_id and text.key(row.short_name) == key then return true end
-  end
-  return false
 end
 
 -- How many records still point to a medication, as phrases for the removal page.
@@ -114,60 +91,7 @@ local function uses(id)
   return list
 end
 
---- Validation ---
-
--- A choice comes from the drop-down or from the box under it. The box wins, because
--- typing is the more deliberate act. A typed value that matches a choice takes the
--- spelling of the choice, so 'oral' and 'Oral' stay one choice.
-local function read_choice(form, name, label, offered)
-  local value, problem = validate.text(form[name .. '_new'], label, CHOICE_MAX)
-  if problem then return nil, problem end
-  if not value then
-    value, problem = validate.text(form[name], label, CHOICE_MAX)
-    if not value then return nil, problem end
-  end
-  local key = text.key(value)
-  for _, choice in ipairs(offered) do
-    if text.key(choice) == key then return choice end
-  end
-  return value
-end
-
-local function read(form, existing, offered)
-  local row, errors = {}, {}
-  row.brand_name,   errors.brand_name   = validate.text(form.brand_name, 'the brand name', NAME_MAX)
-  row.generic_name, errors.generic_name = validate.text(form.generic_name, 'the generic name', NAME_MAX)
-  row.strength,     errors.strength     = validate.text(form.strength, 'the strength', STRENGTH_MAX)
-  row.package_size, errors.package_size = validate.text(form.package_size, 'the package size', PACKAGE_MAX)
-  row.route, errors.route = read_choice(form, 'route', 'the route', offered.route)
-  row.form,  errors.dose_form = read_choice(form, 'dose_form', 'the form', offered.dose_form)
-  row.package_type, errors.package_type =
-    read_choice(form, 'package_type', 'the package type', offered.package_type)
-  row.is_specialty = form.is_specialty == 'yes'
-
-  if not row.brand_name and not row.generic_name
-     and not errors.brand_name and not errors.generic_name then
-    errors.brand_name = 'Enter a brand name or a generic name.'
-  end
-
-  -- A short name that was built by the app follows the parts it was built from. One
-  -- that a person typed stays as typed.
-  local typed, problem = validate.text(form.short_name, 'the short name', NAME_MAX)
-  local built_before = existing
-    and medication_name.short(existing.brand_name, existing.generic_name, existing.strength)
-  if problem then
-    errors.short_name = problem
-  elseif typed and typed ~= built_before then
-    row.short_name = typed
-  else
-    row.short_name = medication_name.short(row.brand_name, row.generic_name, row.strength)
-  end
-
-  if row.short_name and short_name_taken(row.short_name, existing and existing.medication_id) then
-    errors.short_name = 'Choose another short name. A medication with this one is already in the catalog.'
-  end
-  return row, errors
-end
+--- Pages ---
 
 -- What the form shows for a stored medication. The form field for the dose form is
 -- called dose_form, because a field called form would shadow the form itself.
@@ -188,6 +112,12 @@ local function form_page(heading, action, typed, errors, offered)
     errors   = errors,
     problems = page.problems(errors, FIELDS),
     offered  = offered,
+    known    = {
+      brand_names   = suggestions.brand_names(),
+      generic_names = suggestions.generic_names(),
+      strengths     = suggestions.strengths(),
+      package_sizes = suggestions.package_sizes(),
+    },
   })
 end
 
@@ -196,15 +126,19 @@ end
 pv.get(LIST, function(req)
   local typed = medication_search.typed(req.query.q)
   local found = medication_search.find(typed)
-  local medications = typed == '' and everything() or found.matches
+  local medications = typed == '' and first_page() or found.matches
+  local total = pv.query1('SELECT count(*) AS medications FROM medication').medications
   return pv.render('catalog', {
     section     = 'setup',
     notice      = page.notice(req.query.notice),
     filter      = typed,
     medications = medications,
+    names       = suggestions.medication_names(),
     close       = found.close,
     exact       = found.exact,
     found       = page.counted(#medications, 'medication', 'medications'),
+    total       = page.counted(total, 'medication', 'medications'),
+    shortened   = typed == '' and total > #medications,
   })
 end)
 
@@ -231,6 +165,7 @@ pv.get(LIST .. '/:id', function(req)
     section     = 'setup',
     notice      = page.notice(req.query.notice),
     medication  = medication,
+    source_name = catalog_entry.SOURCES[medication.source],
     other_names = other_names(medication.medication_id),
   })
 end)
@@ -313,6 +248,7 @@ pv.post(LIST .. '/:id/names', function(req)
   return pv.render('medication', {
     section     = 'setup',
     medication  = medication,
+    source_name = catalog_entry.SOURCES[medication.source],
     other_names = other_names(id),
     typed_alias = req.form.alias,
     alias_err   = problem,

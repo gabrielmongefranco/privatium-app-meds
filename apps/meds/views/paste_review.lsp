@@ -27,14 +27,83 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 <h1>Check the fills</h1>
 <p>These fills were read from the text you pasted, for <strong><?= person.display_name ?></strong>.
    Nothing is added yet.</p>
-<p class="pv-notice pv-notice-info" role="status"><?= icon('info-circle') ?> <?= summary ?></p>
+<p class="pv-notice pv-notice-info" role="status"><?= icon('info-circle') ?> <span><?= summary ?></span></p>
+<? if err then ?>
+  <p id="review-err" class="pv-notice pv-notice-error" role="alert" tabindex="-1"><?= icon('exclamation-triangle') ?> <span><?= err ?></span></p>
+<? end ?>
 
 <form method="post" action="<?= url('/fills/paste/add') ?>" novalidate>
   <?= csrf() ?>
   <input type="hidden" name="person_id" value="<?= person.id ?>">
   <input type="hidden" name="pasted" value="<?= pasted ?>">
+  <?= render('_medication_names', { names = names }) ?>
 
-  <? for _, row in ipairs(rows) do ?>
+  <h2>Medications</h2>
+  <? if #found.medications == 0 then ?>
+    <p class="pv-empty">No fill in this text can be added, so there is no medication to choose.</p>
+  <? end ?>
+  <p>The portal writes each name its own way. Tell the app once which medication a name
+     means, and the app remembers it for the next paste.</p>
+  <? for _, subject in ipairs(found.medications) do ?>
+    <? if subject.known then ?>
+      <div class="pv-card meds-claim">
+        <h3><?= subject.name ?></h3>
+        <p><span class="pv-badge pv-badge-ok"><?= icon('check-circle') ?> Known name</span>
+           This is <strong><?= subject.known.short_name ?></strong>.</p>
+      </div>
+    <? else ?>
+      <div class="meds-claim">
+        <h3><?= subject.name ?></h3>
+        <? if #subject.candidates == 0 then ?>
+          <p><span class="pv-badge pv-badge-warn"><?= icon('question-circle') ?> New name</span>
+             The catalog holds nothing like this name. The app filled in a new medication
+             from it. Check the details, or type the name of the medication you mean.</p>
+        <? elseif subject.candidates[1].sure then ?>
+          <p><span class="pv-badge pv-badge-ok"><?= icon('check-circle') ?> Matched</span>
+             One medication has the same name and the same strength. It is chosen for you.</p>
+        <? else ?>
+          <p><span class="pv-badge pv-badge-warn"><?= icon('question-circle') ?> Choose a medication</span>
+             These medications are the closest. The best match comes first.</p>
+        <? end ?>
+        <?= render('_medication_picker', { prefix = subject.prefix, typed = typed,
+              legend = 'Medication for the name ' .. subject.name, candidates = subject.candidates,
+              pick = subject.used and subject.pick or nil, explicit = true }) ?>
+      </div>
+    <? end ?>
+  <? end ?>
+
+  <h2>Pharmacies</h2>
+  <? if #found.pharmacies == 0 then ?>
+    <p class="pv-empty">No fill in this text can be added, so there is no pharmacy to choose.</p>
+  <? end ?>
+  <? for _, subject in ipairs(found.pharmacies) do ?>
+    <div class="pv-card meds-claim">
+      <h3><?= subject.name or 'Pharmacy with no name' ?></h3>
+      <? if subject.known then ?>
+        <p><span class="pv-badge pv-badge-ok"><?= icon('check-circle') ?> Known pharmacy</span>
+           This pharmacy is in the app.</p>
+      <? else ?>
+        <? local refused = subject.used and subject.problem ?>
+        <label for="f-<?= subject.field ?>">Pharmacy for <?= subject.name or 'these fills' ?></label>
+        <select id="f-<?= subject.field ?>" name="<?= subject.field ?>"<? if refused then ?> aria-invalid="true" aria-describedby="f-<?= subject.field ?>-err"<? end ?>>
+          <? if subject.can_add then ?>
+            <option value="<?= new_pharmacy ?>"<? if typed[subject.field] == new_pharmacy then ?> selected<? end ?>>Add <?= subject.name ?>, with the address and phone number that were pasted</option>
+          <? else ?>
+            <option value="">Choose a pharmacy</option>
+          <? end ?>
+          <? for _, pharmacy in ipairs(found.known) do ?>
+            <option value="<?= pharmacy.id ?>"<? if pharmacy.id == typed[subject.field] then ?> selected<? end ?>><?= pharmacy.name ?></option>
+          <? end ?>
+        </select>
+        <? if refused then ?>
+          <p id="f-<?= subject.field ?>-err" class="pv-error" role="alert"><?= icon('exclamation-triangle') ?> <?= subject.problem ?></p>
+        <? end ?>
+      <? end ?>
+    </div>
+  <? end ?>
+
+  <h2>Fills</h2>
+  <? for _, row in ipairs(found.rows) do ?>
     <? local claim = row.claim ?>
     <fieldset class="meds-claim">
       <legend>Fill <?= row.index ?>: <?= claim.drug_name or 'no name' ?>, <?= claim.filled_on ?></legend>
@@ -47,15 +116,12 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
           <span class="pv-badge pv-badge-muted"><?= icon('dash-circle') ?> <?= row.result ?></span>
         <? end ?>
         <? if row.result == 'Already recorded' then ?>This person has a fill with the same prescription number and date. It is left out.<? end ?>
-        <? if row.result == 'Not in the catalog' then ?>No medication in the catalog is close to this name. Add the medication to the catalog, then read the text again.<? end ?>
         <? if row.result == 'Details missing' then ?>The details of this fill were not open in the portal. Open them and copy the list again.<? end ?>
         <? if row.result == 'Not paid' then ?>The claim status is "<?= claim.status ?>". Add this fill only if it took place.<? end ?>
-        <? if row.result == 'Choose a medication' then ?>The app does not know this name yet. Choose the medication, and the app remembers the name.<? end ?>
       </p>
       <? for _, problem in ipairs(row.problems) do ?>
         <p class="pv-error"><?= icon('exclamation-triangle') ?> <?= problem ?></p>
       <? end ?>
-
       <dl class="meds-read">
         <dt>Date filled</dt><dd><?= claim.filled_on ?></dd>
         <dt>Name in the portal</dt><dd><?= claim.drug_name ?></dd>
@@ -67,31 +133,10 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
         <dt>Plan paid</dt><dd><?= claim.plan_paid or 'Not read' ?>, not stored</dd>
         <dt>Deductible</dt><dd><?= claim.deductible or 'Not read' ?>, not stored</dd>
       </dl>
-
       <? if row.can_add then ?>
-        <label for="f-medication_<?= row.index ?>">Medication</label>
-        <select id="f-medication_<?= row.index ?>" name="medication_<?= row.index ?>">
-          <? if not row.known_name then ?><option value="">Choose a medication</option><? end ?>
-          <? for _, option in ipairs(row.suggestions) do ?>
-            <option value="<?= option.value ?>"<? if option.value == row.medication_id then ?> selected<? end ?>><?= option.label ?></option>
-          <? end ?>
-        </select>
-
-        <label for="f-pharmacy_<?= row.index ?>">Pharmacy</label>
-        <select id="f-pharmacy_<?= row.index ?>" name="pharmacy_<?= row.index ?>">
-          <? if claim.pharmacy_name then ?>
-            <option value="<?= new_pharmacy ?>"<? if row.pharmacy_id == new_pharmacy then ?> selected<? end ?>>Add <?= claim.pharmacy_name ?> from the pasted details</option>
-          <? else ?>
-            <option value="">Choose a pharmacy</option>
-          <? end ?>
-          <? for _, pharmacy in ipairs(pharmacies) do ?>
-            <option value="<?= pharmacy.id ?>"<? if pharmacy.id == row.pharmacy_id then ?> selected<? end ?>><?= pharmacy.name ?></option>
-          <? end ?>
-        </select>
-
-        <label for="f-include_<?= row.index ?>">
-          <input id="f-include_<?= row.index ?>" name="include_<?= row.index ?>" type="checkbox" value="yes"<? if row.ready then ?> checked<? end ?>>
-          Add this fill
+        <label class="meds-option" for="f-include_<?= row.index ?>">
+          <input id="f-include_<?= row.index ?>" name="include_<?= row.index ?>" type="checkbox" value="yes"<? if typed['include_' .. row.index] == 'yes' then ?> checked<? end ?>>
+          <span>Add this fill</span>
         </label>
       <? end ?>
     </fieldset>

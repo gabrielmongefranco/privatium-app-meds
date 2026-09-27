@@ -21,16 +21,22 @@
 -- You should have received a copy of the GNU General Public License along
 -- with this program. If not, see <https://www.gnu.org/licenses/>.
 
-local pv            = require 'privatium'
-local page          = require 'page'
-local people_filter = require 'people_filter'
-local store         = require 'store'
-local text          = require 'text'
-local validate      = require 'validate'
+local pv              = require 'privatium'
+local entries         = require 'entries'
+local medication_pick = require 'medication_pick'
+local page            = require 'page'
+local people_filter   = require 'people_filter'
+local quick_add       = require 'quick_add'
+local store           = require 'store'
+local suggestions     = require 'suggestions'
+local text            = require 'text'
+local validate        = require 'validate'
 
 --- Configuration ---
 local LIST   = '/authorizations'
-local FIELDS = { 'entry_id', 'valid_from', 'valid_to' }
+local FIELDS = { 'person_id', 'medication_id', 'valid_to', 'valid_from' }
+-- A medication with an approval and no list entry is one the person is about to start.
+local STATUS_OF_NEW_ENTRY = 'not_started'
 
 --- Reads ---
 
@@ -54,51 +60,50 @@ local function everything(person_id)
      ORDER BY pa.valid_to DESC, pa.id]], { person_id })
 end
 
--- The medications an authorization can be for: every entry of every list.
--- Grain: one row per person_medication row.
-local function entry_options()
-  local options = {}
-  for _, row in ipairs(pv.query([[
-      SELECT pm.id, m.short_name || ', for ' || p.display_name AS label
-        FROM person_medication pm
-        JOIN person p     ON p.id = pm.person_id       -- many:1
-        JOIN medication m ON m.id = pm.medication_id   -- many:1
-       ORDER BY p.display_name COLLATE NOCASE, m.short_name COLLATE NOCASE, pm.id]])) do
-    options[#options + 1] = { value = row.id, label = row.label }
-  end
-  return options
-end
-
--- The list entry of the person and the medication of an authorization, for the form.
-local function entry_of(authorization)
-  local entry = pv.query1([[
-    SELECT id
-      FROM person_medication
-     WHERE person_id = ? AND medication_id = ?
-     ORDER BY id
-     LIMIT 1]], { authorization.person_id, authorization.medication_id })
-  return entry and entry.id
-end
-
 --- Validation ---
 
+-- Reads an authorization with the records it may add beside it: a person and a
+-- medication.
+-- @return table, table, table  The row, the problems, and what to add in the batch.
 local function read(form)
-  local row, errors = {}, {}
-  local entry = pv.get_row('person_medication', text.clean(form.entry_id) or '')
-  if entry then
-    row.person_id, row.medication_id = entry.person_id, entry.medication_id
-  else
-    errors.entry_id = 'Choose a medication from the list.'
-  end
-  row.valid_from, errors.valid_from = validate.date(form.valid_from, 'the first day', true)
+  local row, errors, adding = {}, {}, {}
+  adding.person_id, adding.person, errors.person_id =
+    quick_add.read(form, 'person_id', quick_add.PERSON, true)
+  adding.pick = medication_pick.read(form, 'medication', true)
+  errors.medication_id = adding.pick.problem
+  row.person_id, row.medication_id = adding.person_id, adding.pick.id
+
+  -- Only the last day is required. A renewal notice often names no first day.
   row.valid_to, errors.valid_to = validate.date(form.valid_to, 'the last day', true)
+  row.valid_from, errors.valid_from = validate.date(form.valid_from, 'the first day')
   if row.valid_from and row.valid_to and row.valid_to < row.valid_from then
-    errors.valid_to = 'Choose a last day that is the first day or later.'
+    errors.valid_from = 'Choose a first day that is the last day or earlier, or leave it empty.'
   end
-  return row, errors
+  return row, errors, adding
 end
 
-local function form_page(heading, action, typed, errors)
+-- Writes an authorization and the new records beside it in one batch. A medication
+-- that is not on the list of the person is added to it, so the Refills page can warn
+-- when the authorization ends.
+-- @return boolean, string|nil  True, or false and a message.
+local function save(id, row, adding)
+  return store.together('prior_authorization', function(tx)
+    row.person_id     = quick_add.write(tx, quick_add.PERSON, adding.person_id, adding.person)
+    row.medication_id = medication_pick.write(tx, adding.pick)
+    local on_list = adding.person_id and adding.pick.id
+      and entries.of(adding.person_id, adding.pick.id)
+    if not on_list then
+      tx.append('person_medication', {
+        person_id = row.person_id, medication_id = row.medication_id,
+        status = STATUS_OF_NEW_ENTRY, refills_left = 0,
+      })
+    end
+    if id then tx.append('prior_authorization', id, row)
+    else tx.append('prior_authorization', row) end
+  end)
+end
+
+local function form_page(heading, action, typed, errors, pick)
   return pv.render('authorization_form', {
     section  = 'authorizations',
     heading  = heading,
@@ -106,7 +111,10 @@ local function form_page(heading, action, typed, errors)
     typed    = typed,
     errors   = errors,
     problems = page.problems(errors, FIELDS),
-    entries  = entry_options(),
+    pick     = pick,
+    people   = quick_add.options(quick_add.PERSON),
+    in_use   = medication_pick.in_use(text.clean(typed.medication_id)),
+    names    = suggestions.medication_names(),
   })
 end
 
@@ -122,25 +130,28 @@ pv.get(LIST, function(req)
   })
 end)
 
+-- The form can start from a list entry, which names the person and the medication.
 pv.get(LIST .. '/new', function(req)
-  return form_page('Add a prior authorization', url(LIST .. '/new'),
-    { entry_id = text.clean(req.query.entry) }, {})
+  local entry = req.query.entry and pv.get_row('person_medication', req.query.entry)
+  return form_page('Add a prior authorization', url(LIST .. '/new'), {
+    person_id     = entry and entry.person_id or text.clean(req.query.person),
+    medication_id = entry and entry.medication_id,
+  }, {})
 end)
 
 pv.post(LIST .. '/new', function(req)
-  local row, errors = read(req.form)
+  local row, errors, adding = read(req.form)
   if not next(errors) then
-    local saved, refusal = store.save('prior_authorization', nil, row)
+    local saved, refusal = save(nil, row, adding)
     if saved then return pv.redirect(url(LIST .. '?notice=saved')) end
-    errors.valid_from = refusal
+    errors.valid_to = refusal
   end
-  return form_page('Add a prior authorization', url(LIST .. '/new'), req.form, errors)
+  return form_page('Add a prior authorization', url(LIST .. '/new'), req.form, errors, adding.pick)
 end)
 
 pv.get(LIST .. '/:id/edit', function(req)
   local authorization = pv.get_row('prior_authorization', req.params.id)
   if not authorization then return pv.redirect(url(LIST .. '?notice=missing')) end
-  authorization.entry_id = entry_of(authorization)
   return form_page('Change a prior authorization',
     url(LIST .. '/' .. authorization.id .. '/edit'), authorization, {})
 end)
@@ -148,14 +159,14 @@ end)
 pv.post(LIST .. '/:id/edit', function(req)
   local authorization = pv.get_row('prior_authorization', req.params.id)
   if not authorization then return pv.redirect(url(LIST .. '?notice=missing')) end
-  local row, errors = read(req.form)
+  local row, errors, adding = read(req.form)
   if not next(errors) then
-    local saved, refusal = store.save('prior_authorization', authorization.id, row)
+    local saved, refusal = save(authorization.id, row, adding)
     if saved then return pv.redirect(url(LIST .. '?notice=saved')) end
-    errors.valid_from = refusal
+    errors.valid_to = refusal
   end
   return form_page('Change a prior authorization',
-    url(LIST .. '/' .. authorization.id .. '/edit'), req.form, errors)
+    url(LIST .. '/' .. authorization.id .. '/edit'), req.form, errors, adding.pick)
 end)
 
 pv.get(LIST .. '/:id/remove', function(req)
@@ -164,8 +175,7 @@ pv.get(LIST .. '/:id/remove', function(req)
   return pv.render('remove', {
     section = 'authorizations',
     heading = 'Remove a prior authorization',
-    name    = 'the prior authorization from ' .. authorization.valid_from
-              .. ' to ' .. authorization.valid_to,
+    name    = 'the prior authorization that ends on ' .. authorization.valid_to,
     used_by = {},
     action  = url(LIST .. '/' .. authorization.id .. '/remove'),
     back    = url(LIST),

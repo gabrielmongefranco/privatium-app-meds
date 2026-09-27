@@ -92,12 +92,12 @@ Every table also has an `id` column, which holds a ULID and no such information.
 
 #### `profile`
 
-Grain: one row per node. At most one row ever exists. Saving the name again amends that
-row.
+Grain: one row per node. At most one row ever exists. The table holds the reminder
+settings. It has no row until someone saves the settings, and saving them again amends
+that row. With no row, every default is in force.
 
 | Column | Type | Required | Meaning | Personal or health information |
 |---|---|---|---|---|
-| `display_name` | `VARCHAR` | Yes | What the app calls the household. A family name or a nickname. | Personal, if a real name is entered |
 | `due_within_days` | `BIGINT` | No | A refill is due when its next fill date is this many days away or fewer. Empty means 3. | No |
 | `due_soon_within_days` | `BIGINT` | No | A refill is due soon when its next fill date is this many days away or fewer. Empty means 7. | No |
 | `specialty_due_within_days` | `BIGINT` | No | The due count for a specialty medication. Empty means 5. | No |
@@ -134,8 +134,16 @@ second row here.
 | `package_size` | `VARCHAR` | No | Package size as text | No |
 | `package_type` | `VARCHAR` | No | The package, such as `Bottle` | No |
 | `is_specialty` | `BOOLEAN` | Yes | Whether this is a specialty medication, which takes longer to arrive and is due earlier | No |
+| `rxcui` | `VARCHAR` | No | The RxNorm concept unique identifier (RxCUI) of the product: digits, kept as text | No |
+| `source` | `VARCHAR` | No | The drug reference the row was copied from: `rxterms`, `rxnorm` or `openfda_ndc`. Empty when the owner typed the row. | No |
+| `retrieved_on` | `DATE` | No | The local date the row was copied or refreshed. Empty when the owner typed the row. | No |
 
 A medication needs a generic name or a brand name.
+
+RxNorm is the drug list of the United States National Library of Medicine. It gives every
+product a number, the RxCUI. Two medications never share an RxCUI, and the forms check
+that. [The app design](design/README.md#the-catalog-and-the-drug-references)
+explains how the catalog gets entries from the drug references.
 
 The short name follows one pattern unless the owner types another: the brand name, the
 generic name in brackets, then the strength. An example is
@@ -230,8 +238,10 @@ Grain: one row per approval window for one person and one medication.
 |---|---|---|---|---|
 | `person_id` | `VARCHAR` | Yes | The person the insurer approved | Health |
 | `medication_id` | `VARCHAR` | Yes | The medication | Health |
-| `valid_from` | `DATE` | Yes | First day the approval covers | Health |
+| `valid_from` | `DATE` | No | First day the approval covers. Empty when the household does not know it. | Health |
 | `valid_to` | `DATE` | Yes | Last day the approval covers, on or after the first day | Health |
+
+Only the last day drives the warnings, so an approval with no first day works the same.
 
 ### Status values
 
@@ -264,7 +274,7 @@ keeps the log readable without a lookup. No table holds the choices.
 | `v_reminder_default` | Exactly one row | The five day counts the app starts with |
 | `v_reminder_setting` | Exactly one row | The five day counts in force |
 | `v_spending_by_year` | One row per person per year with at least one fill | Number of fills and total paid |
-| `v_row_count` | One row per table | Row counts |
+| `v_row_count` | One row per table, `profile` included | Row counts |
 
 In `v_medication`, the full name joins every part that is filled in: the generic name,
 the brand name in brackets, the strength, the route, the form and the package.
@@ -330,9 +340,12 @@ edits.
 
 ### Sample data
 
-`apps/meds/sample/seed.jsonl` holds one invented household name and a starter catalog.
-The catalog has 41 medications that are common in the United States, with 38 other names
-for them. It holds no person, no fill and no other record about anyone.
+`apps/meds/sample/seed.jsonl` holds a starter catalog and nothing else.
+The catalog has 2,214 medications and 562 other names for them. It holds the 200 drugs
+most prescribed in the United States, and the drugs of the owner's list, at every strength
+that RxTerms lists. It also holds entries written by hand, such as continuous glucose
+monitors. [How to build the starter catalog](how-to/build-the-starter-catalog.md) names
+the sources and their licenses. It holds no person, no fill and no other record about anyone.
 
 A Privatium node offers to load the file from its settings page only while the app's log
 is empty. The file must never hold a real name, a date of birth, or a record of what a

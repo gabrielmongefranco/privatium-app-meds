@@ -53,10 +53,16 @@ paid. The [data model](data-model.md) marks each such column.
 | A website becomes a link only with `http` or `https` | `validate.website` | Unit tests and the smoke test send a `javascript:` address. |
 | A page address carries ids and codes only | `lib/page.lua` turns a known code into a sentence | The smoke test sends markup as a code and as an id. |
 | Pasted portal text is untrusted | `lib/portal_reader.lua` only takes the text apart. The add step reads the text again and checks every value again. | The smoke test asks to add rows that the review refused. |
-| A close match never picks a medication | `lib/medication_search.lua` | The smoke test checks that a new name leaves the choice empty. |
+| A close match never picks a medication | `lib/medication_pick.lua`, `lib/medication_search.lua` | The smoke test types a misspelled name and a name that fits two medications. Both come back as a question. |
+| A pasted name picks a medication only with the same name and the same strength | `lib/written_name.lua` | Unit tests check that "5 mg" is not found in "0.5 mg", "2.5 mg", "25 mg" or "875-5 mg". The review page marks the match before anything is added. |
+| A record added from inside another form passes the same checks | `lib/quick_add.lua`, `lib/catalog_entry.lua` | The smoke test sends a name that is too long and a new medication with no name. |
+| A refused form adds nothing | Every form writes its records in one batch | The smoke test counts the pharmacies after a refused fill that named a new one. |
 | A record in use is not removed | `uses` in the route modules | The smoke test posts removals by hand. |
 | Diagnostic messages hold no field values | `page.masked` in `lib/page.lua` | Unit tests |
-| The app calls no network service | No `[permissions]` in `app.toml`, and no address outside the app in any template | Lint rules PV207 and PV504 pass. |
+| The node calls no network service | The Lua of the app has no function that does | Lint rule PV504 passes. |
+| The browser calls three drug references, and nothing else | `permissions.remote` in `app.toml` lists them. `static/medication_lookup.js` names no other address. | Lint rule PV207 passes. |
+| The lookup sends the typed name only | `static/medication_lookup.js` sends no cookie and no page address | Read in the code. Not measured in a browser. |
+| What a drug reference answers is untrusted | The script writes it with `textContent`. The server checks every field it receives: `lib/catalog_entry.lua`, `lib/reference_words.lua`. | The smoke test sends markup as a source, a route and a dose form, and letters as an identifier. Unit tests cover the words of a reference. |
 
 ### Known gaps in security
 
@@ -64,6 +70,10 @@ paid. The [data model](data-model.md) marks each such column.
   computer and its backups. [Privatium's security page](https://github.com/gabrielmongefranco/privatium/blob/main/docs/security.md)
   explains what the framework protects.
 - Removing a record hides it. The original line stays in the log.
+- Text boxes suggest values that other records hold, such as insurance plans and what a
+  medication is for. Anyone who can open the app can already read those records.
+- A lookup tells the drug reference which name was typed, from which internet address.
+  The reference learns nothing else. The lookup is on for everyone.
 - A browser may keep pages in its history and its cache. On a shared device, close the
   browser after use.
 - A printed medication list is health information on paper.
@@ -92,7 +102,8 @@ No automated check drives a browser, and automated tools find only part of the p
 These checks are open:
 
 1. Finish each main task with the keyboard only: see the refills, record a fill, paste
-   fills, add a medication to a list.
+   fills, add a medication to a list. Include the medication box: pick a suggestion
+   while typing, and open **Add a new medication**.
 2. Finish the same tasks with a screen reader.
 3. Check that the list of problems takes the focus when a refused form comes back.
 4. Zoom to 200% and look for overlap and cut-off text.
@@ -101,6 +112,11 @@ These checks are open:
 6. Turn JavaScript off in the node's own browser and save a fill.
 7. Open a print preview of the medication list.
 8. Check both color schemes.
+9. Check how the screen reader announces the suggestions of a text box. Browsers and
+   screen readers differ in their support for the `<datalist>` element. The fields work
+   as plain text boxes where the suggestions are not announced.
+10. Look up a medication in a browser, with the keyboard only and with a screen reader.
+    Check that the status message is announced and that the results can be reached.
 
 Record the date, the browser, the screen reader and the result of each check in this
 section when it is done.

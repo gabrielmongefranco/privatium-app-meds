@@ -34,7 +34,9 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 
 <form method="get" action="<?= url('/setup/catalog') ?>" role="search" class="meds-search">
   <label for="q">Find a medication by any of its names</label>
-  <input id="q" name="q" type="search" value="<?= filter ?>" maxlength="100" autocomplete="off">
+  <input id="q" name="q" type="search" value="<?= filter ?>" maxlength="100" autocomplete="off"
+         list="medication-names">
+  <?= render('_medication_names', { names = names }) ?>
   <button type="submit" class="pv-btn"><?= icon('search') ?> Find</button>
   <? if filter ~= '' then ?>
     <a class="pv-btn" href="<?= url('/setup/catalog') ?>">Show all</a>
@@ -46,7 +48,11 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 <? elseif #medications == 0 then ?>
   <p class="pv-empty">No medication answers to "<?= filter ?>".</p>
 <? else ?>
-  <p class="pv-meta"><?= found ?><? if filter ~= '' then ?> answer to "<?= filter ?>"<? end ?>.</p>
+  <? if shortened then ?>
+    <p class="pv-meta">The catalog holds <?= total ?>. This page shows the first <?= #medications ?>, with the ones in use first. Search to find any other.</p>
+  <? else ?>
+    <p class="pv-meta"><?= found ?><? if filter ~= '' then ?> answer to "<?= filter ?>"<? end ?>.</p>
+  <? end ?>
   <table class="pv-records" role="table">
     <caption class="pv-visually-hidden">Medications in the catalog, by short name</caption>
     <thead role="rowgroup">

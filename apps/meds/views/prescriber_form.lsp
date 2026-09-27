@@ -31,7 +31,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
   <?= render('_field', { name = 'name', label = 'Name', value = typed.name, err = errors.name,
         required = true, maxlength = 120 }) ?>
   <?= render('_field', { name = 'clinic', label = 'Clinic', value = typed.clinic,
-        err = errors.clinic, maxlength = 120 }) ?>
+        err = errors.clinic, maxlength = 120, suggestions = clinics }) ?>
   <?= render('_contact_fields', { typed = typed, errors = errors, with_mobile = true }) ?>
 
   <p class="pv-actions">

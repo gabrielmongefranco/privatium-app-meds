@@ -1,11 +1,10 @@
 <?--
 This file is part of Prescription Tracker
-apps/meds/views/index.lsp
+apps/meds/views/_medication_names.lsp
 Author(s): Gabriel Mongefranco
-Created: 2026-09-26
+Created: 2026-09-27
 Last Modified: 2026-09-27
-Summary: The home page of a household with no people yet. Greets it and invites it to add
-         the first person.
+Summary: The names that every medication box on a page suggests while a person types.
 Notes: See README file for documentation and full license information.
 
 Copyright © 2026 Gabriel Mongefranco
@@ -23,12 +22,9 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <https://www.gnu.org/licenses/>.
 --?>
 
-<?= render('_nav', { section = section }) ?>
-<div class="meds">
-<p class="meds-mark"><?= icon('capsule') ?></p>
-<h1>Welcome to your prescription tracker.</h1>
-<p><?= greeting ?>. Add the first person, and this page will show the refills that need attention.</p>
-<a class="pv-btn pv-btn-primary" href="<?= url('/setup/people/new') ?>">
-  <?= icon('plus-lg') ?> Add a person
-</a>
-</div>
+<datalist id="medication-names">
+  <? for _, entry in ipairs(names) do ?>
+    <option value="<?= entry.value ?>"<? if entry.label ~= entry.value then ?> label="<?= entry.label ?>"<? end ?>></option>
+  <? end ?>
+</datalist>
+<script src="<?= url('/static/medication_lookup.js') ?>" defer></script>

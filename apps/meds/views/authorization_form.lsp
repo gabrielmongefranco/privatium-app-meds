@@ -26,24 +26,23 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 <h1><?= heading ?></h1>
 <?= render('_problems', { problems = problems }) ?>
 
-<? if #entries == 0 then ?>
-  <p class="pv-notice pv-notice-info"><?= icon('info-circle') ?>
-    <span>No medication is on a list yet. Add the medication to the list of a person first.</span></p>
-  <p class="pv-actions"><a class="pv-btn" href="<?= url('/medications/new') ?>">Add a medication</a></p>
-<? else ?>
 <form method="post" action="<?= action ?>" novalidate>
   <?= csrf() ?>
-  <?= render('_select', { name = 'entry_id', label = 'Medication and person', value = typed.entry_id,
-        options = entries, required = true, err = errors.entry_id,
-        empty_label = 'Choose a medication' }) ?>
-  <?= render('_field', { name = 'valid_from', label = 'First day', value = typed.valid_from,
-        err = errors.valid_from, required = true, input_type = 'date' }) ?>
+  <?= render('_select_or_new', { name = 'person_id', legend = 'Who is it for', noun = 'person',
+        value = typed.person_id, typed_new = typed.person_id_new, options = people, required = true,
+        err = errors.person_id, empty_label = 'Choose a person' }) ?>
+  <?= render('_medication_names', { names = names }) ?>
+  <?= render('_medication_picker', { prefix = 'medication', typed = typed, options = in_use, pick = pick,
+          err = errors.medication_id }) ?>
+  <p class="pv-help">If the medication is not on the list of the person yet, saving adds it, with the status Not started.</p>
   <?= render('_field', { name = 'valid_to', label = 'Last day', value = typed.valid_to,
         err = errors.valid_to, required = true, input_type = 'date',
         help = 'The last day the approval covers. The letter from the insurer shows it.' }) ?>
+  <?= render('_field', { name = 'valid_from', label = 'First day', value = typed.valid_from,
+        err = errors.valid_from, input_type = 'date',
+        help = 'Leave it empty if you do not know it.' }) ?>
   <p class="pv-actions">
     <button type="submit" class="pv-btn pv-btn-primary"><?= icon('check-lg') ?> Save</button>
     <a class="pv-btn" href="<?= url('/authorizations') ?>">Cancel</a>
   </p>
 </form>
-<? end ?>

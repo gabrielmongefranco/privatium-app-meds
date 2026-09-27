@@ -5,7 +5,8 @@ Author(s): Gabriel Mongefranco
 Created: 2026-09-27
 Last Modified: 2026-09-27
 Summary: How to use the app: refills, medication lists, fills, pasted fills, prior
-         authorizations, contacts and setup.
+         authorizations, contacts and setup, and how to add a missing record from
+         inside a form.
 Notes: See README file for documentation and full license information.
 
 Copyright © 2026 Gabriel Mongefranco
@@ -36,26 +37,63 @@ Every page has the same bar at the top, with six links:
 | **History** | Every fill, and what you paid |
 | **Authorizations** | Prior authorizations and when they end |
 | **Contacts** | Pharmacies and prescribers |
-| **Setup** | People, the medication catalog, the reminder settings, the household name |
+| **Setup** | People, the medication catalog, the reminder settings |
 
 The bar underlines the section you are in. On pages that list records, a row of names
 under the heading narrows the list to one person.
 
 ### Set up the app
 
-Do these steps once, in this order.
-
 1. Load the starter catalog, if you want it. Open the Privatium menu, choose
    **App settings**, find **Prescription Tracker** and choose **Load sample data**.
    Privatium offers the button only while the app holds no records.
-2. Choose **Setup**, then **Household name**, and type the name of your household.
-3. Choose **Setup**, then **People**, and add each person. A first name is enough. The
-   birth date is optional.
-4. Choose **Contacts** and add your pharmacies and prescribers. Only the name is
-   required.
+2. Choose **Setup**, then **People**, and add the first person. A first name is enough.
+   The birth date is optional.
 
-The starter catalog holds 41 common medications. It adds no person and no record about
-anyone.
+The starter catalog holds about 2,214 medications: the 200 drugs most prescribed in the
+United States at every strength, and common supplies such as glucose monitor sensors. It
+adds no person and no record about anyone.
+
+You do not have to add everyone and everything first. Every form lets you add what it
+needs. The next section shows how.
+
+### Add what is missing without leaving a form
+
+A form often needs a record that is not in the app yet, such as a new pharmacy. You add
+it in the same form.
+
+**A person, a pharmacy or a prescriber.** The field has a drop-down and a box under it,
+labeled **Or add a new pharmacy**. Type the name in the box. Saving the form adds the
+pharmacy too. You can fill in its phone number and address later, under **Contacts**.
+
+If you type a name that is already in the app, the app uses that record. It never adds
+a name twice.
+
+**A medication.** The medication box has three parts. Use one of them.
+
+| Part | Use it when |
+|---|---|
+| **Choose one that is already in use** | Someone in the household takes it, or has filled it |
+| **Type a name to search the catalog** | It is in the catalog. Type a few letters of any of its names, then pick it from the suggestions. |
+| **Add a new medication** | It is not in the catalog. Look it up, or type the brand name, the generic name, or both, and the strength. |
+
+The catalog is the list of products the app knows. It says nothing about who takes them.
+
+When the name you typed fits several medications, the form comes back and asks which one
+you mean. When the name is close to one the app knows, the form offers that medication,
+and you decide.
+
+**Look up a medication.** Inside **Add a new medication**, type a name under
+**Look it up in a drug reference** and choose **Look up**. The app asks public drug
+references of the United States government for it. Pick a result, and the app fills in
+the brand name, the generic name and the strength. Check them, then save the form.
+
+The lookup needs a connection to the internet. It sends the name you typed and nothing
+else. Without a connection, fill in the fields yourself.
+
+**Text that repeats.** Some text boxes suggest what you typed before: the insurance plan,
+the clinic, the instructions, what a medication is for, and the names and strengths in
+the catalog. Pick a suggestion, or type something new.
 
 ### See what needs a refill
 
@@ -89,11 +127,12 @@ When no refill is left, the row names the prescriber to ask for a new prescripti
    the prescription number and the insurance plan of the last fill.
 3. Type the amount you paid. A currency sign is fine.
 4. Check **Refills left after this fill**. The form starts with one fewer than before.
+   If you leave it empty, the app lowers the count by one.
 5. Choose **Save the fill**.
 
-For a medication that is not on the page, choose **Record a fill** at the top and find
-the medication by name. If the medication is not on the person's list, saving the fill
-adds it, with the status Taking regularly.
+For a medication that is not on the page, choose **Record a fill** at the top. The form
+then starts with the medication box. If the medication is not on the person's list,
+saving the fill adds it, with the status Taking regularly.
 
 ### Paste fills from a portal
 
@@ -105,19 +144,41 @@ list and let the app read it.
 3. In the app, choose **Refills**, then **Paste fills from a portal**.
 4. Choose the person the portal page belongs to, paste the text and choose
    **Read the text**.
-5. Check each fill. Choose a medication or a pharmacy where the app asks for one.
-6. Tick **Add this fill** for the fills you want, then choose **Add fills**.
+5. Check the review page. It has three parts, described below.
+6. Choose **Add fills**.
+
+The review page asks about each medication name and each pharmacy once, however many
+fills use it.
+
+**Medications.** Each name the portal wrote is listed with what the app made of it.
+
+| The page says | Meaning | What you do |
+|---|---|---|
+| Known name | The app has seen this name before | Nothing |
+| Matched | One medication has the same name and the same strength. It is chosen for you. | Check it |
+| Choose a medication | Some medications are close. The best match comes first. | Pick one |
+| New name | The catalog holds nothing like it. The app filled in a new medication from the name. | Check the brand name, the generic name and the strength |
+
+For every name you can also pick **Another medication** and type its name, or pick
+**A new medication**. The app remembers the portal's name as another name of the
+medication you choose. The next paste knows it.
+
+**Pharmacies.** A pharmacy that the app knows is matched by its identifier or its name.
+For a new one, the app offers to add it with the address and phone number that were
+pasted. You can pick one of your pharmacies instead.
+
+**Fills.** Each fill has a result and a box labeled **Add this fill**.
 
 | Result | Meaning |
 |---|---|
-| Ready | Every value was read and matched. The fill is ticked for you. |
-| Choose a medication | The app does not know the portal's name yet. Pick the medication. The app remembers the name for next time. |
-| Choose a pharmacy | No pharmacy matches. Pick one, or add it from the pasted details. |
-| Not paid | The claim status is not Paid. Add the fill only if it took place. |
+| Ready | Every value was read. The fill is ticked for you. |
+| Not paid | The claim status is not Paid. Tick the fill only if it took place. |
 | Already recorded | The person has a fill with the same prescription number and date. It is left out. |
-| Not in the catalog | No medication is close to the name. Add it to the catalog, then read the text again. |
 | Details missing | The details were not open in the portal. Open them and copy again. |
 | Could not read | A value is not a date or a number. The row says which. |
+
+If a choice is still open when you choose **Add fills**, the page comes back and marks
+it. Nothing is added until every fill you ticked has a medication and a pharmacy.
 
 Adding a pasted fill lowers the refills left of its medication by one. What the plan
 paid and the deductible are shown and not stored.
@@ -134,7 +195,7 @@ Choose **Medications** to see what each person takes, grouped by status.
 To add a medication to a list:
 
 1. Choose **Add a medication**.
-2. Find the medication by any of its names and choose it.
+2. In the medication box, pick the medication, type its name, or add a new one.
 3. Choose who takes it and its status. Add the instructions, when to take it, what it is
    for, the prescriber and the pharmacy.
 4. Choose **Save**.
@@ -165,9 +226,14 @@ The printed page leaves out the navigation and the buttons.
 A prior authorization is an insurer's approval to cover a medication for a set period.
 
 1. Choose **Authorizations**, then **Add an authorization**.
-2. Choose the medication and the person.
-3. Type the first day and the last day from the insurer's letter.
-4. Choose **Save**.
+2. Choose the person.
+3. Choose the medication.
+4. Type the last day from the insurer's letter.
+5. Type the first day if you know it. You can leave it empty.
+6. Choose **Save**.
+
+If the medication is not on the person's list, saving adds it, with the status Not
+started. The Refills page can then warn you when the authorization ends.
 
 The Refills page warns you 30 days before the latest authorization of a medication in
 use ends. After a renewal, add the new authorization and the warning goes away.
@@ -183,8 +249,9 @@ Choose **Change** in a row to correct a fill or to remove it.
 
 ### Find a medication by any name
 
-Every search box for medications looks through the short name, the brand name, the
-generic name and the other names. Capital letters and punctuation do not matter.
+Every medication box and the search box of the catalog look through the short name,
+the brand name, the generic name and the other names. Capital letters and punctuation do
+not matter.
 
 | You type | The app shows |
 |---|---|
@@ -210,6 +277,9 @@ You can also open a medication in the catalog and type the name under
 
 The catalog lists products. It does not say who takes them.
 
+The quickest way is inside any form, as **Add what is missing without leaving a form**
+shows. The catalog page has the full form, with every field.
+
 1. Choose **Setup**, then **Medication catalog**.
 2. Use the search box to check that the medication is not there yet.
 3. Choose **Add a medication**.
@@ -222,6 +292,10 @@ The catalog lists products. It does not say who takes them.
 8. Leave the short name empty. The app builds it, such as "Examplol (Exampline) 10 mg".
    Type a short name only if you want a different one.
 9. Choose **Save**.
+
+Under **Reference codes** you can type the RxNorm identifier of the product. RxNorm is
+the drug list of the United States National Library of Medicine. The field is optional,
+and the app works the same without it.
 
 ### Merge two entries for one product
 
@@ -275,8 +349,8 @@ time of day.
 
 ### Conclusion
 
-You can now set up a household, keep its medication lists, record fills by hand or from
-a portal, and see what needs a refill.
+You can now keep the medication lists of a household, add what is missing from inside
+any form, record fills by hand or from a portal, and see what needs a refill.
 
 ### Additional resources
 

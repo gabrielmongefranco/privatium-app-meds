@@ -47,17 +47,21 @@ end
 
 --- Check the values of a fill.
 -- @param form table  The values as typed or as read from pasted text, keyed by column.
--- @param new_pharmacy boolean|nil  True when the pharmacy is added in the same batch as
---        the fill, so it cannot be looked up yet.
+-- @param pending table|nil  The columns whose record is added in the same batch as the
+--        fill, as { pharmacy_id = true }. Such a record cannot be looked up yet, so the
+--        caller checks it and sets the column before the fill is written.
 -- @return table, table  The row for the log, and the problems keyed by column. The row
 --         is complete only when the second table is empty.
-function fills.read(form, new_pharmacy)
+function fills.read(form, pending)
   local row, errors = {}, {}
-  row.person_id, errors.person_id = read_id(form.person_id, 'person', 'a person')
-  row.medication_id, errors.medication_id = read_id(form.medication_id, 'medication', 'a medication')
-  if new_pharmacy then
-    row.pharmacy_id = form.pharmacy_id
-  else
+  pending = pending or {}
+  if not pending.person_id then
+    row.person_id, errors.person_id = read_id(form.person_id, 'person', 'a person')
+  end
+  if not pending.medication_id then
+    row.medication_id, errors.medication_id = read_id(form.medication_id, 'medication', 'a medication')
+  end
+  if not pending.pharmacy_id then
     row.pharmacy_id, errors.pharmacy_id = read_id(form.pharmacy_id, 'pharmacy', 'a pharmacy')
   end
   row.filled_on, errors.filled_on = validate.date(form.filled_on, 'the date filled', true)
@@ -142,11 +146,18 @@ function fills.add_all(tx, rows, refills_left)
 end
 
 --- Add one fill.
+-- @param row table  A row that fills.read returned with no problems.
+-- @param refills_left integer|nil  The refills left after the fill. Nil lowers the
+--        count by one.
+-- @param before function|nil  Receives the batch and the row before the fill is
+--        written. It adds the records the fill points to that are new, and sets their
+--        ids on the row.
 -- @return string|nil, string|nil  The id of the fill, or nil and a message. Writes the
---         fill and its list entry in one batch.
-function fills.save_new(row, refills_left)
+--         fill, its list entry and the new records in one batch.
+function fills.save_new(row, refills_left, before)
   local ids
   local saved, refusal = store.together('fill', function(tx)
+    if before then before(tx, row) end
     ids = fills.add_all(tx, { row }, refills_left)
   end)
   if not saved then return nil, refusal end

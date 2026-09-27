@@ -50,7 +50,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
       <tr role="row">
         <td role="cell"><span class="pv-cell-label" aria-hidden="true">Medication</span><?= row.medication_name ?></td>
         <td role="cell"><span class="pv-cell-label" aria-hidden="true">For</span><?= row.person_name ?></td>
-        <td role="cell"><span class="pv-cell-label" aria-hidden="true">First day</span><?= fmt.date(row.valid_from) ?></td>
+        <td role="cell"><span class="pv-cell-label" aria-hidden="true">First day</span><? if row.valid_from then ?><?= fmt.date(row.valid_from) ?><? else ?>Not known<? end ?></td>
         <td role="cell"><span class="pv-cell-label" aria-hidden="true">Last day</span><?= fmt.date(row.valid_to) ?></td>
         <td role="cell"><span class="pv-cell-label" aria-hidden="true">State</span><?= row.state ?></td>
         <td role="cell" class="meds-row-actions">

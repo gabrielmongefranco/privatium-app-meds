@@ -76,7 +76,9 @@ node on a temporary data directory and uses invented data only.
 - Money is `DECIMAL`, dates are `DATE`, and both are handled the way the Tier 1 guide
   describes. Never do arithmetic on them as floats or by adding days to a number.
 - Every internal link goes through `url()` so the app works unchanged in solo mode.
-- Nothing in this repository depends on a network service at run time.
+- The node calls no network service. The one script of the app, the lookup of a new
+  medication, calls three public drug references from the browser, and every form works
+  without it. Add no other outside address.
 
 ### Project skills
 

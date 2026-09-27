@@ -32,7 +32,6 @@ local store    = require 'store'
 local validate = require 'validate'
 
 --- Configuration ---
-local NAME_MAX      = 60    -- Matches the maxlength of the name field
 local DAY_COUNT_MAX = 365   -- A reminder more than a year ahead is a typing mistake
 
 -- The day counts, in the order the form shows them. `label` completes the sentence
@@ -45,10 +44,11 @@ local DAY_COUNTS = {
   { name = 'authorization_notice_days',      label = 'the days of notice' },
 }
 
--- The one household using this node. At most one row exists.
+-- The reminder settings of this node. At most one row exists, and none until the
+-- settings are saved for the first time.
 local function profile()
   return pv.query1([[
-    SELECT id, display_name, due_within_days, due_soon_within_days,
+    SELECT id, due_within_days, due_soon_within_days,
            specialty_due_within_days, specialty_due_soon_within_days,
            authorization_notice_days
       FROM profile
@@ -84,12 +84,9 @@ local function fill_notice(fill_id)
 end
 
 pv.get('/', function(req)
-  local me = profile()
   local filter = people_filter.read(req)
   if #filter.people == 0 then
-    return pv.render('index', {
-      section = 'home', me = me, greeting = clock.greeting(clock.hour()),
-    })
+    return pv.render('index', { section = 'home', greeting = clock.greeting(clock.hour()) })
   end
 
   local groups, by_key = {}, {}
@@ -118,7 +115,6 @@ pv.get('/', function(req)
   local ending = authorization_watch.ending(filter.id)
   return pv.render('refills', {
     section  = 'home',
-    me       = me,
     greeting = clock.greeting(clock.hour()),
     notice   = fill_notice(req.query.filled) or page.notice(req.query.notice),
     filter   = filter,
@@ -127,38 +123,6 @@ pv.get('/', function(req)
     alerts   = #by_key.overdue.rows + #by_key.due.rows + #by_key.due_soon.rows + #ending,
     next_row = next_row,
   })
-end)
-
---- Household name ---
-
-pv.get('/edit', function()
-  return pv.render('edit', { section = 'setup', me = profile() })
-end)
-
-pv.post('/name', function(req)
-  local name, problem = validate.text(req.form.display_name, 'a name', NAME_MAX, true)
-  local me = profile() or {}
-  if not name then
-    me.display_name = req.form.display_name
-    return pv.render('edit', { section = 'setup', me = me, err = problem })
-  end
-
-  -- Reusing the existing id makes this an amendment, not a second household.
-  -- An amendment replaces the whole row, so the day counts travel with the new name.
-  local saved, refusal = store.save('profile', me.id, {
-    display_name                   = name,
-    due_within_days                = me.due_within_days,
-    due_soon_within_days           = me.due_soon_within_days,
-    specialty_due_within_days      = me.specialty_due_within_days,
-    specialty_due_soon_within_days = me.specialty_due_soon_within_days,
-    authorization_notice_days      = me.authorization_notice_days,
-  })
-  if not saved then
-    me.display_name = name
-    return pv.render('edit', { section = 'setup', me = me, err = refusal })
-  end
-
-  return pv.redirect(url('/'))
 end)
 
 --- Reminder settings ---
@@ -177,16 +141,12 @@ local function reminders_page(typed, errors)
 end
 
 pv.get('/setup/reminders', function()
-  local me = profile()
-  if not me then return pv.redirect(url('/edit?notice=unnamed')) end
-  return reminders_page(me, {})
+  return reminders_page(profile() or {}, {})
 end)
 
 pv.post('/setup/reminders', function(req)
-  local me = profile()
-  if not me then return pv.redirect(url('/edit?notice=unnamed')) end
-
-  local row, errors = { display_name = me.display_name }, {}
+  local me = profile() or {}
+  local row, errors = {}, {}
   for _, count in ipairs(DAY_COUNTS) do
     row[count.name], errors[count.name] =
       validate.whole_number(req.form[count.name], count.label, 0, DAY_COUNT_MAX)
@@ -208,6 +168,8 @@ pv.post('/setup/reminders', function(req)
 
   if next(errors) then return reminders_page(req.form, errors) end
 
+  -- Reusing the id of the stored row makes this an amendment, so the node never holds
+  -- a second row of settings.
   local saved, refusal = store.save('profile', me.id, row)
   if not saved then
     errors.due_within_days = refusal
@@ -226,6 +188,5 @@ pv.get('/setup', function(req)
     section = 'setup',
     notice  = page.notice(req.query.notice),
     counts  = counts,
-    me      = profile(),
   })
 end)

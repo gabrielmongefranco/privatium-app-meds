@@ -21,35 +21,29 @@
 -- You should have received a copy of the GNU General Public License along
 -- with this program. If not, see <https://www.gnu.org/licenses/>.
 
+
 local pv                = require 'privatium'
 local fills             = require 'fills'
 local match             = require 'match'
+local medication_pick   = require 'medication_pick'
 local medication_search = require 'medication_search'
 local page              = require 'page'
 local portal_reader     = require 'portal_reader'
+local quick_add         = require 'quick_add'
 local store             = require 'store'
+local suggestions       = require 'suggestions'
 local text              = require 'text'
 local validate          = require 'validate'
+local written_name      = require 'written_name'
 
 --- Configuration ---
 local PASTE           = '/fills/paste'
 local PASTED_MAX      = 60000   -- Bytes. A Tier 1 request holds 64 KiB, and the form adds a little.
 local SUGGESTIONS_MAX = 8       -- Medications offered for a name that is not known yet
 local NEW_PHARMACY    = 'new'   -- The choice that adds the pharmacy from the pasted details
-local NAME_MAX, ADDRESS_MAX, PHONE_MAX = 120, 200, 40
+local NAME_MAX, ADDRESS_MAX, PHONE_MAX, ALIAS_MAX = 120, 200, 40, 200
 
 --- Reads ---
-
-local function as_options(rows)
-  local options = {}
-  for _, row in ipairs(rows) do options[#options + 1] = { value = row.id, label = row.label } end
-  return options
-end
-
-local function people()
-  return as_options(pv.query(
-    'SELECT id, display_name AS label FROM person ORDER BY display_name COLLATE NOCASE, id'))
-end
 
 -- Grain: one row per pharmacy.
 local function pharmacies()
@@ -80,66 +74,169 @@ end
 
 --- Review ---
 
--- Turns the claims of a pasted text into the rows of the review table. Each row says
--- what was read, what it matched, and whether it can be added.
-local function review(claims, person_id, chosen)
-  local known = pharmacies()
+-- The number of the first fill of the text that carries each key. The fields of a
+-- medication or a pharmacy are named after that number. It depends on the text alone,
+-- so a choice still belongs to its name when the text is read again.
+local function first_fill_of(claims, key_of)
+  local first = {}
+  for index, claim in ipairs(claims) do
+    local key = key_of(claim)
+    if key and key ~= '' and not first[key] then first[key] = index end
+  end
+  return first
+end
+
+-- The medications of a paste: one for each distinct name among the fills that can be
+-- added, so ten fills of one medication ask one question.
+-- @param rows table   The rows of the review.
+-- @param typed table  The values of the review form; filled in with what the app
+--        suggests when `submitted` is false.
+local function medications_of(claims, rows, typed, submitted)
+  local first = first_fill_of(claims, function(claim) return text.key(claim.drug_name) end)
+  local list, by_key = {}, {}
+  for _, row in ipairs(rows) do
+    local claim = row.claim
+    local key = text.key(claim.drug_name)
+    if row.can_add and not by_key[key] then
+      local subject = { index = first[key], name = claim.drug_name }
+      subject.prefix = 'medication_' .. subject.index
+      local offered, exact = medication_search.suggest(claim.drug_name, SUGGESTIONS_MAX)
+      subject.candidates = offered
+      if exact then
+        subject.known = exact
+      elseif submitted then
+        subject.pick = medication_pick.read(typed, subject.prefix, true, true)
+      else
+        -- The choice that is marked to begin with: the one medication with the same
+        -- name and strength, or a new medication when the catalog holds nothing like it.
+        local parts = written_name.parse(claim.drug_name)
+        typed[subject.prefix .. '_generic']  = parts.name
+        typed[subject.prefix .. '_strength'] = parts.strength
+        if offered[1] and offered[1].sure then
+          typed[subject.prefix .. '_choice'] = offered[1].medication_id
+        elseif #offered == 0 then
+          typed[subject.prefix .. '_choice'] = medication_pick.NEW
+        end
+      end
+      list[#list + 1], by_key[key] = subject, subject
+    end
+  end
+  return list, by_key
+end
+
+-- The key of the pharmacy of a claim: its identifier, or its name.
+local function pharmacy_key(claim)
+  return claim.pharmacy_npi or text.key(claim.pharmacy_name)
+end
+
+-- The row of a pharmacy that is added from the pasted details.
+local function pharmacy_row(claim)
+  return {
+    name    = validate.text(claim.pharmacy_name, 'the name', NAME_MAX, true),
+    address = validate.text(claim.pharmacy_address, 'the address', ADDRESS_MAX),
+    phone   = validate.phone(claim.pharmacy_phone, 'the phone number', PHONE_MAX),
+    npi     = validate.npi(claim.pharmacy_npi),
+  }
+end
+
+-- The pharmacies of a paste: one for each distinct pharmacy among the fills that can
+-- be added.
+local function pharmacies_of(claims, rows, typed, submitted, known)
+  local first = first_fill_of(claims, pharmacy_key)
+  local list, by_key = {}, {}
+  for _, row in ipairs(rows) do
+    local claim = row.claim
+    local key = pharmacy_key(claim)
+    if row.can_add and not by_key[key] then
+      local subject = { index = first[key], claim = claim, name = claim.pharmacy_name }
+      subject.field = 'pharmacy_' .. subject.index
+      subject.known = pharmacy_of(claim, known)
+      subject.can_add = pharmacy_row(claim).name ~= nil
+      if not subject.known then
+        if not submitted and subject.can_add then typed[subject.field] = NEW_PHARMACY end
+        local chosen = text.clean(typed[subject.field])
+        if chosen == NEW_PHARMACY and subject.can_add then
+          subject.new_row = pharmacy_row(claim)
+        elseif chosen and chosen ~= NEW_PHARMACY and pv.get_row('pharmacy', chosen) then
+          subject.id = chosen
+        else
+          subject.problem = 'Choose a pharmacy from the list.'
+        end
+      end
+      list[#list + 1], by_key[key] = subject, subject
+    end
+  end
+  return list, by_key
+end
+
+-- Turns the claims of a pasted text into what the review page shows: the medications,
+-- the pharmacies, and one row for each fill that says whether it can be added.
+local function review(claims, person_id, typed, submitted)
   local rows = {}
   for index, claim in ipairs(claims) do
     local row = { index = index, claim = claim, problems = {} }
-    local picked = chosen['medication_' .. index]
-    local suggestions, exact = {}, nil
-    if claim.drug_name then
-      suggestions, exact = medication_search.suggest(claim.drug_name, SUGGESTIONS_MAX)
-    end
-    row.suggestions = {}
-    for _, medication in ipairs(suggestions) do
-      row.suggestions[#row.suggestions + 1] =
-        { value = medication.medication_id, label = medication.short_name }
-    end
-    row.medication_id = picked or (exact and exact.medication_id)
-    row.known_name = exact ~= nil
-
-    row.pharmacy_id = chosen['pharmacy_' .. index] or pharmacy_of(claim, known)
-      or (claim.pharmacy_name and NEW_PHARMACY)
-
     local form = {
-      person_id = person_id, medication_id = row.medication_id, pharmacy_id = row.pharmacy_id,
-      filled_on = claim.filled_on, days_supply = claim.days_supply, quantity = claim.quantity,
-      amount_paid = claim.amount_paid, rx_number = claim.rx_number,
+      person_id = person_id, filled_on = claim.filled_on, days_supply = claim.days_supply,
+      quantity = claim.quantity, amount_paid = claim.amount_paid, rx_number = claim.rx_number,
     }
-    local _, errors = fills.read(form, row.pharmacy_id == NEW_PHARMACY)
+    row.fill, row.errors = fills.read(form, { medication_id = true, pharmacy_id = true })
     for _, field in ipairs({ 'filled_on', 'days_supply', 'quantity', 'amount_paid', 'rx_number' }) do
-      if errors[field] then row.problems[#row.problems + 1] = errors[field] end
+      if row.errors[field] then row.problems[#row.problems + 1] = row.errors[field] end
+    end
+    if text.key(claim.drug_name) == '' then
+      row.problems[#row.problems + 1] = 'The name of the medication was not read.'
     end
 
     if #row.problems > 0 then
-      row.result, row.can_add = 'Could not read', false
+      row.result = 'Could not read'
     elseif claim.rx_number and claim.filled_on
            and fills.recorded(person_id, claim.rx_number, claim.filled_on) then
-      row.result, row.can_add = 'Already recorded', false
-    elseif #row.suggestions == 0 then
-      row.result, row.can_add = 'Not in the catalog', false
-    elseif not claim.details_open then
-      row.result, row.can_add = 'Details missing', false
-    elseif not row.medication_id then
-      row.result, row.can_add = 'Choose a medication', true
-    elseif not row.pharmacy_id then
-      row.result, row.can_add = 'Choose a pharmacy', true
+      row.result = 'Already recorded'
+    elseif not claim.details_open or (pharmacy_key(claim) or '') == '' then
+      row.result = 'Details missing'
     elseif (claim.status or ''):lower() ~= 'paid' then
       row.result, row.can_add = 'Not paid', true
     else
       row.result, row.can_add, row.ready = 'Ready', true, true
     end
+
+    -- A fill is marked to begin with when nothing speaks against it. After that, the
+    -- marks are the person's own.
+    local field = 'include_' .. index
+    if not submitted then typed[field] = row.ready and 'yes' or nil end
+    row.wanted = row.can_add == true and typed[field] == 'yes'
     rows[#rows + 1] = row
   end
-  return rows, known
+
+  local known = pharmacies()
+  local medications, medication_by = medications_of(claims, rows, typed, submitted)
+  local pharmacy_list, pharmacy_by = pharmacies_of(claims, rows, typed, submitted, known)
+  for _, row in ipairs(rows) do
+    if row.can_add then
+      row.medication = medication_by[text.key(row.claim.drug_name)]
+      row.pharmacy   = pharmacy_by[pharmacy_key(row.claim)]
+    end
+  end
+  return { rows = rows, medications = medications, pharmacies = pharmacy_list, known = known }
 end
 
 local function paste_page(typed, err)
   return pv.render('paste', {
-    section = 'history', typed = typed, err = err, people = people(),
+    section = 'history', typed = typed, err = err,
+    people = quick_add.options(quick_add.PERSON),
     notice = page.notice(typed.notice),
+  })
+end
+
+local function review_page(found, person, pasted, typed, err)
+  local ready, asked = 0, 0
+  for _, row in ipairs(found.rows) do if row.ready then ready = ready + 1 end end
+  for _, subject in ipairs(found.medications) do if not subject.known then asked = asked + 1 end end
+  return pv.render('paste_review', {
+    section = 'history', found = found, person = person, pasted = pasted, typed = typed,
+    err = err, new_pharmacy = NEW_PHARMACY, names = suggestions.medication_names(),
+    summary = page.counted(#found.rows, 'fill', 'fills') .. ' found. ' .. ready .. ' ready to add. '
+      .. page.counted(asked, 'name is', 'names are') .. ' new to the app.',
   })
 end
 
@@ -173,14 +270,9 @@ pv.post(PASTE .. '/read', function(req)
     req.form.notice = 'unread'
     return paste_page(req.form)
   end
-  local rows, known = review(claims, person_id, {})
-  local ready = 0
-  for _, row in ipairs(rows) do if row.ready then ready = ready + 1 end end
-  return pv.render('paste_review', {
-    section = 'history', rows = rows, person = pv.get_row('person', person_id),
-    pasted = pasted, pharmacies = known, new_pharmacy = NEW_PHARMACY,
-    summary = page.counted(#rows, 'fill', 'fills') .. ' found. ' .. ready .. ' ready to add.',
-  })
+  local typed = {}
+  return review_page(review(claims, person_id, typed, false),
+    pv.get_row('person', person_id), pasted, typed)
 end)
 
 pv.post(PASTE .. '/add', function(req)
@@ -190,66 +282,68 @@ pv.post(PASTE .. '/add', function(req)
   -- The text is read again and every value is checked again. What the review page
   -- sent back is used only for the choices a person made there.
   local claims = portal_reader.read(pasted)
-  local chosen = {}
-  for index = 1, #claims do
-    for _, name in ipairs({ 'medication_' .. index, 'pharmacy_' .. index }) do
-      chosen[name] = text.clean(req.form[name])
-    end
-  end
-  local rows = review(claims, person_id, chosen)
+  local found = review(claims, person_id, req.form, true)
 
-  local to_add = {}
-  for _, row in ipairs(rows) do
-    local wanted = req.form['include_' .. row.index] == 'yes'
-    if wanted and row.can_add and row.medication_id and row.pharmacy_id then
-      local new_pharmacy = row.pharmacy_id == NEW_PHARMACY
-      local fill, errors = fills.read({
-        person_id = person_id, medication_id = row.medication_id,
-        pharmacy_id = row.pharmacy_id, filled_on = row.claim.filled_on,
-        days_supply = row.claim.days_supply, quantity = row.claim.quantity,
-        amount_paid = row.claim.amount_paid, rx_number = row.claim.rx_number,
-      }, new_pharmacy)
-      if not next(errors) then
-        to_add[#to_add + 1] = { fill = fill, claim = row.claim, new_pharmacy = new_pharmacy }
-      end
+  local wanted, unanswered = {}, 0
+  for _, row in ipairs(found.rows) do
+    if row.wanted then
+      wanted[#wanted + 1] = row
+      row.medication.used, row.pharmacy.used = true, true
     end
   end
-  if #to_add == 0 then return pv.redirect(url('/fills?added=0')) end
+  if #wanted == 0 then return pv.redirect(url('/fills?added=0')) end
+  for _, group in ipairs({ found.medications, found.pharmacies }) do
+    for _, subject in ipairs(group) do
+      local refused = (subject.pick and subject.pick.problem) or subject.problem
+      if subject.used and not subject.known and refused then unanswered = unanswered + 1 end
+    end
+  end
+  if unanswered > 0 then
+    return review_page(found, pv.get_row('person', person_id), pasted, req.form,
+      'Nothing was added yet. ' .. page.counted(unanswered, 'choice is', 'choices are')
+      .. ' still open. Each one is marked below.')
+  end
 
   local saved = store.together('fill', function(tx)
-    local made, taught, fill_rows = {}, {}, {}
-    for _, item in ipairs(to_add) do
-      local claim = item.claim
-      if item.new_pharmacy then
-        -- Two fills from one new pharmacy add it once.
-        local key = claim.pharmacy_npi or text.key(claim.pharmacy_name)
-        if not made[key] then
-          made[key] = tx.append('pharmacy', {
-            name    = validate.text(claim.pharmacy_name, 'the name', NAME_MAX, true),
-            address = validate.text(claim.pharmacy_address, 'the address', ADDRESS_MAX),
-            phone   = validate.phone(claim.pharmacy_phone, 'the phone number', PHONE_MAX),
-            npi     = validate.npi(claim.pharmacy_npi),
-          })
+    -- Two names of the portal that lead to the same new medication add it once.
+    local added = {}
+    for _, subject in ipairs(found.medications) do
+      if subject.used and subject.known then
+        subject.id = subject.known.medication_id
+      elseif subject.used then
+        local new_row = subject.pick.new_row
+        local key = new_row and text.key(new_row.short_name)
+        if key and added[key] then
+          subject.id = added[key]
+        else
+          subject.id = medication_pick.write(tx, subject.pick)
+          if key then added[key] = subject.id end
         end
-        item.fill.pharmacy_id = made[key]
-      end
-      -- The name the portal used becomes another name of the medication, so the next
-      -- paste finds it without asking.
-      local name_key = item.fill.medication_id .. ' ' .. text.key(claim.drug_name)
-      if claim.drug_name and not taught[name_key]
-         and not answers_to(item.fill.medication_id, claim.drug_name) then
-        taught[name_key] = true
-        local alias = validate.text(claim.drug_name, 'the name', 200)
-        if alias then
-          tx.append('medication_alias', { medication_id = item.fill.medication_id, alias = alias })
+        -- The name the portal used becomes another name of the medication, so the
+        -- next paste finds it without asking.
+        local alias = validate.text(subject.name, 'the name', ALIAS_MAX)
+        local answers = new_row and text.key(new_row.short_name) == text.key(subject.name)
+          or (not new_row and answers_to(subject.id, subject.name))
+        if alias and not answers then
+          tx.append('medication_alias', { medication_id = subject.id, alias = alias })
         end
       end
-      fill_rows[#fill_rows + 1] = item.fill
     end
-    fills.add_all(tx, fill_rows, nil)
+    for _, subject in ipairs(found.pharmacies) do
+      if subject.used then
+        subject.id = subject.known or subject.id or tx.append('pharmacy', subject.new_row)
+      end
+    end
+
+    local rows = {}
+    for _, row in ipairs(wanted) do
+      row.fill.medication_id, row.fill.pharmacy_id = row.medication.id, row.pharmacy.id
+      rows[#rows + 1] = row.fill
+    end
+    fills.add_all(tx, rows, nil)
   end)
   if not saved then
     return paste_page(req.form, 'The app could not add the fills. Read the text again and check each row.')
   end
-  return pv.redirect(url('/fills?person=' .. person_id .. '&added=' .. #to_add))
+  return pv.redirect(url('/fills?person=' .. person_id .. '&added=' .. #wanted))
 end)

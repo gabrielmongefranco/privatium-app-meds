@@ -96,7 +96,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
     <tbody role="rowgroup">
     <? for _, authorization in ipairs(authorizations) do ?>
       <tr role="row">
-        <td role="cell"><span class="pv-cell-label" aria-hidden="true">First day</span><?= fmt.date(authorization.valid_from) ?></td>
+        <td role="cell"><span class="pv-cell-label" aria-hidden="true">First day</span><? if authorization.valid_from then ?><?= fmt.date(authorization.valid_from) ?><? else ?>Not known<? end ?></td>
         <td role="cell"><span class="pv-cell-label" aria-hidden="true">Last day</span><?= fmt.date(authorization.valid_to) ?></td>
         <td role="cell"><span class="pv-cell-label" aria-hidden="true">State</span><?= authorization.state ?></td>
       </tr>

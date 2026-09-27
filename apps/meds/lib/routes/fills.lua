@@ -25,10 +25,12 @@ local pv                = require 'privatium'
 local clock             = require 'clock'
 local entries           = require 'entries'
 local fills             = require 'fills'
-local medication_search = require 'medication_search'
+local medication_pick   = require 'medication_pick'
 local page              = require 'page'
 local people_filter     = require 'people_filter'
+local quick_add         = require 'quick_add'
 local store             = require 'store'
+local suggestions       = require 'suggestions'
 local text              = require 'text'
 local validate          = require 'validate'
 
@@ -47,15 +49,9 @@ local function as_options(rows)
   return options
 end
 
-local function people()
-  return as_options(pv.query(
-    'SELECT id, display_name AS label FROM person ORDER BY display_name COLLATE NOCASE, id'))
-end
+local function people() return quick_add.options(quick_add.PERSON) end
 
-local function pharmacies()
-  return as_options(pv.query(
-    'SELECT id, name AS label FROM pharmacy ORDER BY name COLLATE NOCASE, id'))
-end
+local function pharmacies() return quick_add.options(quick_add.PHARMACY) end
 
 local function medication(id)
   return pv.query1(
@@ -74,7 +70,7 @@ local function starting_values(person_id, medication_id)
      WHERE l.person_id = ? AND l.medication_id = ?]], { person_id, medication_id }) or {}
   local entry = person_id and entries.of(person_id, medication_id)
   last.pharmacy_id = last.pharmacy_id or (entry and entry.pharmacy_id)
-  last.refills_left = entry and math.max(entry.refills_left - 1, 0) or 0
+  last.refills_left = entry and math.max(entry.refills_left - 1, 0) or nil
   last.person_id, last.medication_id = person_id, medication_id
   last.filled_on = clock.today()
   return last
@@ -103,7 +99,9 @@ end
 
 --- Pages ---
 
-local function form_page(heading, action, typed, errors, chosen, is_new)
+-- The form of a fill. `chosen` is the medication when the form is about one; without
+-- it, the form holds the medication box, and `pick` is what the box answered.
+local function form_page(heading, action, typed, errors, chosen, is_new, pick)
   local person_id = text.clean(typed.person_id)
   return pv.render('fill_form', {
     section    = 'history',
@@ -113,6 +111,10 @@ local function form_page(heading, action, typed, errors, chosen, is_new)
     errors     = errors,
     problems   = page.problems(errors, FIELDS),
     medication = chosen,
+    pick       = pick,
+    in_use     = not chosen and medication_pick.in_use(text.clean(typed.medication_id)) or {},
+    names      = not chosen and suggestions.medication_names() or {},
+    plans      = suggestions.insurance_plans(),
     people     = people(),
     pharmacies = pharmacies(),
     is_new     = is_new,
@@ -120,6 +122,38 @@ local function form_page(heading, action, typed, errors, chosen, is_new)
     on_list    = person_id ~= nil and chosen ~= nil
                  and entries.of(person_id, chosen.medication_id) ~= nil,
   })
+end
+
+-- Reads a fill with the records it may add beside it: a person, a pharmacy and, when
+-- the form holds the medication box, a medication.
+-- @return table, table, table  The row, the problems, and what to add in the batch.
+local function read_with_new(form, fixed_medication_id)
+  local adding, problems = {}, {}
+  adding.person_id, adding.person, problems.person_id =
+    quick_add.read(form, 'person_id', quick_add.PERSON, true)
+  adding.pharmacy_id, adding.pharmacy, problems.pharmacy_id =
+    quick_add.read(form, 'pharmacy_id', quick_add.PHARMACY, true)
+  if fixed_medication_id then
+    adding.pick = { id = fixed_medication_id }
+  else
+    adding.pick = medication_pick.read(form, 'medication', true)
+    problems.medication_id = adding.pick.problem
+  end
+
+  local row, errors = fills.read(form, { person_id = true, pharmacy_id = true, medication_id = true })
+  for field, problem in pairs(problems) do errors[field] = problem end
+  row.person_id, row.pharmacy_id, row.medication_id =
+    adding.person_id, adding.pharmacy_id, adding.pick.id
+  return row, errors, adding
+end
+
+-- Adds the new records of a fill inside its batch and sets their ids on the fill.
+local function write_new(adding)
+  return function(tx, row)
+    row.person_id   = quick_add.write(tx, quick_add.PERSON, adding.person_id, adding.person)
+    row.pharmacy_id = quick_add.write(tx, quick_add.PHARMACY, adding.pharmacy_id, adding.pharmacy)
+    row.medication_id = medication_pick.write(tx, adding.pick)
+  end
 end
 
 --- Routes ---
@@ -189,37 +223,33 @@ pv.get(LIST, function(req)
 end)
 
 -- Recording a fill starts from a list entry, or from a person and a medication. With
--- neither, the first page finds the medication.
+-- neither, the form holds the medication box.
 pv.get(LIST .. '/new', function(req)
   local entry = req.query.entry and pv.get_row('person_medication', req.query.entry)
   local person_id = entry and entry.person_id or text.clean(req.query.person)
   local chosen = medication(entry and entry.medication_id or req.query.medication)
   if chosen then
-    return form_page('Record a fill', url(LIST .. '/new'),
+    return form_page('Record a fill', url(LIST .. '/new?medication=' .. chosen.medication_id),
       starting_values(person_id, chosen.medication_id), {}, chosen, true)
   end
-  local typed = medication_search.typed(req.query.q)
-  return pv.render('fill_choose', {
-    section = 'history',
-    person  = person_id or '',
-    filter  = typed,
-    found   = medication_search.find(typed),
-  })
+  return form_page('Record a fill', url(LIST .. '/new'),
+    { person_id = person_id, filled_on = clock.today() }, {}, nil, true)
 end)
 
 pv.post(LIST .. '/new', function(req)
-  local row, errors = fills.read(req.form)
+  -- The page address names the medication when the form is about one.
+  local chosen = medication(req.query.medication)
+  local row, errors, adding = read_with_new(req.form, chosen and chosen.medication_id)
   local refills_left
   refills_left, errors.refills_left = validate.whole_number(
-    req.form.refills_left, 'the refills left', 0, fills.REFILLS_MAX, true)
+    req.form.refills_left, 'the refills left', 0, fills.REFILLS_MAX)
   if not next(errors) then
-    local saved, refusal = fills.save_new(row, refills_left)
+    local saved, refusal = fills.save_new(row, refills_left, write_new(adding))
     if saved then return pv.redirect(url('/?filled=' .. saved)) end
     errors.filled_on = refusal
   end
-  local chosen = medication(text.clean(req.form.medication_id))
-  if not chosen then return pv.redirect(url(LIST .. '/new')) end
-  return form_page('Record a fill', url(LIST .. '/new'), req.form, errors, chosen, true)
+  local action = url(LIST .. '/new' .. (chosen and ('?medication=' .. chosen.medication_id) or ''))
+  return form_page('Record a fill', action, req.form, errors, chosen, true, adding.pick)
 end)
 
 pv.get(LIST .. '/:id/edit', function(req)
@@ -233,11 +263,13 @@ pv.post(LIST .. '/:id/edit', function(req)
   local fill = pv.get_row('fill', req.params.id)
   if not fill then return pv.redirect(url(LIST .. '?notice=missing')) end
   -- The medication of a fill does not change in this form; a merge moves it.
-  req.form.medication_id = fill.medication_id
   req.form.id = fill.id
-  local row, errors = fills.read(req.form)
+  local row, errors, adding = read_with_new(req.form, fill.medication_id)
   if not next(errors) then
-    local saved, refusal = store.save('fill', fill.id, row)
+    local saved, refusal = store.together('fill', function(tx)
+      write_new(adding)(tx, row)
+      tx.append('fill', fill.id, row)
+    end)
     if saved then return pv.redirect(url(LIST .. '?notice=saved')) end
     errors.filled_on = refusal
   end
