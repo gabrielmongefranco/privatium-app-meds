@@ -81,11 +81,22 @@ function catalog_entry.with_short_name(name)
 end
 
 --- The medication that was copied from a drug reference under an identifier.
+-- One product comes in several packages, and each package is an entry of its own. So
+-- two entries are the same only when the identifier and the package are the same.
 -- @param rxcui string|nil
+-- @param package_size string|nil
+-- @param package_type string|nil
 -- @return string|nil  The id of the medication, or nil.
-function catalog_entry.with_rxcui(rxcui)
+function catalog_entry.with_rxcui(rxcui, package_size, package_type)
   if not rxcui then return nil end
-  local found = pv.query1('SELECT id FROM medication WHERE rxcui = ? ORDER BY id LIMIT 1', { rxcui })
+  local found = pv.query1([[
+    SELECT id
+      FROM medication
+     WHERE rxcui = ?1
+       AND coalesce(package_size, '') = ?2
+       AND coalesce(package_type, '') = ?3
+     ORDER BY id
+     LIMIT 1]], { rxcui, package_size or '', package_type or '' })
   return found and found.id
 end
 
@@ -163,13 +174,18 @@ function catalog_entry.read(form, existing, offered)
   -- that a person typed stays as typed.
   local typed, problem = validate.text(form.short_name, 'the short name', max)
   local built_before = existing
+    and medication_name.short(existing.brand_name, existing.generic_name, existing.strength,
+                              existing.package_size, existing.package_type)
+  -- A name that the app built before the package was part of it counts as built too.
+  local built_plain = existing
     and medication_name.short(existing.brand_name, existing.generic_name, existing.strength)
   if problem then
     errors.short_name = problem
-  elseif typed and typed ~= built_before then
+  elseif typed and typed ~= built_before and typed ~= built_plain then
     row.short_name = typed
   else
-    row.short_name = medication_name.short(row.brand_name, row.generic_name, row.strength)
+    row.short_name = medication_name.short(row.brand_name, row.generic_name, row.strength,
+                                           row.package_size, row.package_type)
   end
 
   local own_id, same_as = existing and existing.medication_id, nil
@@ -180,9 +196,9 @@ function catalog_entry.read(form, existing, offered)
       same_as = holder
     end
   end
-  local copied = catalog_entry.with_rxcui(row.rxcui)
+  local copied = catalog_entry.with_rxcui(row.rxcui, row.package_size, row.package_type)
   if copied and copied ~= own_id then
-    errors.rxcui = 'Check the RxNorm identifier. A medication with this one is already in the catalog.'
+    errors.rxcui = 'Check the RxNorm identifier and the package. A medication with both is already in the catalog.'
     same_as = copied
   end
   return row, errors, same_as

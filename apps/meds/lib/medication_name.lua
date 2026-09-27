@@ -23,16 +23,20 @@
 
 local medication_name = {}
 
---- The short name: the brand name, the generic name in brackets, then the strength.
--- A part that is missing is left out, brackets included:
---   Examplol, Exampline, 10 mg  ->  Examplol (Exampline) 10 mg
---   nil,      Exampline, 10 mg  ->  Exampline 10 mg
---   Examplol, nil,       nil    ->  Examplol
+--- The short name: the brand name, the generic name in brackets, the strength, then
+-- the package. A carton of 2 is another thing to refill than a carton of 6, so the
+-- package is part of the name. A part that is missing is left out, brackets included:
+--   Examplol, Exampline, 10 mg           ->  Examplol (Exampline) 10 mg
+--   Examplol, Exampline, 10 mg, 2, Pack  ->  Examplol (Exampline) 10 mg 2 Pack
+--   nil,      Exampline, 10 mg           ->  Exampline 10 mg
+--   Examplol, nil,       nil             ->  Examplol
 -- @param brand string|nil
 -- @param generic string|nil
 -- @param strength string|nil
+-- @param package_size string|nil  How much one package holds, such as '2' or '60 mL'.
+-- @param package_type string|nil  The kind of package, such as 'Pack' or 'Bottle'.
 -- @return string|nil  The name, or nil when there is neither a brand nor a generic name.
-function medication_name.short(brand, generic, strength)
+function medication_name.short(brand, generic, strength, package_size, package_type)
   local name
   if brand and generic then
     name = brand .. ' (' .. generic .. ')'
@@ -41,6 +45,8 @@ function medication_name.short(brand, generic, strength)
   end
   if not name then return nil end
   if strength then name = name .. ' ' .. strength end
+  if package_size then name = name .. ' ' .. package_size end
+  if package_type then name = name .. ' ' .. package_type end
   return name
 end
 

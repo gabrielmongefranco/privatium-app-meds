@@ -364,9 +364,8 @@
   // Picks a medication of the catalog: its name goes into the name box, and the
   // fields of a new medication are emptied, so the form saves the one that was picked.
   function pick(lookup, entry) {
-    ['brand', 'generic', 'strength', 'rxcui', 'source', 'route', 'dose_form'].forEach(function (ending) {
-      setField(lookup, ending, '');
-    });
+    ['brand', 'generic', 'strength', 'package_size', 'package_type', 'rxcui', 'source', 'route',
+      'dose_form'].forEach(function (ending) { setField(lookup, ending, ''); });
     setField(lookup, 'name', entry.name);
     var other = lookup.closest('fieldset').querySelector(
       'input[type="radio"][name="' + lookup.getAttribute('data-lookup') + '_choice"][value="other"]');

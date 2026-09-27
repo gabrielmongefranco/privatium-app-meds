@@ -33,7 +33,7 @@ Nobody who only uses the app has to do this. The file is part of the repository.
 | `clincalc_top200.txt` | The 200 drugs most prescribed in the United States in 2024, by ingredient |
 | `clincalc_names_in_rxterms.txt` | The few drugs of that list that RxTerms files under another name |
 | `more_ingredients.txt` | More drugs, by ingredient |
-| `preferred_brands.txt` | The brand a short name shows when a drug has several brands |
+| `preferred_brands.txt` | The brand a short name shows when a drug has several brands. A brand of this list that no entry names is added with its own products. |
 | `labeled_in_micrograms.txt` | Drugs whose labels print every strength up to 1 mg in micrograms |
 | `by_hand.jsonl` | Entries written by hand: the first catalog of the project, and products that no drug reference holds, such as continuous glucose monitors |
 
@@ -65,7 +65,7 @@ its drug list, which gives every product a number.
    does not hold:
 
    ```text
-   build_seed: 63 entries written by hand, 2150 entries from RxTerms, 483 brand names as other names
+   build_seed: 61 entries written by hand, 2217 entries from RxTerms, 454 brand names as other names
    ```
 
 4. Run the three checks in [How to run the tests](run-the-tests.md). The smoke test loads
@@ -82,13 +82,17 @@ its drug list, which gives every product a number.
    makers filed with openFDA for the same product and the same amount, and uses
    micrograms when most of them print micrograms. A drug on the list of drugs labeled in
    micrograms needs no count.
-5. It builds one catalog entry for each product. The short name is the brand name, the
+5. It adds the products of every preferred brand that no entry names yet.
+6. For an injection or a nasal product, it reads the cartons on the labels of openFDA.
+   It makes one entry for each size of carton, and shows the strength of one device
+   where the label prints it so.
+7. It builds one catalog entry for each product and package. The short name is the brand name, the
    generic name in brackets, and the strength.
-6. It leaves out a product that an entry written by hand already covers, and gives that
+8. It leaves out a product that an entry written by hand already covers, and gives that
    entry the number of the product.
-7. It makes every short name different. Two products with one name and one strength get
-   their form or their package added, such as "Pen Injector 3 mL".
-8. It writes the entries written by hand first, then the others by name.
+9. It makes every short name different. Two products with one name and one strength get
+   their form or their device added, such as "Pen Injector 3 mL".
+10. It writes the entries written by hand first, then the others by name.
 
 The same lists and the same answers always give the same file.
 
@@ -103,7 +107,7 @@ nothing about any person, and it reads no record of the app.
 |---|---|---|
 | ClinCalc DrugStats, The Top 200 of 2024 | The names of the 200 drugs | Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0) |
 | RxTerms and RxNorm, National Library of Medicine | Strengths, forms, brand names and product numbers | Public data. The terms ask for a notice. |
-| openFDA NDC Directory, Food and Drug Administration | The unit that labels print for a strength | Public data |
+| openFDA NDC Directory, Food and Drug Administration | The unit and the strength that labels print, and the sizes of the cartons | Public data |
 
 The Credits section of the project README names these sources. The file
 `tools/seed/clincalc_top200.txt` holds the full citation of the ClinCalc list.
@@ -112,6 +116,11 @@ Recommended: ask someone who knows licenses whether a file that mixes a CC BY-SA
 with the project's own license needs anything more. This page makes no claim about that.
 
 ### Known limits
+
+- openFDA answers 1,000 requests a day from one address without a key. A first run asks
+  it about 700 times. The answers are kept, so a later run asks for little.
+- The cartons come from the labels that makers filed. A carton that no label lists has
+  no entry. Add it in the app, or write it into `by_hand.jsonl`.
 
 - A strength below 1 mg stays in milligrams when openFDA holds no label for the product,
   or when as many labels print milligrams as micrograms.
