@@ -34,6 +34,7 @@ Nobody who only uses the app has to do this. The file is part of the repository.
 | `clincalc_names_in_rxterms.txt` | The few drugs of that list that RxTerms files under another name |
 | `more_ingredients.txt` | More drugs, by ingredient |
 | `preferred_brands.txt` | The brand a short name shows when a drug has several brands |
+| `labeled_in_micrograms.txt` | Drugs whose labels print every strength up to 1 mg in micrograms |
 | `by_hand.jsonl` | Entries written by hand: the first catalog of the project, and products that no drug reference holds, such as continuous glucose monitors |
 
 RxTerms is a drug vocabulary of the United States National Library of Medicine. RxNorm is
@@ -44,7 +45,7 @@ its drug list, which gives every product a number.
 | Tool | Note |
 |---|---|
 | Python 3.8 or newer | The script uses the standard library only |
-| A connection to the internet | The script asks two services of the National Library of Medicine |
+| A connection to the internet | The script asks two services of the National Library of Medicine, and openFDA |
 
 ### Steps
 
@@ -64,7 +65,7 @@ its drug list, which gives every product a number.
    does not hold:
 
    ```text
-   build_seed: 63 entries written by hand, 2151 entries from RxTerms, 487 brand names as other names
+   build_seed: 63 entries written by hand, 2150 entries from RxTerms, 483 brand names as other names
    ```
 
 4. Run the three checks in [How to run the tests](run-the-tests.md). The smoke test loads
@@ -77,19 +78,23 @@ its drug list, which gives every product a number.
 1. It reads the lists and drops a drug that is on two of them.
 2. It asks RxTerms for every product of each drug: one for each strength and form.
 3. It asks RxNorm for the brand names of each product.
-4. It builds one catalog entry for each product. The short name is the brand name, the
+4. It puts a strength below 1 mg into the unit of the label. It reads the labels that
+   makers filed with openFDA for the same product and the same amount, and uses
+   micrograms when most of them print micrograms. A drug on the list of drugs labeled in
+   micrograms needs no count.
+5. It builds one catalog entry for each product. The short name is the brand name, the
    generic name in brackets, and the strength.
-5. It leaves out a product that an entry written by hand already covers, and gives that
+6. It leaves out a product that an entry written by hand already covers, and gives that
    entry the number of the product.
-6. It makes every short name different. Two products with one name and one strength get
+7. It makes every short name different. Two products with one name and one strength get
    their form or their package added, such as "Pen Injector 3 mL".
-7. It writes the entries written by hand first, then the others by name.
+8. It writes the entries written by hand first, then the others by name.
 
 The same lists and the same answers always give the same file.
 
 ### What the script sends
 
-The script sends names of drugs and numbers of products to the two services. It sends
+The script sends names of drugs and numbers of products to the three services. It sends
 nothing about any person, and it reads no record of the app.
 
 ### Sources and licenses
@@ -97,18 +102,19 @@ nothing about any person, and it reads no record of the app.
 | Source | Used for | Terms |
 |---|---|---|
 | ClinCalc DrugStats, The Top 200 of 2024 | The names of the 200 drugs | Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0) |
-| RxTerms and RxNorm, National Library of Medicine | Strengths, forms, brand names and product numbers | Public data. The terms ask for a notice, which is in the `NOTICE` file. |
+| RxTerms and RxNorm, National Library of Medicine | Strengths, forms, brand names and product numbers | Public data. The terms ask for a notice. |
+| openFDA NDC Directory, Food and Drug Administration | The unit that labels print for a strength | Public data |
 
-The `NOTICE` file of the repository holds the citation of the ClinCalc list and the
-notice of the National Library of Medicine.
+The Credits section of the project README names these sources. The file
+`tools/seed/clincalc_top200.txt` holds the full citation of the ClinCalc list.
 
 Recommended: ask someone who knows licenses whether a file that mixes a CC BY-SA list
 with the project's own license needs anything more. This page makes no claim about that.
 
 ### Known limits
 
-- RxTerms prints some strengths in another unit than the label, such as "0.05 mg" for a
-  tablet that the label calls "50 mcg". The catalog keeps what RxTerms prints.
+- A strength below 1 mg stays in milligrams when openFDA holds no label for the product,
+  or when as many labels print milligrams as micrograms.
 - The strengths of compounded mixes differ from pharmacy to pharmacy. The two entries
   written by hand hold one strength each. Check them against your own label.
 - ClinCalc groups several magnesium products under one name. The catalog leaves that

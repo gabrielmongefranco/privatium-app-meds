@@ -1,0 +1,16 @@
+# This file is part of Prescription Tracker
+# tools/seed/labeled_in_micrograms.txt
+# Author(s): Gabriel Mongefranco
+# Created: 2026-09-27
+# Last Modified: 2026-09-27
+# Summary: Drugs whose labels print every strength below 1 mg in micrograms. For any
+#          other drug, the seed builder counts the units on the labels that openFDA holds.
+# Format: one drug per line, by ingredient, as the catalog shows its generic name.
+# Notes: See README file for documentation and full license information.
+#
+# Copyright © 2026 Gabriel Mongefranco
+# Licensed under the GNU General Public License v3.0 or later.
+# See <https://www.gnu.org/licenses/>.
+
+Alprostadil
+Levothyroxine
