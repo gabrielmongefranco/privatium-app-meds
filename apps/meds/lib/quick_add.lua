@@ -28,6 +28,8 @@ local validate = require 'validate'
 local quick_add = {}
 
 --- Configuration ---
+quick_add.NEW = 'new'   -- The choice of a drop-down that adds a record
+
 -- The records a form can add by name alone, beside its own record. `column` holds the
 -- name. `noun` completes the sentence 'Choose a ...'.
 quick_add.PERSON     = { tbl = 'person',     column = 'display_name', noun = 'person',     max = 120 }
@@ -80,6 +82,9 @@ function quick_add.read(form, field, kind, required)
   end
 
   local id = text.clean(form[field])
+  if id == quick_add.NEW then
+    return nil, nil, 'Type the name of the new ' .. kind.noun .. '.'
+  end
   if not id then
     if required then
       return nil, nil, 'Choose a ' .. kind.noun .. ', or type the name of a new one.'

@@ -90,14 +90,14 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
     <caption class="pv-visually-hidden">Prior authorizations, latest first</caption>
     <thead role="rowgroup"><tr role="row">
       <th scope="col" role="columnheader">First day</th>
-      <th scope="col" role="columnheader">Last day</th>
+      <th scope="col" role="columnheader">Expires on</th>
       <th scope="col" role="columnheader">State</th>
     </tr></thead>
     <tbody role="rowgroup">
     <? for _, authorization in ipairs(authorizations) do ?>
       <tr role="row">
         <td role="cell"><span class="pv-cell-label" aria-hidden="true">First day</span><? if authorization.valid_from then ?><?= fmt.date(authorization.valid_from) ?><? else ?>Not known<? end ?></td>
-        <td role="cell"><span class="pv-cell-label" aria-hidden="true">Last day</span><?= fmt.date(authorization.valid_to) ?></td>
+        <td role="cell"><span class="pv-cell-label" aria-hidden="true">Expires on</span><?= fmt.date(authorization.valid_to) ?></td>
         <td role="cell"><span class="pv-cell-label" aria-hidden="true">State</span><?= authorization.state ?></td>
       </tr>
     <? end ?>

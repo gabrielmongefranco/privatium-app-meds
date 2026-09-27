@@ -53,4 +53,17 @@ function text.key(value)
   return key
 end
 
+--- A decimal number without the zeros that say nothing.
+-- '30.000' becomes '30' and '2.500' becomes '2.5'. The number stays text from start to
+-- end, so an exact decimal never passes through a float.
+-- @param value any  A number as text, as a DECIMAL column returns it.
+-- @return string|nil  The shorter text, or nil for nil.
+function text.plain_number(value)
+  if value == nil then return nil end
+  local number = tostring(value)
+  if not number:find('.', 1, true) then return number end
+  number = number:gsub('0+$', ''):gsub('%.$', '')
+  return number
+end
+
 return text

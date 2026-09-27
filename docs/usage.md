@@ -50,7 +50,7 @@ under the heading narrows the list to one person.
 2. Choose **Setup**, then **People**, and add the first person. A first name is enough.
    The birth date is optional.
 
-The starter catalog holds about 2,214 medications: the 200 drugs most prescribed in the
+The starter catalog holds about 2,213 medications: the 200 drugs most prescribed in the
 United States at every strength, and common supplies such as glucose monitor sensors. It
 adds no person and no record about anyone.
 
@@ -62,9 +62,13 @@ needs. The next section shows how.
 A form often needs a record that is not in the app yet, such as a new pharmacy. You add
 it in the same form.
 
-**A person, a pharmacy or a prescriber.** The field has a drop-down and a box under it,
-labeled **Or add a new pharmacy**. Type the name in the box. Saving the form adds the
+**A person, a pharmacy or a prescriber.** Open the drop-down and choose
+**-- Add new --**. A box for the name appears. Type the name. Saving the form adds the
 pharmacy too. You can fill in its phone number and address later, under **Contacts**.
+
+The route, the form and the other choices of a form work the same way.
+
+If your browser runs no scripts, the box is always there, under the drop-down.
 
 If you type a name that is already in the app, the app uses that record. It never adds
 a name twice.
@@ -73,7 +77,7 @@ a name twice.
 
 | Part | Use it when |
 |---|---|
-| **Choose one that is already in use** | Someone in the household takes it, or has filled it |
+| **Choose one that is already in use** | Someone in the household takes it, or has filled it. Choose **-- Find another or add new --** to see the two other parts. |
 | **Type a name to search the catalog** | It is in the catalog. Type a few letters of any of its names, then pick it from the suggestions. |
 | **Add a new medication** | It is not in the catalog. Look it up, or type the brand name, the generic name, or both, and the strength. |
 
@@ -84,9 +88,11 @@ you mean. When the name is close to one the app knows, the form offers that medi
 and you decide.
 
 **Look up a medication.** Inside **Add a new medication**, type a name under
-**Look it up in a drug reference** and choose **Look up**. The app asks public drug
-references of the United States government for it. Pick a result, and the app fills in
-the brand name, the generic name and the strength. Check them, then save the form.
+**Look it up in a drug reference** and choose **Look up**. The app looks in its own
+catalog first. It asks the public drug references of the United States government only
+when the catalog holds nothing under the name, or when you choose
+**None of these. Search the drug references.** Pick a result, and the app fills in the
+brand name, the generic name and the strength. Check them, then save the form.
 
 The lookup needs a connection to the internet. It sends the name you typed and nothing
 else. Without a connection, fill in the fields yourself.
@@ -104,7 +110,8 @@ Choose **Refills**. The page lists what needs attention, most urgent first.
 | Overdue | The next fill date has passed |
 | Due | The next fill date is today or up to 3 days away |
 | Due soon | The next fill date is 4 to 7 days away |
-| Authorizations ending | A prior authorization ends within 30 days, or has ended |
+| New prescriptions to ask for | No refill is left, and the next fill is overdue, due or due soon |
+| Prior authorizations | A prior authorization has expired, is due or is due soon |
 | As needed | Taken as needed. The dates are shown and raise no alert. |
 | Missing information | No fill yet, or a last fill with no days supply |
 | Not due yet | Everything else in use. Open the group to see it. |
@@ -119,6 +126,19 @@ Each row shows two dates:
 - The **recommended** date also counts the supply that earlier fills built up.
 
 When no refill is left, the row names the prescriber to ask for a new prescription.
+
+**New prescriptions to ask for** lists every medication with no refill left whose next
+fill is near. It covers the medications taken regularly and the ones taken as needed.
+Some prescribers take a request for refills from the patient only, never from the
+pharmacy, so the page reminds you to ask.
+
+**Prior authorizations** shows three levels:
+
+| Level | Meaning | What to do |
+|---|---|---|
+| Expired | The expiration date has passed | Ask for a new authorization before the next fill |
+| Due | It expires within 14 days | Ask for a new authorization now |
+| Due soon | It expires within 30 days | Plan to ask |
 
 ### Record a fill
 
@@ -180,6 +200,11 @@ pasted. You can pick one of your pharmacies instead.
 If a choice is still open when you choose **Add fills**, the page comes back and marks
 it. Nothing is added until every fill you ticked has a medication and a pharmacy.
 
+The app also looks at the prescription number. When an earlier fill of the person has
+the same number, the app knows its medication. If the portal's name fits that medication
+too, it is chosen for you. If the name does not fit, the medication comes first in the
+list and you decide. Hyphens and spaces in a number do not matter.
+
 Adding a pasted fill lowers the refills left of its medication by one. What the plan
 paid and the deductible are shown and not stored.
 
@@ -228,19 +253,23 @@ A prior authorization is an insurer's approval to cover a medication for a set p
 1. Choose **Authorizations**, then **Add an authorization**.
 2. Choose the person.
 3. Choose the medication.
-4. Type the last day from the insurer's letter.
-5. Type the first day if you know it. You can leave it empty.
+4. Check the first day. The form starts with the first day of this month. Clear the
+   field if you do not know the first day.
+5. Check the expiration date. The form starts with one year after the first day of this
+   month. The insurer's letter shows the date.
 6. Choose **Save**.
 
 If the medication is not on the person's list, saving adds it, with the status Not
 started. The Refills page can then warn you when the authorization ends.
 
-The Refills page warns you 30 days before the latest authorization of a medication in
-use ends. After a renewal, add the new authorization and the warning goes away.
+The Refills page shows the latest authorization of a medication in use from 30 days
+before it expires. From 14 days before, it is due. After a renewal, add the new
+authorization and the reminder goes away.
 
 ### Look at the history
 
-Choose **History** to see every fill, newest first. Narrow the list by person,
+Choose **History** to see every fill, newest first. The quantity and the days supply
+have a column each. A quantity shows decimals only when it has them, such as 2.5. Narrow the list by person,
 medication, pharmacy or year. Under the filters, the page shows the number of fills and
 the total you paid. The table **Paid by year** shows the total for each person in each
 year.
@@ -323,7 +352,8 @@ cannot be undone in the app, so merge only entries with the same strength.
 | Due soon | 7 days |
 | Due, for a specialty medication | 5 days |
 | Due soon, for a specialty medication | 10 days |
-| Notice before a prior authorization ends | 30 days |
+| Due, for a prior authorization | 14 days |
+| Due soon, for a prior authorization | 30 days |
 
 ### Remove a record
 

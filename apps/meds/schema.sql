@@ -34,12 +34,14 @@ CREATE TABLE profile (
     due_soon_within_days           BIGINT,               -- A refill is due soon when its next fill date is this many days away or fewer
     specialty_due_within_days      BIGINT,               -- The same two counts for a specialty medication, which takes longer to arrive
     specialty_due_soon_within_days BIGINT,
-    authorization_notice_days      BIGINT,               -- Days before a prior authorization ends when the app starts to warn
+    authorization_notice_days      BIGINT,               -- A prior authorization is due soon when it expires in this many days or fewer
+    authorization_due_within_days  BIGINT,               -- A prior authorization is due when it expires in this many days or fewer
     CHECK (due_within_days IS NULL OR due_within_days >= 0),
     CHECK (due_soon_within_days IS NULL OR due_soon_within_days >= 0),
     CHECK (specialty_due_within_days IS NULL OR specialty_due_within_days >= 0),
     CHECK (specialty_due_soon_within_days IS NULL OR specialty_due_soon_within_days >= 0),
-    CHECK (authorization_notice_days IS NULL OR authorization_notice_days >= 0)
+    CHECK (authorization_notice_days IS NULL OR authorization_notice_days >= 0),
+    CHECK (authorization_due_within_days IS NULL OR authorization_due_within_days >= 0)
 );
 
 --- person: a household member ---
@@ -153,7 +155,7 @@ CREATE TABLE prior_authorization (
     person_id     VARCHAR NOT NULL,   -- person.id; an insurer approves a medication for one member
     medication_id VARCHAR NOT NULL,   -- medication.id
     valid_from    DATE,               -- The first day the approval covers; NULL when the household does not know it
-    valid_to      DATE NOT NULL,      -- The last day the approval covers
+    valid_to      DATE NOT NULL,      -- The expiration date: the last day the approval covers
     CHECK (valid_from IS NULL OR valid_to >= valid_from)
 );
 
@@ -170,7 +172,8 @@ SELECT 3  AS due_within_days,
        7  AS due_soon_within_days,
        5  AS specialty_due_within_days,
        10 AS specialty_due_soon_within_days,
-       30 AS authorization_notice_days;
+       30 AS authorization_notice_days,
+       14 AS authorization_due_within_days;
 
 --- v_reminder_setting: the day counts in force ---
 -- Grain: exactly one row, whether or not a profile row exists.
@@ -185,7 +188,9 @@ SELECT coalesce((SELECT max(p.due_within_days) FROM profile p),
        coalesce((SELECT max(p.specialty_due_soon_within_days) FROM profile p),
                 d.specialty_due_soon_within_days) AS specialty_due_soon_within_days,
        coalesce((SELECT max(p.authorization_notice_days) FROM profile p),
-                d.authorization_notice_days)      AS authorization_notice_days
+                d.authorization_notice_days)      AS authorization_notice_days,
+       coalesce((SELECT max(p.authorization_due_within_days) FROM profile p),
+                d.authorization_due_within_days)  AS authorization_due_within_days
   FROM v_reminder_default d;
 
 --- v_medication: the catalog with its built names ---

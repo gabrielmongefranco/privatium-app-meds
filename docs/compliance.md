@@ -92,7 +92,7 @@ The target is the Web Content Accessibility Guidelines (WCAG) 2.2, level AA.
 | The app uses the shell's color tokens only | Lint rule PV406 passes. The tokens meet the contrast floors in both color schemes. |
 | Tables are real tables with header cells | Lint rule PV407 passes |
 | Every icon beside text is hidden from screen readers | Lint rule PV401 passes |
-| Every save works without JavaScript | The smoke test uses plain form posts only |
+| Every save works without JavaScript | The smoke test uses plain form posts only. The two scripts of the app only show fields and fill them in. |
 | A refused form keeps what was typed and lists its problems | The smoke test checks both |
 | Buttons are at least 44 CSS pixels high | The shell's button style. Not measured in a browser. |
 

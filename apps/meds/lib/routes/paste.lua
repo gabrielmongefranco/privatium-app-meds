@@ -86,12 +86,44 @@ local function first_fill_of(claims, key_of)
   return first
 end
 
+-- Looks for the medication of a name among the earlier fills of the person, by the
+-- prescription numbers of its fills. A number that is known names one medication. When
+-- the drug of the written name is among the names of that medication too, the two
+-- agree, and the medication is the choice to begin with. With the number alone, the
+-- medication comes first and the person decides.
+local function by_prescription(subject, person_id, typed, submitted)
+  local found = {}
+  for _, claim in ipairs(subject.claims) do
+    for _, id in ipairs(fills.medications_of_rx(person_id, claim.rx_number)) do found[id] = true end
+  end
+  local id = next(found)
+  -- Numbers that lead to two medications say nothing.
+  if not id or next(found, id) then return end
+
+  local medication, fits = medication_search.fit(id, subject.name)
+  if not medication then return end
+  local others = {}
+  for _, candidate in ipairs(subject.candidates) do
+    if candidate.medication_id ~= id then
+      candidate.sure = nil
+      others[#others + 1] = candidate
+    end
+  end
+  medication.sure = fits
+  medication.note = fits and 'Same prescription number and name' or 'Same prescription number'
+  table.insert(others, 1, medication)
+  subject.candidates, subject.by_number = others, true
+  if not submitted then
+    typed[subject.prefix .. '_choice'] = fits and id or nil
+  end
+end
+
 -- The medications of a paste: one for each distinct name among the fills that can be
 -- added, so ten fills of one medication ask one question.
 -- @param rows table   The rows of the review.
 -- @param typed table  The values of the review form; filled in with what the app
 --        suggests when `submitted` is false.
-local function medications_of(claims, rows, typed, submitted)
+local function medications_of(claims, rows, person_id, typed, submitted)
   local first = first_fill_of(claims, function(claim) return text.key(claim.drug_name) end)
   local list, by_key = {}, {}
   for _, row in ipairs(rows) do
@@ -102,6 +134,7 @@ local function medications_of(claims, rows, typed, submitted)
       subject.prefix = 'medication_' .. subject.index
       local offered, exact = medication_search.suggest(claim.drug_name, SUGGESTIONS_MAX)
       subject.candidates = offered
+      subject.claims = {}
       if exact then
         subject.known = exact
       elseif submitted then
@@ -120,6 +153,11 @@ local function medications_of(claims, rows, typed, submitted)
       end
       list[#list + 1], by_key[key] = subject, subject
     end
+    if row.can_add then table.insert(by_key[key].claims, claim) end
+  end
+
+  for _, subject in ipairs(list) do
+    if not subject.known then by_prescription(subject, person_id, typed, submitted) end
   end
   return list, by_key
 end
@@ -209,7 +247,7 @@ local function review(claims, person_id, typed, submitted)
   end
 
   local known = pharmacies()
-  local medications, medication_by = medications_of(claims, rows, typed, submitted)
+  local medications, medication_by = medications_of(claims, rows, person_id, typed, submitted)
   local pharmacy_list, pharmacy_by = pharmacies_of(claims, rows, typed, submitted, known)
   for _, row in ipairs(rows) do
     if row.can_add then

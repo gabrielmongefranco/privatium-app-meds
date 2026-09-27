@@ -15,7 +15,7 @@ Notes: See README file for documentation and full license information.
 Usage, from the root of the repository:
     python3 tools/build_seed.py [--cache FOLDER]
 The script sends drug names and RxNorm identifiers to two services of the United States
-National Library of Medicine, and nothing else. It keeps their answers in the cache
+National Library of Medicine and to openFDA, and nothing else. It keeps their answers in the cache
 folder, so a second run asks for nothing it already has.
 Exit codes: 0 the seed was written, 1 a service did not answer, 2 an input is missing.
 """
@@ -39,6 +39,7 @@ __date__ = "2026-09-27"
 
 import argparse
 import concurrent.futures
+import decimal
 import hashlib
 import json
 import os
@@ -57,6 +58,9 @@ SEED = os.path.join(ROOT, "apps", "meds", "sample", "seed.jsonl")
 
 RXTERMS_SEARCH = "https://clinicaltables.nlm.nih.gov/api/rxterms/v3/search"
 RXNAV = "https://rxnav.nlm.nih.gov/REST"
+OPENFDA_NDC = "https://api.fda.gov/drug/ndc.json"
+LABELS_MAX = 100                   # Products of openFDA read for the unit of one strength
+MICROGRAMS_IN_A_MILLIGRAM = 1000
 REQUEST_TIMEOUT_SECONDS = 30
 REQUESTS_AT_ONCE = 6               # Requests that wait for an answer at the same time
 SECONDS_BETWEEN_REQUESTS = 0.4     # For each of them. RxNav asks for 20 requests a second or fewer.
@@ -72,6 +76,16 @@ ID_LENGTH = 26                     # A ULID
 STRENGTH = re.compile(
     r"^\s*([\d.,]+(?:-[\d.,]+)*\s?(?:%|(?:mg|mcg|g|ml|unt|meq|mmol)\b(?:/[\d.,]*\s?[a-z]+)?))\s*(.*)$",
     re.IGNORECASE)
+
+# A strength below 1 mg, alone or for each unit of volume: '0.05 mg', '0.01 mg/mL'.
+# Only such a strength may be printed in micrograms on the label.
+SMALL_STRENGTH = re.compile(r"^(0?\.\d+) mg((?:/.*)?)$")
+
+# The same, up to 1 mg, for a drug that is always labeled in micrograms.
+LISTED_STRENGTH = re.compile(r"^(0?\.\d+|1(?:\.0+)?) mg((?:/.*)?)$")
+
+# The amount and the unit that open a strength of openFDA: '50 ug/1', '.05 mg/1'.
+LABEL_STRENGTH = re.compile(r"^\s*([\d.]+)\s*(mg|ug|mcg)\b", re.IGNORECASE)
 
 # Words RxTerms adds to a drug name for a release form. They are not part of the name.
 RELEASE_WORDS = {"xr", "dr", "ec"}
@@ -174,8 +188,12 @@ class Reference:
         os.makedirs(cache, exist_ok=True)
         self.asked = 0
 
-    def get(self, url):
-        """Returns the answer to a request as parsed JSON, from the cache when it is there."""
+    def get(self, url, empty_status=None):
+        """Returns the answer to a request as parsed JSON, from the cache when it is there.
+
+        A service that answers with `empty_status` has nothing to say, which is an
+        answer too. It is kept as an empty answer.
+        """
         name = hashlib.sha256(url.encode("utf-8")).hexdigest() + ".json"
         path = os.path.join(self.cache, name)
         if os.path.isfile(path):
@@ -185,6 +203,11 @@ class Reference:
         try:
             with urllib.request.urlopen(url, timeout=REQUEST_TIMEOUT_SECONDS) as answer:
                 body = json.load(answer)
+        except urllib.error.HTTPError as problem:
+            if problem.code != empty_status:
+                print("build_seed: no answer from", urllib.parse.urlsplit(url).netloc, "-", problem)
+                sys.exit(1)
+            body = {}
         except (urllib.error.URLError, TimeoutError, ValueError) as problem:
             print("build_seed: no answer from", urllib.parse.urlsplit(url).netloc, "-", problem)
             sys.exit(1)
@@ -232,7 +255,54 @@ class Reference:
         return sorted(brands, key=str.lower)
 
 
+    def label_unit_of(self, rxcui, milligrams):
+        """The unit that most labels print for one strength of one product.
+
+        openFDA holds the labels that makers file. The products that name the RxNorm
+        identifier and hold the same amount are counted by their unit.
+        Returns 'mcg', 'mg', or None when no label holds the amount or the count is a tie.
+        """
+        query = urllib.parse.urlencode({
+            "search": 'openfda.rxcui:"' + rxcui + '"', "limit": LABELS_MAX})
+        answer = self.get(OPENFDA_NDC + "?" + query, empty_status=404)
+        counts = {"mg": 0, "mcg": 0}
+        for product in answer.get("results", []):
+            for ingredient in product.get("active_ingredients", []):
+                found = LABEL_STRENGTH.match(ingredient.get("strength") or "")
+                if not found:
+                    continue
+                amount = decimal.Decimal(found.group(1))
+                unit = "mg" if found.group(2).lower() == "mg" else "mcg"
+                in_milligrams = amount if unit == "mg" else amount / MICROGRAMS_IN_A_MILLIGRAM
+                if in_milligrams == milligrams:
+                    counts[unit] += 1
+        if counts["mcg"] == counts["mg"]:
+            return None
+        return "mcg" if counts["mcg"] > counts["mg"] else "mg"
+
+
 ### Transform Records ###
+def as_label_prints(entry, reference, in_micrograms):
+    """The strength of an entry in the unit of the label.
+
+    RxTerms prints '0.05 mg' for a tablet that its label calls '50 mcg'. A strength
+    below 1 mg becomes micrograms when the drug is on the list of drugs labeled in
+    micrograms, or when most labels of the product print micrograms. Any other
+    strength, and one whose labels cannot be read, stays as RxTerms prints it.
+    """
+    strength = entry["strength"]
+    listed = plain(entry["generic_name"]) in in_micrograms
+    # The label of a listed drug prints 1 mg as 1000 mcg too.
+    small = (LISTED_STRENGTH if listed else SMALL_STRENGTH).match(strength or "")
+    if not small:
+        return strength
+    milligrams = decimal.Decimal(small.group(1))
+    if not listed and reference.label_unit_of(entry["rxcui"], milligrams) != "mcg":
+        return strength
+    micrograms = (milligrams * MICROGRAMS_IN_A_MILLIGRAM).normalize()
+    return format(micrograms, "f") + " mcg" + small.group(2)
+
+
 def as_strength(value):
     """A strength as a label prints it: '100 unt/ml' becomes '100 units/mL'."""
     strength = re.sub(r"\s+", " ", value.strip())
@@ -384,6 +454,7 @@ def main():
                  for row in hand_medications if row["d"].get("brand_name")}
     preferred.update({line.lower(): line for line in read_list("preferred_brands.txt")})
 
+    in_micrograms = {plain(line) for line in read_list("labeled_in_micrograms.txt")}
     requests = requests_of()
     products_by_drug = [reference.products_of(request) for request in requests]
 
@@ -405,6 +476,7 @@ def main():
                 continue
             seen.add(rxcui)
             entry = entry_of(request, details, printed, reference.brands_of(rxcui), preferred)
+            entry["strength"] = as_label_prints(entry, reference, in_micrograms)
             match = next((row for row in hand_medications
                           if "rxcui" not in row["d"] and same_product(entry, row)), None)
             if match:

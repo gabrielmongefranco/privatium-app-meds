@@ -218,15 +218,20 @@ this order:
 | Step | The app finds | The page says | The choice starts as |
 |---|---|---|---|
 | 1 | One medication that answers to exactly this name | Known name | That medication, with nothing to choose |
-| 2 | One medication whose brand or generic name starts the portal's name, and whose strength the portal's name holds | Matched | That medication, marked |
-| 3 | Medications that share words with the name | Choose a medication | Nothing. The best match comes first. |
-| 4 | Nothing | New name | A new medication, filled in from the name |
+| 2 | An earlier fill of the person with the same prescription number, whose medication has the drug of the name among its names | Matched | That medication, marked |
+| 2 | The same, under a name that does not fit | Choose a medication | Nothing. That medication comes first. |
+| 3 | One medication whose brand or generic name starts the portal's name, and whose strength the portal's name holds | Matched | That medication, marked |
+| 4 | Medications that share words with the name | Choose a medication | Nothing. The best match comes first. |
+| 5 | Nothing | New name | A new medication, filled in from the name |
 
-Step 2 compares whole words and whole strengths. "Exampline" does not start
+A prescription number is compared without hyphens and spaces, and only with the fills
+of the same person. Numbers that lead to two medications say nothing.
+
+The step for name and strength compares whole words and whole strengths. "Exampline" does not start
 "EXAMPLINE-SAMPLAMIDE", and "5 mg" is not found in "0.5 mg" or in "25 mg". When two
 medications pass, the app picks neither.
 
-In step 4, the app takes the name apart. "EXAMPLINE HCL 10 MG TABLET" becomes the generic
+In step 5, the app takes the name apart. "EXAMPLINE HCL 10 MG TABLET" becomes the generic
 name "Exampline HCL" and the strength "10 mg". You correct both before you add anything,
 because a portal does not say whether a name is a brand name.
 
@@ -367,13 +372,18 @@ filter. A second table shows the total paid for each person in each year.
 #### Authorizations
 
 This page lists every prior authorization with the medication, the person, the first day,
-the last day and a state. The states are Active, Ends in a number of days, Ended, and Not
+the expiration date and a state. The states are Active, Due soon, Due, Expired, and Not
 started. You can add, edit and remove an authorization here or on the medication page.
 
 The form asks for the person and for the medication in two separate fields. The person
-comes first, then [the medication box](#the-medication-box). Only the last day is
-required. A household often knows when an approval ends and not when it began, and only
-the last day drives the warnings. A first day that is not known shows as "Not known".
+comes first, then [the medication box](#the-medication-box), then the first day, then
+the expiration date. Only the expiration date is required. A household often knows when
+an approval ends and not when it began, and only the expiration date drives the
+reminders. A first day that is not known shows as "Not known".
+
+A new authorization starts with two dates filled in: the first day of the current month,
+and the same day one year later as the expiration date. Most approvals start with a
+month and run for a year, so most need little typing.
 
 An authorization for a medication that is not on the person's list adds the medication
 to the list, with the status Not started. The Refills page warns about an authorization
@@ -408,16 +418,23 @@ confirm.
 #### Choices in forms
 
 Five fields offer choices: the route, the form, the package type, the medication type,
-and when to take it. Each one is a drop-down with a text box under it, labeled
-**Or type a new one**.
+and when to take it. Each one is a drop-down. Its second choice is **-- Add new --**,
+which shows a text box for the new choice.
 
 The choices are a built-in starter list plus every value that your records already use.
 A value that you type becomes a choice as soon as a record uses it. A misspelled choice
 goes away once no record uses it. No separate screen manages the choices.
 
-A field that points to a person, a pharmacy or a prescriber works the same way. It is a
-drop-down with a text box under it, labeled **Or add a new pharmacy**, for example. A
-name typed into the box adds the record when the form is saved, in the same batch as the
+A field that points to a person, a pharmacy or a prescriber works the same way. Its
+drop-down has the choice **-- Add new --**, which shows a text box for the name. The
+drop-down of the medication box has **-- Find another or add new --**, which shows the
+name to type and the fields of a new medication.
+
+The script `static/forms.js` hides the boxes until that choice is made. It empties a box
+when you choose another record, so nothing you did not mean is saved. Without the
+script, the boxes are always there, and a typed name wins over the drop-down.
+
+A name typed into the box adds the record when the form is saved, in the same batch as the
 form's own record. A form that is refused adds nothing. A typed name that a record
 already has picks that record.
 
@@ -456,7 +473,7 @@ The catalog gets its entries in three ways.
 
 | Way | What it adds |
 |---|---|
-| The starter catalog | About 2,214 entries, loaded once into an empty app |
+| The starter catalog | About 2,213 entries, loaded once into an empty app |
 | The lookup in a form | One entry at a time, when you add a medication the catalog lacks |
 | Your own typing | Anything else |
 
@@ -476,8 +493,13 @@ entering prescriptions. [How to build the starter catalog](../how-to/build-the-s
 describes the script that writes the file.
 
 **The lookup** sits inside **Add a new medication**, in the medication box. You type a
-name and choose **Look up**. The app asks the references in this order, and stops at the
-first one that finds something:
+name and choose **Look up**. The app looks in its own catalog first, in the names that
+the page already holds. It shows what it finds, with one more choice:
+**None of these. Search the drug references.** It asks a reference only after that
+choice, or when the catalog holds nothing under the name.
+
+The app asks the references in this order, and stops at the first one that finds
+something:
 
 | Order | Reference | Asked when |
 |---|---|---|
@@ -533,8 +555,12 @@ This table shows where the fields of each reference go.
 Three limits are known:
 
 - **Units.** A reference can print a strength in another unit than the label. RxTerms
-  prints "0.05 mg" for a tablet that the label calls "50 mcg". The app keeps what the
-  reference prints. You can correct the strength before you save.
+  prints "0.05 mg" for a tablet that the label calls "50 mcg". For a strength below
+  1 mg, the app reads the labels that makers filed with openFDA for the same product and
+  the same amount. It shows micrograms when most of them print micrograms. The starter
+  catalog also has a short list of drugs that are always labeled in micrograms. A
+  strength whose labels cannot be read stays as the reference prints it. You can correct
+  the strength before you save.
 - **Brand names in the starter catalog.** A generic product takes the brand of the
   owner's list when it has one, or its only brand. A product with several brands takes
   none and answers to each brand as another name.
@@ -591,11 +617,12 @@ The refill status uses the next fill date, as the legacy view does. The
 | 1 | Overdue | Taking regularly, refill status Overdue | "Overdue by 4 days" |
 | 2 | Due | Taking regularly, refill status Due | "Due today", "Due in 3 days" |
 | 3 | Due soon | Taking regularly, refill status Due soon | "Due in 6 days" |
-| 4 | Authorization ending | An active medication's prior authorization ends within 30 days, or has ended with no later one | "Authorization ends in 12 days" |
-| 5 | As needed | Taking as needed | Both dates and the refills left, with no alert |
-| 6 | Missing information | Taking regularly, with no fill or with a last fill that has no days supply | "Add a days supply to get a refill date" |
-| 7 | Not due yet | Taking regularly, refill status Not due | Both dates |
-| 8 | Paused | On hold or Not started | The status and both dates, with no alert |
+| 4 | New prescriptions to ask for | Taking regularly or as needed, no refill left, refill status Overdue, Due or Due soon | "No refills left", with the prescriber and the phone number |
+| 5 | Prior authorizations | The latest prior authorization of an active medication has expired, or expires within 30 days | "Expired", "Due" within 14 days, "Due soon" within 30 days |
+| 6 | As needed | Taking as needed | Both dates and the refills left, with no alert |
+| 7 | Missing information | Taking regularly, with no fill or with a last fill that has no days supply | "Add a days supply to get a refill date" |
+| 8 | Not due yet | Taking regularly, refill status Not due | Both dates |
+| 9 | Paused | On hold or Not started | The status and both dates, with no alert |
 
 A medication with the status No longer taking appears in no group.
 
@@ -639,7 +666,7 @@ The target is the Web Content Accessibility Guidelines (WCAG) 2.2, level AA.
 | Zoom and small screens | Forms are one column. Nothing has a fixed width. The layout reflows at 320 CSS pixels. |
 | Repeated buttons | Each **Record fill** button carries hidden text that names its medication. |
 | Headings | One `<h1>` on every page, with heading levels in order. |
-| No JavaScript | Every save and every search is a plain form. Suggestions while you type come from the browser. The app ships one script, for the lookup of a new medication, and every form works without it. |
+| No JavaScript | Every save and every search is a plain form. Suggestions while you type come from the browser. The app ships two scripts: one shows the fields of a new record when you choose to add one, and one looks up a new medication. Every form works without them. |
 | Lookup results | Each result is a button, so the keyboard reaches it. A status message says how many results came, from which reference, and what was filled in. Focus moves to the first field that was filled in. |
 | Time limits | None. A status message stays until you leave the page. |
 | Color schemes | The app uses the shell's color tokens only, so it follows light and dark mode. |
@@ -745,7 +772,13 @@ The owner made these decisions on 2026-09-27.
 | Records a form needs | Every drop-down of people, pharmacies, prescribers and medications can add a new one in the same form. |
 | Finding a medication | One box in the form, with suggestions while typing. No separate search page. |
 | Pasted fills | The app matches each name, offers to link it to a medication or to add a new one, and offers to add the pharmacy it read. |
-| Prior authorization form | The person and the medication are two fields. Only the last day is required. |
+| Prior authorization form | The person and the medication are two fields. The first day comes before the expiration date. Only the expiration date is required. The form starts with the first day of the month and one year later. |
+| Reminders for prior authorizations | Due soon at 30 days, due at 14 days, so a request has time to be decided. |
+| Reminder to ask for refills | For medications taken regularly or as needed with no refill left. It follows the days of the refill reminders. |
+| Prescription numbers in pasted fills | A number that an earlier fill has names the medication. A name that fits too makes it the choice. Hyphens and spaces do not count. |
+| Fields that add a record | Hidden until **-- Add new --** is chosen in the drop-down. |
+| Strength units | Micrograms where the label prints micrograms. |
+| Lookup order | The catalog first. A drug reference only when the catalog lacks the name. |
 | Text boxes | They suggest the values that records already hold. |
 | Household name | Removed. |
 | Starter catalog | The ClinCalc top 200 and the owner's list, one entry per strength, plus entries written by hand for glucose monitors and supplies. |

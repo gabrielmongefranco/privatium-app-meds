@@ -72,6 +72,7 @@ local function starting_values(person_id, medication_id)
   last.pharmacy_id = last.pharmacy_id or (entry and entry.pharmacy_id)
   last.refills_left = entry and math.max(entry.refills_left - 1, 0) or nil
   last.person_id, last.medication_id = person_id, medication_id
+  last.quantity = text.plain_number(last.quantity)
   last.filled_on = clock.today()
   return last
 end
@@ -201,6 +202,8 @@ pv.get(LIST, function(req)
      WHERE ?1 = '' OR s.person_id = ?1
      ORDER BY s.year DESC, p.display_name COLLATE NOCASE]], { filter.id })
 
+  for _, row in ipairs(rows) do row.quantity = text.plain_number(row.quantity) end
+
   return pv.render('history', {
     section     = 'history',
     notice      = added_notice(req.query.added) or page.notice(req.query.notice),
@@ -255,6 +258,7 @@ end)
 pv.get(LIST .. '/:id/edit', function(req)
   local fill = pv.get_row('fill', req.params.id)
   if not fill then return pv.redirect(url(LIST .. '?notice=missing')) end
+  fill.quantity = text.plain_number(fill.quantity)
   return form_page('Change a fill', url(LIST .. '/' .. fill.id .. '/edit'), fill, {},
     medication(fill.medication_id), false)
 end)

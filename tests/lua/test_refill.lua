@@ -51,4 +51,15 @@ return function(equal)
   equal('tomorrow', refill.phrase('due', 1), 'Due tomorrow')
   equal('in three days', refill.phrase('due', 3), 'Due in 3 days')
   equal('no fill', refill.phrase('no_fill', nil), 'No fill recorded')
+
+  --- Asking for a new prescription ---
+  equal('taken regularly, none left, due', refill.ask_for_more('taking_regularly', 0, 'due'), true)
+  equal('taken regularly, none left, due soon', refill.ask_for_more('taking_regularly', 0, 'due_soon'), true)
+  equal('taken regularly, none left, overdue', refill.ask_for_more('taking_regularly', 0, 'overdue'), true)
+  equal('taken as needed, none left, due', refill.ask_for_more('taking_as_needed', 0, 'due'), true)
+  equal('none left, and not due yet', refill.ask_for_more('taking_regularly', 0, 'not_due'), false)
+  equal('none left, and no fill', refill.ask_for_more('taking_regularly', 0, 'no_fill'), false)
+  equal('one left', refill.ask_for_more('taking_regularly', 1, 'due'), false)
+  equal('on hold', refill.ask_for_more('on_hold', 0, 'due'), false)
+  equal('no longer taken', refill.ask_for_more('not_taking', 0, 'overdue'), false)
 end

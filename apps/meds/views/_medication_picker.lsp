@@ -32,6 +32,9 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
   local asks = #offered > 0 or explicit
   local open_new = (pick and pick.open_new) or chosen == 'new'
     or (not explicit and ((typed_in('_brand') or '') ~= '' or (typed_in('_generic') or '') ~= ''))
+  -- The parts under the drop-down are in use when a name was typed, a new medication
+  -- was started, or the form came back with choices.
+  local opened = open_new or asks or (typed_in('_name') or '') ~= ''
   local described = 'f-' .. prefix .. '-help' .. (err and (' f-' .. prefix .. '-err') or '')
 ?>
 <fieldset class="meds-choice meds-picker" id="f-<?= prefix ?>_id">
@@ -43,8 +46,9 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
     <label for="f-<?= prefix ?>-list">Choose one that is already in use</label>
     <select id="f-<?= prefix ?>-list" name="<?= prefix ?>_id">
       <option value="">None chosen</option>
+      <option value="new"<? if typed_in('_id') == 'new' or opened then ?> selected<? end ?>>-- Find another or add new --</option>
       <? for _, option in ipairs(in_use) do ?>
-        <option value="<?= option.value ?>"<? if option.value == typed_in('_id') then ?> selected<? end ?>><?= option.label ?></option>
+        <option value="<?= option.value ?>"<? if not opened and option.value == typed_in('_id') then ?> selected<? end ?>><?= option.label ?></option>
       <? end ?>
     </select>
   <? end ?>
@@ -55,7 +59,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
         <label class="meds-option" for="f-<?= prefix ?>-choice-<?= position ?>">
           <input id="f-<?= prefix ?>-choice-<?= position ?>" type="radio" name="<?= prefix ?>_choice"
                  value="<?= medication.medication_id ?>"<? if chosen == medication.medication_id then ?> checked<? end ?>>
-          <span><?= medication.short_name ?><? if medication.sure then ?> <span class="pv-badge pv-badge-ok"><?= icon('check-circle') ?> Same name and strength</span><? end ?>
+          <span><?= medication.short_name ?><? if medication.sure then ?> <span class="pv-badge pv-badge-ok"><?= icon('check-circle') ?> <?= medication.note or 'Same name and strength' ?></span><? elseif medication.note then ?> <span class="pv-badge pv-badge-muted"><?= icon('info-circle') ?> <?= medication.note ?></span><? end ?>
             <span class="pv-meta meds-line"><?= medication.full_name ?></span></span>
         </label>
       <? end ?>
@@ -71,12 +75,16 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
       </label>
     </fieldset>
   <? end ?>
+  <? -- With a script, these parts show only after the choice to find or add. Without one, they are always there. ?>
+  <div<? if #in_use > 0 then ?> data-show-when="<?= prefix ?>_id=new"<? end ?>>
+  <? if explicit then ?><div data-show-when="<?= prefix ?>_choice=other"><? end ?>
   <label for="f-<?= prefix ?>-name"><? if #in_use > 0 and not asks then ?>Or type a name to search the catalog<? else ?>Type a name to search the catalog<? end ?></label>
   <input id="f-<?= prefix ?>-name" name="<?= prefix ?>_name" type="text" value="<?= typed_in('_name') ?>"
          list="medication-names" autocomplete="off" maxlength="100" aria-describedby="<?= described ?>"
          <? if err then ?>aria-invalid="true"<? end ?>>
   <p id="f-<?= prefix ?>-help" class="pv-help">Type a few letters of any name of the medication, then pick it from the suggestions. The catalog is the list of products the app knows.</p>
-  <details<? if open_new then ?> open<? end ?>>
+  <? if explicit then ?></div><div data-show-when="<?= prefix ?>_choice=new"><? end ?>
+  <details<? if open_new or explicit then ?> open<? end ?>>
     <summary>It is not in the catalog. Add a new medication</summary>
     <? -- The lookup needs a script, so it stays hidden until the script shows it. ?>
     <div class="meds-lookup" data-lookup="<?= prefix ?>" hidden>
@@ -109,4 +117,6 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
     </label>
     <p class="pv-help">Saving adds the medication to the catalog. You can add its route, form and package there later.</p>
   </details>
+  <? if explicit then ?></div><? end ?>
+  </div>
 </fieldset>

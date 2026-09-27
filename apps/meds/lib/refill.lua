@@ -53,6 +53,21 @@ function refill.group(status, refill_status, days_supply_missing)
   return refill_status
 end
 
+--- Whether to ask the prescriber for a new prescription.
+-- A medication that is taken, regularly or as needed, with no refill left needs a new
+-- prescription before its next fill. The reminder follows the days of the refill
+-- reminders, so it appears when the next fill is due soon, due or overdue. Some
+-- prescribers take such a request from the patient only, never from the pharmacy.
+-- @param status string         The status of the list entry.
+-- @param refills_left integer  The refills left.
+-- @param refill_status string  The refill status from v_active_medication.
+-- @return boolean
+function refill.ask_for_more(status, refills_left, refill_status)
+  if status ~= 'taking_regularly' and status ~= 'taking_as_needed' then return false end
+  if refills_left ~= 0 then return false end
+  return refill_status == 'overdue' or refill_status == 'due' or refill_status == 'due_soon'
+end
+
 --- The words for a refill status and a number of days.
 -- @param refill_status string  'overdue', 'due', 'due_soon', 'not_due' or 'no_fill'.
 -- @param days integer|nil      Days until the next fill date; negative when it has passed.

@@ -137,6 +137,23 @@ function medication_search.find(typed)
   return found
 end
 
+--- One medication, with how well a written name fits it.
+-- @param id string       The id of the medication.
+-- @param written string  The name as a pharmacy or an insurer wrote it.
+-- @return table|nil, boolean  The medication as a row of v_medication, or nil when it
+--         is gone; and whether the first word of the written name, the drug, is among
+--         the names of the medication.
+function medication_search.fit(id, written)
+  local row = medication(id)
+  if not row then return nil, false end
+  local names = {}
+  for _, name in ipairs(pv.query(
+      'SELECT name FROM v_medication_name WHERE medication_id = ?', { id })) do
+    names[#names + 1] = name.name
+  end
+  return row, match.overlap(written, names) > 0
+end
+
 --- Suggest medications for a name as a pharmacy or an insurer wrote it.
 -- @param written string  The name as written, such as 'EXAMPLINE HCL 10 MG TABLET'.
 -- @param limit integer   The most suggestions to return.

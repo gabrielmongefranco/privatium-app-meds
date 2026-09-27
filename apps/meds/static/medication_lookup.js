@@ -35,6 +35,8 @@
   var TERM_MAXIMUM_LENGTH = 100;
   var DRUGS_MAX = 10;               // Drugs asked of a reference in one search
   var RESULTS_MAX = 40;             // Results shown; one drug can have many strengths
+  var CATALOG_MAX = 12;             // Medications of the catalog shown before a reference is asked
+  var LABELS_MAX = 100;             // Products of openFDA read for the unit of one strength
 
   // The references, in the order they are asked. The next one is asked only when the
   // one before it finds nothing or does not answer, as when it limits requests.
@@ -105,6 +107,37 @@
   function strengthIn(printed) {
     var found = STRENGTH.exec(text(printed));
     return found ? asStrength(found[1]) : '';
+  }
+
+  // A strength below 1 mg, alone or for each unit of volume: '0.05 mg', '0.01 mg/mL'.
+  var SMALL_STRENGTH = /^(0?\.\d+) mg((?:\/.*)?)$/;
+  // The amount and the unit that open a strength of openFDA: '50 ug/1', '.05 mg/1'.
+  var LABEL_STRENGTH = /^\s*([\d.]+)\s*(mg|ug|mcg)\b/i;
+
+  // A strength in the unit of the label. RxTerms prints '0.05 mg' for a tablet that its
+  // label calls '50 mcg'. openFDA holds the labels that makers file, so the products
+  // that name the RxNorm identifier and hold the same amount are counted by their
+  // unit. The strength becomes micrograms when most of them print micrograms.
+  // Resolves to the strength as it came when the labels cannot be read.
+  function asLabelPrints(strength, rxcui) {
+    var small = SMALL_STRENGTH.exec(strength || '');
+    if (!small || !rxcui) { return Promise.resolve(strength); }
+    var micrograms = Math.round(parseFloat(small[1]) * 1000000) / 1000;
+    var url = OPENFDA_NDC + '?limit=' + LABELS_MAX + '&search=' +
+      encodeURIComponent('openfda.rxcui:"' + rxcui + '"');
+    return getJson(url, 404).then(function (answer) {
+      var counts = { mg: 0, mcg: 0 };
+      ((answer && answer.results) || []).forEach(function (product) {
+        (product.active_ingredients || []).forEach(function (ingredient) {
+          var found = LABEL_STRENGTH.exec(ingredient.strength || '');
+          if (!found) { return; }
+          var unit = found[2].toLowerCase() === 'mg' ? 'mg' : 'mcg';
+          var amount = parseFloat(found[1]) * (unit === 'mg' ? 1000 : 1);
+          if (Math.abs(amount - micrograms) < 0.0005) { counts[unit] += 1; }
+        });
+      });
+      return counts.mcg > counts.mg ? micrograms + ' mcg' + small[2] : strength;
+    }).catch(function () { return strength; });
   }
 
   /* The three references */
@@ -208,7 +241,7 @@
         if (!found) { return fallback; }
         // The full name of a branded product ends with its brand: '... [Lipitor]'.
         var brand = /\[([^\]]+)\]\s*$/.exec(text(found.fullName));
-        return {
+        var fields = {
           brand: brand ? brand[1] : '',
           generic: asName(beforeStrength(found.fullGenericName)) || fallback.generic,
           // The printed strength is the one on the label: RxTerms prints '10 mcg/ml'
@@ -218,6 +251,10 @@
           route: text(found.route),
           doseForm: text(found.rxnormDoseForm)
         };
+        return asLabelPrints(fields.strength, result.rxcui).then(function (strength) {
+          fields.strength = strength;
+          return fields;
+        });
       })
       .catch(function () { return fallback; });
   }
@@ -284,31 +321,94 @@
       return;
     }
     found.results.forEach(function (result) {
-      var item = document.createElement('li');
-      var button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'pv-btn';
-      button.textContent = result.label;
-      button.addEventListener('click', function () {
+      resultButton(list, result.label, function () {
         say(lookup, 'Getting the details of ' + result.label + '.');
         detailsOf(result).then(function (fields) { fill(lookup, fields, found.reference, result.label); });
       });
-      item.appendChild(button);
-      list.appendChild(item);
     });
     say(lookup, found.results.length + (found.results.length === 1 ? ' result' : ' results') +
       ' from ' + found.reference.name + '. Choose one.');
   }
 
+  // The names of the catalog that hold every typed word. The page carries them for the
+  // suggestions of the name box, so this asks nobody.
+  function inCatalog(term) {
+    var words = term.toLowerCase().split(' ');
+    var options = document.querySelectorAll('#medication-names option');
+    var found = [];
+    var seen = {};
+    for (var index = 0; index < options.length && found.length < CATALOG_MAX; index += 1) {
+      var name = options[index].value;
+      var shown = options[index].getAttribute('label') || name;
+      var searched = (name + ' ' + shown).toLowerCase();
+      var holdsAll = words.every(function (word) { return searched.indexOf(word) !== -1; });
+      if (holdsAll && !seen[shown]) {
+        seen[shown] = true;
+        found.push({ name: name, shown: shown });
+      }
+    }
+    return found;
+  }
+
+  function resultButton(list, label, action) {
+    var item = document.createElement('li');
+    var button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'pv-btn';
+    button.textContent = label;
+    button.addEventListener('click', action);
+    item.appendChild(button);
+    list.appendChild(item);
+  }
+
+  // Picks a medication of the catalog: its name goes into the name box, and the
+  // fields of a new medication are emptied, so the form saves the one that was picked.
+  function pick(lookup, entry) {
+    ['brand', 'generic', 'strength', 'rxcui', 'source', 'route', 'dose_form'].forEach(function (ending) {
+      setField(lookup, ending, '');
+    });
+    setField(lookup, 'name', entry.name);
+    var other = lookup.closest('fieldset').querySelector(
+      'input[type="radio"][name="' + lookup.getAttribute('data-lookup') + '_choice"][value="other"]');
+    if (other) {
+      other.checked = true;
+      other.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    clearResults(lookup);
+    say(lookup, 'Chosen from the catalog: ' + entry.shown + '. Save the form to use it.');
+    var box = field(lookup, 'name');
+    if (box) { box.focus(); }
+  }
+
+  function askReferences(lookup, term) {
+    clearResults(lookup);
+    say(lookup, 'Searching the drug references.');
+    searchFrom(0, term).then(function (found) { show(lookup, found, term); });
+  }
+
+  // The catalog comes first. A drug reference is asked only when the catalog holds
+  // nothing under the name, or when a person says that none of its medications is
+  // the one.
   function search(lookup) {
     var term = text(within(lookup, '[data-lookup-term]').value).slice(0, TERM_MAXIMUM_LENGTH);
-    clearResults(lookup);
+    var list = clearResults(lookup);
     if (term.length < TERM_MINIMUM_LENGTH) {
       say(lookup, 'Type ' + TERM_MINIMUM_LENGTH + ' letters or more.');
       return;
     }
-    say(lookup, 'Searching.');
-    searchFrom(0, term).then(function (found) { show(lookup, found, term); });
+    var known = inCatalog(term);
+    if (known.length === 0) {
+      askReferences(lookup, term);
+      return;
+    }
+    known.forEach(function (entry) {
+      resultButton(list, entry.shown, function () { pick(lookup, entry); });
+    });
+    resultButton(list, 'None of these. Search the drug references.', function () {
+      askReferences(lookup, term);
+    });
+    say(lookup, 'The catalog has ' + known.length + (known.length === 1 ? ' medication' : ' medications') +
+      ' under this name. Choose one, or search the drug references.');
   }
 
   // Events are heard on the document, so a part of a page that arrives later works too.

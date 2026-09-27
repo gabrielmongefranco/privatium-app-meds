@@ -24,6 +24,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 --?>
 
 <link rel="stylesheet" href="<?= url('/static/meds.css') ?>">
+<script src="<?= url('/static/forms.js') ?>" defer></script>
 <nav aria-label="Prescription Tracker">
   <ul class="pv-subnav meds-nav">
     <li><a href="<?= url('/') ?>"<? if section == 'home' then ?> aria-current="page"<? end ?>><?= icon('capsule') ?> Refills</a></li>

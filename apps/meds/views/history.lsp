@@ -62,7 +62,8 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
       <th scope="col" role="columnheader">Medication</th>
       <th scope="col" role="columnheader">For</th>
       <th scope="col" role="columnheader">Pharmacy</th>
-      <th scope="col" role="columnheader">Quantity and days</th>
+      <th scope="col" role="columnheader">Quantity</th>
+      <th scope="col" role="columnheader">Days supply</th>
       <th scope="col" role="columnheader">You paid</th>
       <th scope="col" role="columnheader">Action</th>
     </tr></thead>
@@ -74,8 +75,8 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
           <? if row.rx_number then ?><span class="pv-meta meds-line">Rx <?= row.rx_number ?></span><? end ?></td>
         <td role="cell"><span class="pv-cell-label" aria-hidden="true">For</span><?= row.person_name ?></td>
         <td role="cell"><span class="pv-cell-label" aria-hidden="true">Pharmacy</span><?= row.pharmacy_name ?></td>
-        <td role="cell"><span class="pv-cell-label" aria-hidden="true">Quantity and days</span>
-          <?= row.quantity or 'No quantity' ?>, <? if row.days_supply then ?><?= row.days_supply ?> days<? else ?>no days supply<? end ?></td>
+        <td role="cell"><span class="pv-cell-label" aria-hidden="true">Quantity</span><?= row.quantity or 'Not given' ?></td>
+        <td role="cell"><span class="pv-cell-label" aria-hidden="true">Days supply</span><?= row.days_supply or 'Not given' ?></td>
         <td role="cell"><span class="pv-cell-label" aria-hidden="true">You paid</span><? if row.amount_paid then ?><?= fmt.money(row.amount_paid) ?><? else ?>Not given<? end ?></td>
         <td role="cell"><a class="pv-btn" href="<?= url('/fills/' .. row.id .. '/edit') ?>"><?= icon('pencil') ?> Change<span class="pv-visually-hidden"> the fill of <?= row.filled_on ?>, <?= row.medication_name ?></span></a></td>
       </tr>

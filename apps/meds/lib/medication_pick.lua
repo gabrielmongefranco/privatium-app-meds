@@ -144,6 +144,10 @@ function medication_pick.read(form, prefix, required, explicit)
   end
   if text.clean(form[prefix .. '_name']) then return by_name(form[prefix .. '_name']) end
   local id = text.clean(form[prefix .. '_id'])
+  if id == medication_pick.NEW then
+    return { open_new = true,
+             problem = 'Type the name of the medication to find it, or add it as a new medication.' }
+  end
   if id then return by_id(id) end
   if required then
     return { problem = 'Choose a medication: pick one from the list, type its name, or add a new one.' }
