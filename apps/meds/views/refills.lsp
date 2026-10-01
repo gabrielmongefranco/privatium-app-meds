@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/views/refills.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-09-27
+Last Modified: 2026-10-01
 Summary: The Refills page: what needs attention now, most urgent first. Only a medication
          taken regularly raises an alert; the others show their dates without one.
 Notes: See README file for documentation and full license information.
@@ -85,9 +85,11 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
           <td role="cell"><span class="pv-cell-label" aria-hidden="true">For</span><?= row.person_name ?></td>
           <td role="cell"><span class="pv-cell-label" aria-hidden="true">Next fill</span><span class="pv-badge pv-badge-warn"><?= icon('telephone') ?> No refills left</span>
             <? if row.status == 'taking_as_needed' then ?>
-              <span class="pv-meta meds-line">The last fill lasts until <?= fmt.date(row.next_fill_on) ?></span>
+              <span class="pv-meta meds-line">Supply lasts until <?= fmt.date(row.lasts_until) ?></span>
             <? else ?>
-              <span class="pv-meta meds-line"><?= row.phrase ?>, on <?= fmt.date(row.next_fill_on) ?></span>
+              <span class="pv-meta meds-line"><?= row.phrase ?>
+                <span class="meds-line">Next fill date <?= fmt.date(row.next_fill_on) ?></span>
+                <span class="meds-line">Lasts until <?= fmt.date(row.lasts_until) ?></span></span>
             <? end ?></td>
           <td role="cell"><span class="pv-cell-label" aria-hidden="true">Ask</span><?= row.prescriber_name or 'The prescriber' ?><? if row.prescriber_href then ?>: <a href="tel:<?= row.prescriber_href ?>"><?= row.prescriber_phone ?></a><? end ?></td>
         </tr>

@@ -2,8 +2,8 @@
 # .github/workflows/lint.yml
 # Author(s): Gabriel Mongefranco
 # Created: 2026-09-26
-# Last Modified: 2026-09-26
-# Summary: Lints the app with the pinned Privatium release on every push and pull request.
+# Last Modified: 2026-10-01
+# Summary: Lints the app and checks refill rules and catalog marks on pushes and pull requests.
 #          No Rust toolchain is needed; the job downloads the release binary.
 # Notes: See README file for documentation and full license information.
 #
@@ -44,3 +44,8 @@ jobs:
       - name: Lint the app
         # An empty data directory, so the lint reads no configuration from the runner.
         run: ./privatium --data-dir "$RUNNER_TEMP/lint-node" lint apps/meds
+
+      - name: Verify refill date calculations
+        run: |
+          python3 tests/test_supply.py
+          python3 tests/test_catalog.py

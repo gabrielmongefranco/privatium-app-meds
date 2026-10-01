@@ -2,7 +2,7 @@
 -- apps/meds/lib/entries.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-09-27
+-- Last Modified: 2026-10-01
 -- Summary: Reads what people take: each entry of a person's medication list with its refill
 --          dates, its refill status in words, and its group on the Refills page.
 -- Notes: See README file for documentation and full license information.
@@ -35,7 +35,7 @@ for _, group in ipairs(refill.GROUPS) do GROUP_BY_KEY[group.key] = group end
 local function dressed(row)
   row.status_label = choices.status_label(row.status)
   row.group        = refill.group(row.status, row.refill_status, row.days_supply_missing)
-  row.phrase       = refill.phrase(row.refill_status, row.days_until_next_fill)
+  row.phrase       = refill.phrase(row.refill_status, row.days_until_next_fill, row.days_until_runs_out)
   local group      = GROUP_BY_KEY[row.group]
   -- A medication that raises no alert shows its status in a quiet badge.
   local shown      = group and group.alert and group or GROUP_BY_KEY[row.group or 'paused']
@@ -55,16 +55,17 @@ function entries.list(person_id)
            pm.prescribed_for, pm.instructions, pm.when_to_take, pm.refills_left,
            p.display_name  AS person_name,
            m.short_name    AS medication_name,
-           m.is_specialty,
+           m.is_specialty, m.is_controlled,
            pr.name         AS prescriber_name,
            pr.phone        AS prescriber_phone,
            ph.name         AS pharmacy_name,
            ph.phone        AS pharmacy_phone,
            lph.name        AS last_fill_pharmacy_name,
            s.last_fill_id, s.last_filled_on, s.last_days_supply, s.days_supply_missing,
-           s.next_fill_on, s.recommended_next_fill_on,
+           s.next_fill_on, s.lasts_until, s.allowance, a.plan_name,
            coalesce(a.refill_status, CASE WHEN s.next_fill_on IS NULL THEN 'no_fill' ELSE 'not_due' END) AS refill_status,
-           CAST(julianday(s.next_fill_on) - julianday(date('now', 'localtime')) AS INTEGER) AS days_until_next_fill
+           CAST(julianday(s.next_fill_on) - julianday(date('now', 'localtime')) AS INTEGER) AS days_until_next_fill,
+           CAST(julianday(s.lasts_until) - julianday(date('now', 'localtime')) AS INTEGER) AS days_until_runs_out
       FROM person_medication pm
       JOIN person p     ON p.id = pm.person_id        -- many:1
       JOIN medication m ON m.id = pm.medication_id    -- many:1

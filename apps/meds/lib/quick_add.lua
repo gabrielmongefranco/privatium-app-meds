@@ -2,7 +2,7 @@
 -- apps/meds/lib/quick_add.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-09-27
+-- Last Modified: 2026-10-01
 -- Summary: A person, a pharmacy or a prescriber that a form adds by name, beside its own
 --          record, so nobody leaves a form to add one.
 -- Notes: See README file for documentation and full license information.
@@ -34,6 +34,7 @@ quick_add.NEW = 'new'   -- The choice of a drop-down that adds a record
 -- name. `noun` completes the sentence 'Choose a ...'.
 quick_add.PERSON     = { tbl = 'person',     column = 'display_name', noun = 'person',     max = 120 }
 quick_add.PHARMACY   = { tbl = 'pharmacy',   column = 'name',         noun = 'pharmacy',   max = 120 }
+quick_add.PLAN       = { tbl = 'plan', column = 'name', noun = 'plan', max = 120 }
 quick_add.PRESCRIBER = { tbl = 'prescriber', column = 'name',         noun = 'prescriber', max = 120 }
 
 --- Reads ---
@@ -44,12 +45,14 @@ local function named(kind)
     return pv.query('SELECT id, display_name AS name FROM person ORDER BY display_name COLLATE NOCASE, id')
   elseif kind == quick_add.PHARMACY then
     return pv.query('SELECT id, name FROM pharmacy ORDER BY name COLLATE NOCASE, id')
+  elseif kind == quick_add.PLAN then
+    return pv.query('SELECT id, name FROM plan ORDER BY name COLLATE NOCASE, id')
   end
   return pv.query('SELECT id, name FROM prescriber ORDER BY name COLLATE NOCASE, id')
 end
 
 --- The choices of a drop-down for one kind of record.
--- @param kind table  One of quick_add.PERSON, quick_add.PHARMACY, quick_add.PRESCRIBER.
+-- @param kind table  One of quick_add.PERSON, quick_add.PHARMACY, quick_add.PRESCRIBER, quick_add.PLAN.
 -- @return table  A list of { value = id, label = name }, ordered by name.
 function quick_add.options(kind)
   local options = {}

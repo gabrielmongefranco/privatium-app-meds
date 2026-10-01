@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 docs/design/import.md
 Author(s): Gabriel Mongefranco
 Created: 2026-09-26
-Last Modified: 2026-09-27
+Last Modified: 2026-10-01
 Summary: The owner's one-time import of the legacy SQLite database:
          table mapping, the review of medication names, cleaning rules, new ids, safety
          rules and checks.
@@ -40,8 +40,8 @@ it. So the import reads each legacy row once and writes it to the app as one eve
 
 - **The legacy file.** The import opens it read-only and never changes it. Keep it as an
   archive.
-- **The two dates.** The app works out the next fill date and the recommended next fill
-  date by the rules of the legacy view. The [data model](../data-model.md) lists them.
+- **The two dates.** The app calculates refill eligibility and physical supply exhaustion from
+  recorded fills and payer rules. The [data model](../data-model.md) lists them.
 - **Read access with SQL.** The cache at `cache/meds.sqlite` in the data directory is an
   ordinary SQLite file. In a test, the `sqlite3` command-line shell read every table and
   view from it. Python's SQLite library, which lacks SQLite's decimal
@@ -78,6 +78,7 @@ that a spreadsheet program opens, with one row per legacy medication.
 | Legacy name | The name in the legacy catalog | Nothing |
 | Short name | The brand name, the generic name in brackets, then the strength | Change it only if you want another name in the app |
 | Specialty | no | Write yes for each specialty medication |
+| Controlled | Suggested by ingredient | Check yes or no before loading |
 | Same product as | The legacy name of another row, when both share a name, a strength and a form. For an entry of the starter catalog, the word `catalog:` and its short name. | Keep it, clear it, or write another legacy name |
 | Looks like | Rows whose names are close but not equal | Read it. Fill in **Same product as** only when you are sure. |
 
@@ -103,6 +104,7 @@ Load applies the file this way:
 | `Pharmacies` | `pharmacy` | `PharmacyName` |
 | `Prescribers` | `prescriber` | `PrescriberName` |
 | `MedicationTracking` | `person_medication` | `MedicationTrackingID` |
+| Distinct `PrescriptionFills.InsurancePlan` values | `plan` | Trimmed name, ignoring case |
 | `PrescriptionFills` | `fill` | `PrescriptionFillID` |
 | `PriorAuthorizations` | `prior_authorization` | `PriorAuthorizationID` |
 | `MedicationStatuses` | None. The five values are fixed in the schema. | Not applicable |
@@ -129,6 +131,9 @@ A legacy column that is not listed keeps its meaning under the new name in the
 | `Medications.MedicationLongName` | None | The view `v_medication` builds the full name |
 | None | `medication.short_name` | Built from the brand name, the generic name and the strength |
 | None | `medication.is_specialty` | Set from the review file |
+| None | `medication.is_controlled` | Suggested by common ingredient names, then checked in the review file |
+| `PrescriptionFills.InsurancePlan` | `fill.plan_id` | A normalized name becomes a plan id |
+| Latest non-cash fill's plan | `person.plan_id` | Starts new fills; the owner can change it |
 | `MedicationTracking.MedicationType` | `person_medication.medication_type` | Spelling corrected |
 | `MedicationTracking.MedicationStatus` | `person_medication.status` | One of five fixed values |
 | `MedicationTracking.ConditionsPrescribedFor` | `person_medication.prescribed_for` | Renamed |
@@ -206,10 +211,10 @@ Verify compares three things and reports each as a match or a difference.
 |---|---|---|
 | Row counts | One count per legacy table, less the merged medications, plus the added list entries | The view `v_row_count` |
 | Total amount paid | The sum over `PrescriptionFills`, after cleaning | The view `v_spending_by_year` |
-| The two dates | Each row of `ActiveMedicationsView` | The matching row of `v_active_medication` |
+| The two dates | Fill history simulated with current rules | Eligibility and exhaustion from `v_supply` |
 
-Verify lists the merged medications apart from the rest. Their fills now count together,
-so their dates can differ from the legacy view.
+Verify checks the new dates against a daily simulation. It reports legacy date differences
+as expected rather than failed checks. Merged medication histories count together.
 
 ### Steps for the owner
 
@@ -225,8 +230,8 @@ also suggests entries of the starter catalog.
    python3 /path/to/import_legacy.py review --source /path/to/legacy.db --app-url http://127.0.0.1:8420/a/meds
    ```
 
-4. Open `review.csv` in the private folder. Set the short names, mark the specialty
-   medications, and settle the rows that are the same product. The private folder is
+4. Open `review.csv` in the private folder. Set the short names, check specialty and controlled
+   marks, and settle the rows that are the same product. The private folder is
    named `meds-import` and sits beside the legacy file, unless you name another with
    `--folder`.
 5. Load the records into the node:
@@ -241,9 +246,21 @@ also suggests entries of the starter catalog.
    python3 /path/to/import_legacy.py verify --source /path/to/legacy.db --app-url http://127.0.0.1:8420/a/meds
    ```
 
-7. Open the app and look at the Refills page.
+7. Open **Setup**, **Insurance plans** and set the percent and frame of each plan.
+   Check each person's current plan, then look at the Refills page.
 8. Keep the legacy file and the private folder somewhere safe. Both hold health
    information.
+
+### Reload after a schema change
+
+Keep the source database and migration folder outside the Git checkout. Back up the
+node's data directory before replacing existing app data. Stop the node, move its data
+directory aside, and restart with an empty directory. Load the starter catalog from Setup.
+
+Run `review --again` with the existing private review folder and the new app address.
+It keeps settled choices and adds the controlled column. Run `load`, `verify`, then
+`load` again to check that nothing is appended. Check plan settings and person defaults.
+Fills entered after the source database was archived need to be recorded again.
 
 ### What was checked
 
@@ -259,11 +276,18 @@ the sample data. The scratch node and its folder were removed afterward.
 | Load | Every table accepted, with no reject |
 | Load a second time | Nothing appended |
 | Verify: row counts, total amount paid | Match |
-| Verify: next fill date and recommended next fill date | Match for every row of the legacy view that belongs to no merged medication |
+| Legacy dates on September 27, 2026 | Matched the earlier app rules before eligibility and exhaustion were separated |
 | Every section of the app with the imported records | Opened |
 
 The review file of that run kept the suggestions of the script and was not settled by
 the owner. The owner's own run may merge other rows.
+
+### Refill-rule rehearsal, October 1, 2026
+
+An isolated node loaded a copy of the source records. Existing review choices stayed,
+and the controlled column was added. Row counts and total paid matched, and 187 date
+pairs matched an independent daily simulation. A repeated load appended zero records.
+The source database and the owner's review file were unchanged.
 
 ### Conclusion
 

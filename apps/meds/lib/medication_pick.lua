@@ -2,7 +2,7 @@
 -- apps/meds/lib/medication_pick.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-09-27
+-- Last Modified: 2026-10-01
 -- Summary: Reads the medication box of a form: a medication in use, a name typed to
 --          search the catalog, or a new medication.
 -- Notes: See README file for documentation and full license information.
@@ -74,6 +74,7 @@ local function as_new(form, prefix)
     generic_name = form[prefix .. '_generic'],
     strength     = form[prefix .. '_strength'],
     is_specialty = form[prefix .. '_specialty'],
+    is_controlled = form[prefix .. '_controlled'],
     package_size = form[prefix .. '_package_size'],
     package_type = form[prefix .. '_package_type'],
     rxcui        = form[prefix .. '_rxcui'],

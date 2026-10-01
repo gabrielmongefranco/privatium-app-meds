@@ -66,3 +66,15 @@ __pycache__/
 /identity/
 /local/
 /config.toml
+
+# Private databases and one-time migration artifacts
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.sqlite3-*
+*.sqlite-*
+/import_legacy*.py
+/meds-import/
+/review*.csv
+/tmp/

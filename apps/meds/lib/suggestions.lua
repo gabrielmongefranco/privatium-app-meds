@@ -2,7 +2,7 @@
 -- apps/meds/lib/suggestions.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-09-27
+-- Last Modified: 2026-10-01
 -- Summary: The values already in use that text boxes offer while a person types.
 -- Notes: See README file for documentation and full license information.
 --
@@ -38,13 +38,6 @@ end
 -- Every list below has the same grain: one row per distinct value in use, ordered
 -- without regard to case. Each query is written out, because the framework accepts
 -- literal SQL only.
-
---- Insurance plans that fills already name.
-function suggestions.insurance_plans()
-  return values_of(pv.query([[
-    SELECT DISTINCT insurance_plan AS value FROM fill
-     WHERE insurance_plan IS NOT NULL ORDER BY 1 COLLATE NOCASE LIMIT ?]], { LIMIT }))
-end
 
 --- Clinics that prescribers already name.
 function suggestions.clinics()

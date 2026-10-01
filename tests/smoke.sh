@@ -3,7 +3,7 @@
 # tests/smoke.sh
 # Author(s): Gabriel Mongefranco
 # Created: 2026-09-27
-# Last Modified: 2026-09-27
+# Last Modified: 2026-10-01
 # Summary: Starts a Privatium node on a temporary data directory, loads the sample data,
 #          and checks the app's screens over HTTP: normal use, empty and invalid input,
 #          boundaries, and requests that must be refused. Uses invented data only.
@@ -79,6 +79,9 @@ until curl -s -o /dev/null -m 2 "$APP/"; do
 done
 
 ### Helpers ###
+
+# Calendar dates keep status fixtures stable throughout the year.
+day() { date -d "$1" +%F; }
 passed=0
 failed=0
 
@@ -152,6 +155,7 @@ expect_text "a product that comes by the carton has an entry for each carton" '"
 expect_text "the larger carton is an entry of its own" '"short_name":"Otrexup (Methotrexate) 10 mg/0.4 mL Auto-Injector 4 Pack"'
 expect_text "a device shows the strength of its label" '"short_name":"Auvi-Q (Epinephrine) 0.3 mg/0.3 mL Auto-Injector 2 Pack"'
 expect_text "a brand filed under a salt is in the catalog" '"short_name":"Januvia (Sitagliptin) 100 mg"'
+expect_text "starter catalog includes controlled products" '"is_controlled":true'
 expect_text "a syringe with its needle is in the catalog" '"short_name":"Syringe with Needle, Insulin, 0.5 mL, 31G x 5/16\""'
 expect_text "a needle for a pen is in the catalog" '"short_name":"Needle, Pen Tip, 32G x 4 mm"'
 expect_text "an entry of a carton holds its size" '"package_size":"4"'
@@ -189,6 +193,33 @@ expect_text "empty count takes its default" '"specialty_due_within_days":5'
 expect_status "reminder settings are saved a second time" 303 "$(post /setup/reminders /setup/reminders \
   'due_within_days=4' 'due_soon_within_days=8' 'authorization_notice_days=30')"
 expect_status "the settings stay one record" 1 "$(count_of profile)"
+
+expect_status "a percent above 100 is refused" 200 "$(post /setup/reminders /setup/reminders 'early_fill_percent=101')"
+expect_text "a percent above 100 says why" "whole number from 0 to 100"
+expect_status "early refill settings" 200 "$(get /setup/reminders)"
+expect_text "percent default" "Empty means 25."
+
+### Insurance Plans ###
+expect_status "empty plan list" 200 "$(get /setup/plans)"
+expect_text "empty plan list says so" "No plan is recorded."
+expect_status "a plan without its name is refused" 200 "$(post /setup/plans/new /setup/plans/new 'early_fill_percent=25')"
+expect_status "a plan above the percent limit is refused" 200 "$(post /setup/plans/new /setup/plans/new 'name=Invalid Example' 'early_fill_percent=101')"
+expect_status "a plan above the frame limit is refused" 200 "$(post /setup/plans/new /setup/plans/new 'name=Invalid Example' 'supply_frame_days=3651')"
+expect_status "invalid plans add nothing" 0 "$(count_of plan)"
+expect_status "plan without CSRF is refused" 403 "$(curl -s -m 10 -o /dev/null -w '%{http_code}' -X POST --data-urlencode 'name=Example' "$APP/setup/plans/new")"
+expect_status "plan markup is stored as text" 303 "$(post /setup/plans/new /setup/plans/new 'name=<script>example</script>')"
+get /setup/plans >/dev/null
+expect_text "plan name is escaped" "&lt;script&gt;example&lt;/script&gt;"
+expect_no_text "plan name cannot execute markup" "<script>example</script>"
+unused_plan="$(id_in_link /setup/plans)"
+expect_status "unused plan is removed" 303 "$(post "/setup/plans/$unused_plan/remove" "/setup/plans/$unused_plan/remove")"
+expect_status "plan A is added" 303 "$(post /setup/plans/new /setup/plans/new 'name=Example Plan A')"
+get /setup/plans >/dev/null
+plan_a="$(id_in_link /setup/plans)"
+expect_status "plan name duplication is refused" 200 "$(post /setup/plans/new /setup/plans/new 'name=example plan a')"
+expect_status "plan B is added" 303 "$(post /setup/plans/new /setup/plans/new 'name=Example Plan B')"
+get /setup/plans >/dev/null
+plan_b="$(grep -o '/setup/plans/[0-9A-Z]\{26\}' "$BODY" | sed 's|.*/||' | grep -v "$plan_a" | head -1)"
 
 ### People ###
 expect_status "people page" 200 "$(get /setup/people)"
@@ -391,7 +422,7 @@ get '/setup/catalog?q=atorvastatin%20calcium%2020' >/dev/null
 duplicate="$(grep -o '/setup/catalog/[0-9A-Z]\{26\}"' "$BODY" | sed 's|.*/||; s|"||' | grep -v "$lipitor" | head -1)"
 expect_status "records for both entries are recorded" 200 "$(curl -s -m 10 -o /dev/null -w '%{http_code}' \
   -H 'Content-Type: application/json' \
-  -d "{\"events\":[{\"op\":\"put\",\"tbl\":\"fill\",\"id\":\"01J8MEDS0000000000TEST0002\",\"d\":{\"person_id\":\"$alex\",\"medication_id\":\"$duplicate\",\"pharmacy_id\":\"01J8MEDS0000000000TEST0001\",\"filled_on\":\"2026-09-02\",\"days_supply\":30,\"quantity\":\"30\",\"amount_paid\":\"4.50\"}},{\"op\":\"put\",\"tbl\":\"person_medication\",\"id\":\"01J8MEDS0000000000TEST0003\",\"d\":{\"person_id\":\"$alex\",\"medication_id\":\"$duplicate\",\"status\":\"taking_regularly\",\"refills_left\":2}},{\"op\":\"put\",\"tbl\":\"person_medication\",\"id\":\"01J8MEDS0000000000TEST0004\",\"d\":{\"person_id\":\"$alex\",\"medication_id\":\"$lipitor\",\"status\":\"not_taking\",\"refills_left\":0}},{\"op\":\"put\",\"tbl\":\"prior_authorization\",\"id\":\"01J8MEDS0000000000TEST0005\",\"d\":{\"person_id\":\"$alex\",\"medication_id\":\"$duplicate\",\"valid_from\":\"2026-01-01\",\"valid_to\":\"2026-12-31\"}}]}" \
+  -d "{\"events\":[{\"op\":\"put\",\"tbl\":\"fill\",\"id\":\"01J8MEDS0000000000TEST0002\",\"d\":{\"person_id\":\"$alex\",\"medication_id\":\"$duplicate\",\"pharmacy_id\":\"01J8MEDS0000000000TEST0001\",\"filled_on\":\"$(day '-100 days')\",\"days_supply\":365,\"quantity\":\"30\",\"amount_paid\":\"4.50\"}},{\"op\":\"put\",\"tbl\":\"person_medication\",\"id\":\"01J8MEDS0000000000TEST0003\",\"d\":{\"person_id\":\"$alex\",\"medication_id\":\"$duplicate\",\"status\":\"taking_regularly\",\"refills_left\":2}},{\"op\":\"put\",\"tbl\":\"person_medication\",\"id\":\"01J8MEDS0000000000TEST0004\",\"d\":{\"person_id\":\"$alex\",\"medication_id\":\"$lipitor\",\"status\":\"not_taking\",\"refills_left\":0}},{\"op\":\"put\",\"tbl\":\"prior_authorization\",\"id\":\"01J8MEDS0000000000TEST0005\",\"d\":{\"person_id\":\"$alex\",\"medication_id\":\"$duplicate\",\"valid_from\":\"2026-01-01\",\"valid_to\":\"2026-12-31\"}}]}" \
   "$APP/api/events")"
 expect_status "merge page offers the other entry" 200 "$(get "/setup/catalog/$duplicate/merge")"
 expect_text "merge page names the entry that stays" "Lipitor (Atorvastatin) 20 mg"
@@ -422,11 +453,10 @@ expect_status "search by the name of the merged entry" 200 "$(get '/setup/catalo
 expect_text "the old name finds the entry that stays" "Lipitor (Atorvastatin) 20 mg"
 curl -s -m 10 "$APP/api/q/v_active_medication" >"$BODY"
 expect_text "the view shows the medication under the name that stays" '"medication_name":"Lipitor (Atorvastatin) 20 mg"'
-expect_text "the view counts the fill of the merged entry" '"last_filled_on":"2026-09-02"'
+expect_text "the view counts the fill of the merged entry" "\"last_filled_on\":\"$(day '-100 days')\""
 
 ### Medication Lists ###
 # Dates are worked out from today, so the refill statuses stay the same on any day.
-day() { date -d "$1" +%F; }
 entry_of() {   # entry_of <start of a medication name>: prints the id of its list entry
   curl -s -m 10 "$APP/api/q/v_active_medication" \
     | grep -o "\"medication_name\":\"$1[^}]*\"person_medication_id\":\"[0-9A-Z]*\"" \
@@ -595,7 +625,7 @@ expect_status "a fill with no pharmacy is refused" 200 "$(post /setup/people/new
 expect_text "a fill with no pharmacy says why" "Choose a pharmacy, or type the name of a new one."
 fills_before="$(count_of fill)"
 expect_status "a fill is recorded" 303 "$(post /setup/people/new /fills/new \
-  "person_id=$alex" "medication_id=$prinivil" "pharmacy_id=$pharmacy" "filled_on=$(day '-28 days')" \
+  "person_id=$alex" "medication_id=$prinivil" "pharmacy_id=$pharmacy" "filled_on=$(day '-21 days')" \
   'days_supply=30' 'quantity=30' 'amount_paid=$1,012.50' 'refills_left=0' 'rx_number=700001')"
 expect_status "one fill more" "$((fills_before + 1))" "$(count_of fill)"
 curl -s -m 10 "$APP/api/row/person_medication/$entry" >"$BODY"
@@ -606,11 +636,11 @@ expect_status "a fill for a medication taken as needed, long ago" 303 "$(post /s
   'days_supply=30' 'refills_left=0')"
 expect_status "a fill for a medication that is on no list" 303 "$(post /setup/people/new /fills/new \
   "person_id=$alex" "medication_id=01J8MEDS0000000000MED00018" "pharmacy_id=$pharmacy" \
-  "filled_on=$(day '-25 days')" 'days_supply=30' 'refills_left=3')"
+  "filled_on=$(day '-18 days')" 'days_supply=30' 'refills_left=3')"
 pharmacies_before="$(count_of pharmacy)"; fills_before="$(count_of fill)"
 expect_status "a fill by a typed name, at a new pharmacy" 303 "$(post /setup/people/new /fills/new \
   "person_id=$alex" 'medication_name=quickadd (quickaddine) 15 mg' 'pharmacy_id_new=Corner Pharmacy' \
-  "filled_on=$(day '-10 days')" 'days_supply=30' 'insurance_plan=Example Plan')"
+  "filled_on=$(day '-10 days')" 'days_supply=30' 'plan_id=new' 'plan_id_new=Example Plan')"
 expect_status "the fill is added" "$((fills_before + 1))" "$(count_of fill)"
 expect_status "the pharmacy is added with it" "$((pharmacies_before + 1))" "$(count_of pharmacy)"
 expect_status "a refused fill adds no pharmacy" 200 "$(post /setup/people/new /fills/new \
@@ -619,7 +649,7 @@ expect_status "a refused fill adds no pharmacy" 200 "$(post /setup/people/new /f
 expect_status "no pharmacy from a refused fill" "$((pharmacies_before + 1))" "$(count_of pharmacy)"
 expect_text "a refused fill keeps the typed pharmacy" 'value="Never Pharmacy"'
 get "/fills/new?person=$alex" >/dev/null
-expect_text "a plan that a fill names is suggested" '<option value="Example Plan">'
+expect_text "a plan that a fill names is suggested" '>Example Plan</option>'
 norvasc="$(entry_of Norvasc)"
 curl -s -m 10 "$APP/api/row/person_medication/$norvasc" >"$BODY"
 expect_text "the fill adds the medication to the list" '"status":"taking_regularly"'
@@ -636,7 +666,7 @@ expect_text "a medication taken as needed has its own group" '<h2 id="as_needed"
 expect_no_text "a medication taken as needed is never overdue" "Overdue by 1"
 expect_text "no refills left and a fill that is near asks for a new prescription" '<h2 id="asking">New prescriptions to ask for</h2>'
 expect_text "the summary counts the new prescriptions" "New prescriptions to ask for: 2"
-expect_text "a medication taken as needed is asked for too" "The last fill lasts until"
+expect_text "a medication taken as needed is asked for too" "Supply lasts until"
 expect_status "a fill shows its confirmation" 200 "$(get '/?filled=01J8MEDS0000000000TEST0002')"
 expect_text "the confirmation names the medication" "Saved the fill for Lipitor (Atorvastatin) 20 mg."
 expect_status "a fill id that is not in the app shows nothing" 200 "$(get '/?filled=%3Cscript%3E')"
@@ -647,12 +677,80 @@ expect_status "a specialty medication is added" 303 "$(post /setup/catalog/new /
 get '/setup/catalog?q=specimab' >/dev/null
 specimab="$(id_in_link /setup/catalog)"
 expect_status "a fill for the specialty medication" 303 "$(post /setup/people/new /fills/new \
-  "person_id=$alex" "medication_id=$specimab" "pharmacy_id=$pharmacy" "filled_on=$(day '-23 days')" \
+  "person_id=$alex" "medication_id=$specimab" "pharmacy_id=$pharmacy" "filled_on=$(day '-16 days')" \
   'days_supply=28' 'refills_left=5')"
 curl -s -m 10 "$APP/api/q/v_active_medication" >"$BODY"
 if grep -o '"medication_name":"Specimab[^}]*' "$BODY" | grep -q '"refill_status":"due"'; then pass; else fail "a specialty refill 5 days away is due"; fi
 if grep -o '"medication_name":"Norvasc[^}]*' "$BODY" | grep -q '"refill_status":"due_soon"'; then pass; else fail "an ordinary refill 5 days away is due soon"; fi
 if grep -o '{[^}]*"medication_name":"Prinivil[^}]*}' "$BODY" | grep -q '"days_until_next_fill":2'; then pass; else fail "the view counts the days to the next fill"; fi
+
+### Supply And Payer Rules ###
+expect_status "controlled medication is added" 303 "$(post /setup/catalog/new /setup/catalog/new \
+  'brand_name=Controlex' 'generic_name=Controline' 'strength=10 mg' 'is_controlled=yes')"
+get '/setup/catalog?q=controlex' >/dev/null
+controlex="$(id_in_link /setup/catalog)"
+expect_text "catalog shows the controlled mark" "Controlled"
+expect_status "frame medication is added" 303 "$(post /setup/catalog/new /setup/catalog/new \
+  'brand_name=Framelex' 'generic_name=Frameine' 'strength=10 mg')"
+get '/setup/catalog?q=framelex' >/dev/null
+framelex="$(id_in_link /setup/catalog)"
+record_fill() {
+  expect_status "supply fixture is recorded" 303 "$(post /fills/new /fills/new \
+    "person_id=$alex" "medication_id=$1" "pharmacy_id=$pharmacy" "filled_on=$(day "-$2 days")" \
+    "days_supply=$3" "plan_id=$4" 'refills_left=3')"
+}
+row_of() { grep -o "{[^}]*\"medication_name\":\"$1[^}]*}" "$BODY"; }
+record_fill "$controlex" 28 30 "$plan_a"
+record_fill 01J8MEDS0000000000MED00019 40 30 "$plan_a"
+record_fill 01J8MEDS0000000000MED00019 17 30 "$plan_a"
+record_fill 01J8MEDS0000000000MED00011 73 30 "$plan_a"
+record_fill 01J8MEDS0000000000MED00011 33 30 "$plan_a"
+record_fill 01J8MEDS0000000000MED00011 10 30 "$plan_a"
+record_fill 01J8MEDS0000000000MED00012 37 30 "$plan_a"
+record_fill 01J8MEDS0000000000MED00012 14 30 "$plan_b"
+record_fill 01J8MEDS0000000000MED00014 26 30 "$plan_a"
+record_fill 01J8MEDS0000000000MED00031 33 30 "$plan_a"
+record_fill "$framelex" 200 90 "$plan_a"
+record_fill "$framelex" 132 90 "$plan_a"
+record_fill "$framelex" 42 90 "$plan_a"
+curl -s -m 10 "$APP/api/q/v_active_medication" >"$BODY"
+for check in 'Controlex|2' 'Eliquis|13' 'Lexapro|20' 'Singulair|9' 'Synthroid|-3' 'Zyrtec|-10' 'Framelex|26'; do
+  name="${check%|*}"; expected="${check#*|}"
+  if row_of "$name" | grep -q "\"days_until_next_fill\":$expected[,}]"; then pass; else fail "eligibility for $name"; fi
+done
+for check in 'Controlex|2' 'Eliquis|20' 'Lexapro|27' 'Singulair|23' 'Synthroid|4' 'Zyrtec|-3' 'Framelex|70'; do
+  name="${check%|*}"; expected="${check#*|}"
+  if row_of "$name" | grep -q "\"days_until_runs_out\":$expected[,}]"; then pass; else fail "physical supply for $name"; fi
+done
+expect_status "all-history frame is saved" 303 "$(post "/setup/plans/$plan_a/edit" "/setup/plans/$plan_a/edit" \
+  'name=Example Plan A' 'supply_frame_days=3650')"
+curl -s -m 10 "$APP/api/q/v_active_medication" >"$BODY"
+if row_of Framelex | grep -q '"days_until_next_fill":48'; then pass; else fail "all-history frame counts every fill"; fi
+expect_status "plan frame is cleared" 303 "$(post "/setup/plans/$plan_a/edit" "/setup/plans/$plan_a/edit" 'name=Example Plan A')"
+expect_status "controlled early days are saved" 303 "$(post /setup/reminders /setup/reminders \
+  'due_within_days=4' 'due_soon_within_days=8' 'controlled_early_days=2')"
+curl -s -m 10 "$APP/api/q/v_active_medication" >"$BODY"
+if row_of Controlex | grep -q '"days_until_next_fill":0'; then pass; else fail "controlled allowance"; fi
+expect_status "controlled allowance is cleared" 303 "$(post /setup/reminders /setup/reminders \
+  'due_within_days=4' 'due_soon_within_days=8')"
+expect_status "refills with stacked supply" 200 "$(get "/?person=$alex")"
+expect_text "one exhausted supply" "Overdue: 1"
+expect_text "four fills due" "Due: 4"
+expect_text "one fill due soon" "Due soon: 1"
+expect_text "eligibility with supply left" "Fill now. Runs out in 4 days"
+expect_text "overdue uses supply" "Overdue by 3 days"
+expect_text "physical supply date is labeled" "Lasts until"
+expect_no_text "obsolete recommended date is gone" "Recommended"
+expect_status "plan in use cannot be removed" 303 "$(post /setup/plans/new "/setup/plans/$plan_a/remove")"
+expect_status "plan in use still exists" 200 "$(get "/setup/plans/$plan_a/edit")"
+expect_status "person default plan is saved" 303 "$(post "/setup/people/$alex/edit" "/setup/people/$alex/edit" \
+  'display_name=Alex Example' 'birth_date=1980-01-31' "plan_id=$plan_b")"
+expect_status "new fill starts with the person's plan" 200 "$(get "/fills/new?entry=$entry")"
+expect_flat_text "person plan overrides last fill plan" "value=\"$plan_b\" selected"
+expect_status "a forged payer is refused" 200 "$(post /fills/new /fills/new \
+  "person_id=$alex" "medication_id=$prinivil" "pharmacy_id=$pharmacy" \
+  "filled_on=$(day today)" 'plan_id=<script>')"
+expect_text "forged payer says why" "Choose a plan from the list."
 
 expect_status "a status is changed from the page" 303 "$(post /setup/people/new "/medications/$norvasc/status" 'status=on_hold')"
 expect_status "a status that does not exist is ignored" 303 "$(post /setup/people/new "/medications/$norvasc/status" 'status=cured')"
@@ -855,6 +953,12 @@ expect_status "a medication no fill uses is not added" "$medications_before" "$(
 expect_status "history after the paste" 200 "$(get "/fills?person=$alex&added=2")"
 expect_text "history confirms the paste" "2 fills added."
 expect_text "a pasted fill has its prescription number" "Rx 700002"
+curl -s -m 10 "$APP/api/q/v_last_fill" >"$BODY"
+if grep -o '{[^}]*"rx_number":"700002"[^}]*}' "$BODY" | grep -q "\"plan_id\":\"$plan_b\""; then
+  pass
+else
+  fail "pasted fill keeps the person's current plan"
+fi
 curl -s -m 10 "$APP/api/row/person_medication/$(entry_of Lipitor)" >"$BODY"
 expect_text "a pasted fill lowers the refills left by one" '"refills_left":"1"'
 expect_status "contacts after the paste" 200 "$(get /contacts)"
@@ -981,7 +1085,7 @@ RX NUMBER
 
 DAYS SUPPLY
 30
-$(us '-21 days')LISINOPRIL 10 MG TABLETEXAMPLE PHARMACY\$ 12.00\$ 5.00PaidLess Infosort Icon
+$(us '-22 days')LISINOPRIL 10 MG TABLETEXAMPLE PHARMACY\$ 12.00\$ 5.00PaidLess Infosort Icon
 EXAMPLE PHARMACY
 
 PHARMACY ID
@@ -994,6 +1098,7 @@ DAYS SUPPLY
 30"
 expect_status "a page with a fill that was typed by hand is read" 200 "$(post /fills/paste /fills/paste/read "person_id=$alex" "pasted=$repeated")"
 expect_text "the same medication on the same date is already recorded" "This person has a fill of this medication on the same date."
+expect_text "paste review explains the payer" "Example Plan B"
 expect_text "the same medication on another date is ready" "2 fills found. 1 ready to add."
 expect_no_flat_text "a fill that is already recorded cannot be marked" 'name="include_1"'
 fills_before="$(count_of fill)"
@@ -1030,7 +1135,7 @@ expect_text "every fill of the long page is found" "60 fills found."
 ### Setup ###
 expect_status "setup page" 200 "$(get /setup)"
 expect_text "setup page counts the people" "The members of the household. 5 in the app"
-expect_text "setup page counts the medications" "with its other names. $((seed_medications + 5)) in the app"
+expect_text "setup page counts the medications" "with its other names. $((seed_medications + 7)) in the app"
 expect_no_text "setup page asks for no household name" "Household name"
 
 ### Report ###

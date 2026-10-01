@@ -22,7 +22,8 @@ for the one-time import of the owner's legacy database lives outside this reposi
 
 | Table | Grain |
 |---|---|
-| `profile` | One row per node, at most one row ever. Holds the five reminder day counts. No row means every default. |
+| `profile` | One row per node, at most one row ever. Holds reminder counts and early refill defaults. No row means every default. |
+| `plan` | One row per payer, with optional percent and frame overrides |
 | `person` | One row per household member |
 | `medication` | One row per product in the catalog |
 | `medication_alias` | One row per medication per other name |
@@ -33,7 +34,7 @@ for the one-time import of the owner's legacy database lives outside this reposi
 | `prior_authorization` | One row per approval window for one person and one medication |
 
 The views start with `v_`. `v_active_medication` is the readable one: every medication
-in use with its refill status, next fill date and recommended next fill date.
+in use with its refill status, refill eligibility, physical supply exhaustion, payer and early allowance.
 [The data model page](../../docs/data-model.md) is the reference for every table and
 view, and must change in the same commit as `schema.sql`.
 
@@ -53,7 +54,7 @@ view, and must change in the same commit as `schema.sql`.
 | `lib/authorization_words.lua` | Pure Lua: the levels of a prior authorization that needs attention, and their words |
 | `static/forms.js` | Shows the fields of a new record when **-- Add new --** is chosen. Every form works without it. |
 | `static/medication_lookup.js` | The lookup of a new medication, in the browser: RxTerms, then the openFDA NDC Directory, then RxNorm |
-| `lib/quick_add.lua` | A person, a pharmacy or a prescriber that a form adds by name beside its own record |
+| `lib/quick_add.lua` | A person, a pharmacy, a prescriber or a plan that a form adds by name beside its own record |
 | `lib/suggestions.lua` | The values in use that text boxes offer while a person types |
 | `lib/merge.lua` | The plan and the batch of a merge |
 | `lib/entries.lua` | Reads the medication lists with their refill dates, words and groups |
@@ -71,7 +72,8 @@ view, and must change in the same commit as `schema.sql`.
 |---|---|---|
 | `GET /` | `home` | The Refills page, or a welcome while the household has no people |
 | `GET /setup` | `home` | Links to the parts of Setup |
-| `GET`, `POST /setup/reminders` | `home` | The five day counts |
+| `GET`, `POST /setup/reminders` | `home` | Reminder and early refill settings |
+| `GET`, `POST /setup/plans/new`, `/:id/edit`, `/:id/remove`; `GET /setup/plans` | `plans` | Payers and their rules, with removal refused while referenced |
 | `GET /setup/people` | `people` | The list |
 | `GET`, `POST /setup/people/new`, `/:id/edit`, `/:id/remove` | `people` | Add, change, remove |
 | `GET /contacts` | `contacts` | Pharmacies and prescribers |
@@ -111,8 +113,11 @@ view, and must change in the same commit as `schema.sql`.
   append every column. A column left out of the append is cleared.
 - Privatium does not apply a column `DEFAULT` on write. Supply every required value in
   Lua.
-- The two refill dates follow the rules in the data model page. Explain any change to
-  those rules to the owner before coding it.
+- Refill eligibility follows the latest fill's payer, its rolling frame and allowance.
+  Physical supply stacks across every fill, with no credit for gaps. Overdue uses supply;
+  due uses eligibility. Controlled fills count across payers without a frame limit.
+  Zero percent waits for physical exhaustion. Frame 0 counts the last fill only, and
+  3650 counts all history. Preserve the raw boolean in views because Lua treats 0 as true.
 - A medication's short name is `Brand (Generic) strength package` unless the owner typed
   another. One product in two packages is two medications with one RxCUI.
   A second spelling of a product is a `medication_alias` row, never a second medication.
@@ -161,6 +166,6 @@ logs; existing events lack the key and the column is NULL for them. Adding a tab
 a `CREATE TABLE` with a grain comment and a section in the data model page.
 
 Run the three checks in [the test how-to](../../docs/how-to/run-the-tests.md) before
-finishing: `privatium lint apps/meds`, `lua5.4 tests/lua/run.lua` and `tests/smoke.sh`.
+finishing: `privatium lint apps/meds`, `lua5.4 tests/lua/run.lua`, `python3 tests/test_supply.py` and `tests/smoke.sh`.
 A new check in `lib/validate.lua` gets unit tests, and a new screen gets smoke tests,
 with at least one request that must be refused.

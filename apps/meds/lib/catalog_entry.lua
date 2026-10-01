@@ -2,7 +2,7 @@
 -- apps/meds/lib/catalog_entry.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-09-27
+-- Last Modified: 2026-10-01
 -- Summary: The checks of a catalog entry, shared by the catalog form and by every form
 --          that adds a medication beside its own record.
 -- Notes: See README file for documentation and full license information.
@@ -154,6 +154,7 @@ function catalog_entry.read(form, existing, offered)
   row.package_type, errors.package_type =
     read_choice(form, 'package_type', 'the package type', offered.package_type)
   row.is_specialty = form.is_specialty == 'yes'
+  row.is_controlled = form.is_controlled == 'yes'
   row.rxcui, errors.rxcui = read_rxcui(form.rxcui)
 
   -- Where the row came from travels with it, because an amendment replaces the whole

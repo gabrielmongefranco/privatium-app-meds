@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 docs/design/README.md
 Author(s): Gabriel Mongefranco
 Created: 2026-09-26
-Last Modified: 2026-09-27
+Last Modified: 2026-10-01
 Summary: Design of the app's screens: tasks, the medication box, adding records from
          inside a form, pasting fills from a portal, the catalog as a copy of a drug
          reference, refill status rules, accessibility and privacy plans, what was
@@ -34,7 +34,7 @@ otherwise. The [import page](import.md) covers the owner's legacy database.
 
 - Replace hand edits in a database tool with forms that check what you type.
 - Show what needs a refill first, in plain words.
-- Keep the refill dates that the legacy database calculates.
+- Estimate refill eligibility and supply exhaustion from recorded fills and payer rules.
 - Work with a keyboard, a screen reader and a phone.
 - Keep every record on the owner's node. The node calls no network service. The browser
   asks a public drug reference only when you look up a medication to add.
@@ -89,17 +89,17 @@ The page holds these parts, in reading order:
 
 Each row shows the medication, the person, the refill status in words, the last fill,
 the refills left and a **Record fill** button. This example assumes that today is
-2026-09-27. The third row is a specialty medication, which is due earlier.
+2026-10-01. The third row is a specialty medication, which is due earlier.
 
 | Medication | For | Refill | Last fill | Refills left | Action |
 |---|---|---|---|---|---|
 | Examplol (Exampline) 10 mg | Alex Example | Overdue by 4 days | 2026-08-24 at Example Pharmacy, 30 days | None. Ask Dr. Sample for a new prescription: (555) 555-0100 | Record fill |
 | Samplex (Samplamide) 5 mg | Sam Example | Due in 3 days | 2026-08-31 at Example Pharmacy, 30 days | 2 | Record fill |
-| Specimab (Specizumab) 150 mg, specialty | Alex Example | Due in 5 days | 2026-09-04 at Example Specialty Pharmacy, 28 days | 5 | Record fill |
+| Specimab (Specizumab) 150 mg, specialty | Alex Example | Due in 5 days | 2026-09-15 at Example Specialty Pharmacy, 28 days | 5 | Record fill |
 
 Only a medication with the status Taking regularly raises an alert. The other active
 medications appear further down the page. Each one shows its next fill date and its
-recommended next fill date, so you can look them up when you need them.
+supply exhaustion date, so you can look them up when you need them.
 
 When nothing needs attention, the page says so and names the next date: "Nothing needs a
 refill. The next one is Samplex (Samplamide) 5 mg on 2026-10-25."
@@ -139,7 +139,7 @@ thousands separators before it checks the number.
 Saving writes the fill, the new refills left and any record the form added together, in
 one batch. The app then
 returns to the home page, which confirms the save in a status message: "Saved the fill
-for Examplol (Exampline) 10 mg. The next fill date is 2026-10-27."
+for Examplol (Exampline) 10 mg. The next fill date is October 24, 2026, and the supply lasts until October 31, 2026."
 
 If a check fails, the form comes back with everything you typed still in place. Each
 problem appears as text next to its field. A summary at the top links to each field that
@@ -343,8 +343,8 @@ Each medication a person takes has its own page. It holds these parts, in readin
 1. The medication name as the heading, the person, the status and a **Change status**
    control.
 2. **How to take it**: the instructions, when to take it, and what it is for.
-3. **Refills**: the refill status, the last fill, the next fill date, the recommended
-   next fill date, and the refills left.
+3. **Refills**: the refill status, the last fill, the next fill date, the supply exhaustion
+   date, and the refills left.
 4. **Who to call**: the prescriber and the pharmacy, with phone links.
 5. **Prior authorizations**: each approval window with its state, and
    **Add an authorization**.
@@ -408,11 +408,13 @@ This page links to three places:
 - **People**: the household members.
 - **Medication catalog**: every product the household has used, with its other names.
   The sample data adds a starter catalog of common medications.
-- **Reminder settings**: the five day counts in the refill status rules.
+- **Reminder settings**: six reminder day counts and three early refill settings.
+- **Insurance plans**: names, refill overrides and reference-safe removal.
 
 The app asks for no household name.
 
-A catalog entry has a **Specialty** checkbox. A specialty medication takes longer to
+A catalog entry has **Specialty** and **Controlled** checkboxes. Controlled supply counts
+across payers and has no early allowance unless the household sets one. A specialty medication takes longer to
 arrive, so its refill is due earlier.
 
 Two catalog entries that are the same product can be merged. Merging moves the fills,
@@ -609,32 +611,36 @@ records still use. It says how many records use it.
 
 ### Refill status rules
 
-The view `v_active_medication` works out the refill status of every medication in use.
-The app stores none of it. The view uses the next fill date, the day counts and today's
-date. Today is the local date of the computer that runs the node.
+`v_active_medication` calculates the status from refill eligibility, physical supply,
+and the node computer's local date. The app stores none of these calculated values.
 
 | Refill status | Ordinary medication | Specialty medication |
 |---|---|---|
-| Overdue | The next fill date is before today | The same |
-| Due | The next fill date is today or up to 3 days away | Today or up to 5 days away |
-| Due soon | The next fill date is 4 to 7 days away | 6 to 10 days away |
-| Not due | The next fill date is more than 7 days away | More than 10 days away |
-| No fill | No fill is recorded | The same |
+| No fill | No supply date | The same |
+| Overdue | Physical supply ran out before today | The same |
+| Due | Eligibility has passed, is today, or is up to 3 days away | Up to 5 days away |
+| Due soon | Eligibility is 4 to 7 days away | 6 to 10 days away |
+| Not due | Eligibility is more than 7 days away | More than 10 days away |
 
-The five day counts are defaults: 3, 7, 5, 10, and 30 for a prior authorization. You can
-change them under **Reminder settings**.
+Six reminder day counts cover refills and prior authorizations. Three further settings
+cover early refills. Plans can override the household percent and frame.
 
 #### The two dates
 
-The app keeps both dates of the legacy view `ActiveMedicationsView`, worked out by the
-same rules.
+The **next fill date** estimates the earliest day a payer permits another fill.
+**Lasts until** is when physical supply runs out. Every fill adds physical supply,
+and a late fill starts from its own date without credit for the gap.
 
-- The **next fill date** is the date of the last fill plus its days supply.
-- The **recommended next fill date** also counts the supply that earlier fills built up,
-  the way an insurer counts early refills. It is never earlier than the next fill date.
+The payer's count follows the plan of the latest fill, including unknown payers and
+excluding other named plans. It uses a rolling frame on the proposed refill date and
+an allowance rounded down from the last fill's days supply.
+Controlled medications count every fill across payers, without a frame limit.
+Their household days early setting replaces the percent, initially with zero.
+Zero-percent payers for ordinary medications wait for physical supply to run out.
 
-The refill status uses the next fill date, as the legacy view does. The
-[data model](../data-model.md) gives the rules step by step, with a worked example.
+There is no January 1 reset. The [data model](../data-model.md) gives the full rules,
+frame boundary cases, and two worked examples. After eligibility passes with supply
+left, the row reads "Fill now. Runs out in N days".
 
 #### Groups on the Refills page
 
@@ -660,19 +666,15 @@ The medication still appears under Missing information until someone adds the nu
 
 #### Differences from the legacy view
 
-The rules for the two dates are the same. On the owner's data, both dates matched the
-legacy view for every row. Five things differ, each by a decision recorded below.
+The app deliberately differs from `ActiveMedicationsView`:
 
-- **Today.** The legacy view uses the date in Coordinated Universal Time (UTC). In the
-  evening in the Americas that date is already tomorrow. The app uses the local date.
-- **Day counts.** The legacy view uses 7 and 12 days for every medication. The app uses
-  3 and 7, or 5 and 10 for a specialty medication.
-- **Alerts.** The legacy view gives every active medication a refill status and nothing
-  else. The app raises an alert for Taking regularly only, and shows the dates of the
-  others without one.
-- **Empty days supply.** The legacy view counts it as zero. The app counts it as 1 day.
-- **Merged entries.** When two catalog entries are merged, their fills count together.
-  The dates of that medication can then differ from the legacy view.
+- Physical supply stacks across every fill. Gaps earn no credit.
+- Refill eligibility uses the last payer's count, a rolling frame, and an early allowance.
+- Overdue begins after physical supply ends. Due follows eligibility.
+- Today is the node's local date. The legacy view uses Coordinated Universal Time (UTC).
+- Default reminder counts are 3 and 7 days, or 5 and 10 for specialty medications.
+- Only medications taken regularly raise refill alerts. Missing days supply counts as one day.
+- Merged entries share their fill history and can have different dates from the source view.
 
 ### Accessibility plan
 
@@ -777,8 +779,8 @@ The owner made these decisions on 2026-09-27.
 | Refill alerts | Taking regularly only. The dates of the other active medications stay visible. |
 | Empty days supply | Shown under Missing information. Counted as 1 day in views and reports. |
 | Days supply of zero | Stays zero. |
-| The two dates | Same rules as the legacy view. Any difference is explained before it is built. |
-| Date that drives the refill status | The next fill date, as in the legacy view. |
+| The two dates | Refill eligibility and physical supply exhaustion, using stacked supply without gap credit. |
+| Date that drives the refill status | Eligibility drives due; physical supply exhaustion drives overdue. |
 | Prior authorization | Every one names a person. |
 | Medication names | One catalog entry for each product, a short name shown everywhere, and other names that the search understands. |
 | Short name | The brand name, the generic name in brackets, then the strength. |
@@ -836,6 +838,18 @@ Each step ended with a clean `privatium lint`, passing tests and updated documen
     built from them. Done. See
     [The catalog and the drug references](#the-catalog-and-the-drug-references).
 14. A check of the lookup inside a browser. **Planned.**
+
+#### Refill rule decisions, October 1, 2026
+
+| Subject | Decision |
+|---|---|
+| Plans | Reusable records with optional percent and frame overrides; no member details. |
+| Current payer | A person's default starts new fills; historical fills keep their payer. |
+| Unknown payer | Counts toward the last payer's history, to avoid suggesting an unsafe early refill. |
+| Controlled supply | Every fill counts across payers, with no frame limit and zero early days by default. |
+| Cash and over-the-counter | Zero percent waits until physical supply runs out. |
+| Frame special values | Zero counts the last fill only; 3650 counts every fill, even beyond ten years. |
+| Catalog marks | Controlled comes from openFDA schedules; specialty is a name/list suggestion that the owner can correct. |
 
 ### Conclusion
 

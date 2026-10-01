@@ -2,7 +2,7 @@
 -- apps/meds/lib/routes/people.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-09-27
+-- Last Modified: 2026-10-01
 -- Summary: The screens that list, add, change and remove the people of the household.
 -- Notes: See README file for documentation and full license information.
 --
@@ -23,6 +23,7 @@
 local pv       = require 'privatium'
 local clock    = require 'clock'
 local page     = require 'page'
+local quick_add = require 'quick_add'
 local store    = require 'store'
 local text     = require 'text'
 local validate = require 'validate'
@@ -30,7 +31,7 @@ local validate = require 'validate'
 --- Configuration ---
 local LIST     = '/setup/people'
 local NAME_MAX = 120
-local FIELDS   = { 'display_name', 'birth_date' }
+local FIELDS   = { 'display_name', 'birth_date', 'plan_id' }
 
 --- Reads ---
 
@@ -86,6 +87,7 @@ local function read(form, except_id)
   if row.display_name and name_taken(row.display_name, except_id) then
     errors.display_name = 'Choose another name. A person with this name is already in the app.'
   end
+  row.plan_id, row.new_plan, errors.plan_id = quick_add.read(form, 'plan_id', quick_add.PLAN)
   return row, errors
 end
 
@@ -98,7 +100,17 @@ local function form_page(heading, action, typed, errors)
     errors   = errors,
     problems = page.problems(errors, FIELDS),
     today    = clock.today(),
+    plans    = quick_add.options(quick_add.PLAN),
   })
+end
+
+local function save_person(id, row)
+  local new_plan = row.new_plan
+  row.new_plan = nil
+  return store.together('person', function(tx)
+    row.plan_id = quick_add.write(tx, quick_add.PLAN, row.plan_id, new_plan)
+    tx.append('person', id, row)
+  end)
 end
 
 --- Routes ---
@@ -118,7 +130,7 @@ end)
 pv.post(LIST .. '/new', function(req)
   local row, errors = read(req.form, nil)
   if not next(errors) then
-    local saved, refusal = store.save('person', nil, row)
+    local saved, refusal = save_person(nil, row)
     if saved then return pv.redirect(url(LIST .. '?notice=saved')) end
     errors.display_name = refusal
   end
@@ -136,7 +148,7 @@ pv.post(LIST .. '/:id/edit', function(req)
   if not person then return pv.redirect(url(LIST .. '?notice=missing')) end
   local row, errors = read(req.form, person.id)
   if not next(errors) then
-    local saved, refusal = store.save('person', person.id, row)
+    local saved, refusal = save_person(person.id, row)
     if saved then return pv.redirect(url(LIST .. '?notice=saved')) end
     errors.display_name = refusal
   end

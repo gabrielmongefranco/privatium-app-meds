@@ -10,7 +10,7 @@ tools/build_seed.py
 
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-09-27
+Last Modified: 2026-10-01
 Notes: See README file for documentation and full license information.
 
 Usage, from the root of the repository:
@@ -375,6 +375,18 @@ class Reference:
             "search": 'openfda.rxcui:"' + rxcui + '"', "limit": LABELS_MAX})
         return self.get(OPENFDA_NDC + "?" + query, empty_status=404).get("results", [])
 
+    def controlled_products(self, ingredient):
+        """Return scheduled product identifiers for one ingredient, using cached public data.
+
+        Reads at most 100 NDC products. Missing records leave products unmarked.
+        No credentials or household data are sent. Network failures stop the build.
+        """
+        query = urllib.parse.urlencode({
+            "search": 'generic_name:"' + ingredient.replace('"', '') + '"', "limit": LABELS_MAX})
+        products = self.get(OPENFDA_NDC + "?" + query, empty_status=404).get("results", [])
+        return {str(code) for product in products if product.get("dea_schedule") in {"CI", "CII", "CIII", "CIV", "CV"}
+                for code in product.get("openfda", {}).get("rxcui", [])}
+
     def details_of(self, rxcui):
         """What RxTerms says about one product, or None when it says nothing."""
         answer = self.get(RXNAV + "/RxTerms/rxcui/" + rxcui + "/allinfo.json")
@@ -736,6 +748,21 @@ def padded_id(prefix, number):
     return prefix + str(number).zfill(ID_LENGTH - len(prefix))
 
 
+def specialty_mark(generic, listed_ingredients):
+    """Suggest a specialty mark by ingredient name; the owner must check plan coverage.
+
+    The supplied set contains lowercase ingredient names. Returns a boolean without
+    network access or side effects. Salts and combination ingredients are accepted.
+    """
+    for part in generic.split("/"):
+        words = plain(part).split()
+        if any(word.endswith(("mab", "cept")) for word in words):
+            return True
+        if any(ingredient in words for ingredient in listed_ingredients):
+            return True
+    return False
+
+
 def main():
     parser = argparse.ArgumentParser(description="Build the starter catalog.")
     parser.add_argument("--cache", default=os.path.join(tempfile.gettempdir(), "meds-seed-cache"),
@@ -751,6 +778,10 @@ def main():
 
     in_micrograms = {plain(line) for line in read_list("labeled_in_micrograms.txt")}
     requests = requests_of()
+    specialty_ingredients = {plain(line) for line in read_list("specialty.txt")}
+    with concurrent.futures.ThreadPoolExecutor(max_workers=REQUESTS_AT_ONCE) as pool:
+        controlled_codes = set().union(*pool.map(
+            reference.controlled_products, [request["match"] for request in requests]))
     products_by_drug = [reference.products_of(request) for request in requests]
 
     # The answers about each product are asked for side by side, which fills the cache.
@@ -805,6 +836,11 @@ def main():
     name_entries(entries, {plain(row["d"]["short_name"]) for row in hand_medications})
     entries.sort(key=lambda entry: (entry["short_name"].lower(), int(entry["rxcui"])))
 
+    for event in hand_medications:
+        row = event["d"]
+        row["is_controlled"] = bool(row.get("is_controlled") or row.get("rxcui") in controlled_codes)
+        row["is_specialty"] = bool(row.get("is_specialty") or specialty_mark(
+            row.get("generic_name", ""), specialty_ingredients))
     supplies = supplies_of()
     lines = [json.dumps(row, ensure_ascii=False) for row in by_hand + supplies]
     alias_number = 0
@@ -819,7 +855,9 @@ def main():
         for column in ("strength", "route", "form", "package_size", "package_type"):
             if entry.get(column):
                 row[column] = entry[column]
-        row.update({"is_specialty": False, "rxcui": entry["rxcui"], "source": SOURCE_NAME})
+        row.update({"is_specialty": specialty_mark(entry["generic_name"], specialty_ingredients),
+                    "is_controlled": entry["rxcui"] in controlled_codes,
+                    "rxcui": entry["rxcui"], "source": SOURCE_NAME})
         lines.append(json.dumps(
             {"op": "put", "tbl": "medication", "id": medication_id, "d": row}, ensure_ascii=False))
         for alias in entry["aliases"]:

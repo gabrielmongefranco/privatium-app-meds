@@ -2,7 +2,7 @@
 -- apps/meds/lib/routes/paste.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-09-27
+-- Last Modified: 2026-10-01
 -- Summary: The screens that turn the pasted text of a portal page into fills: paste, review,
 --          add. The text is untrusted; it is read again and checked again before anything is saved.
 -- Notes: See README file for documentation and full license information.
@@ -246,16 +246,18 @@ end
 -- the pharmacies, and one row for each fill that says whether it can be added.
 local function review(claims, person_id, typed, submitted)
   local rows = {}
+  local person = pv.get_row('person', person_id)
   for index, claim in ipairs(claims) do
     local row = { index = index, claim = claim, problems = {} }
     local form = {
-      person_id = person_id, filled_on = claim.filled_on, days_supply = claim.days_supply,
+      plan_id = person and person.plan_id, person_id = person_id, filled_on = claim.filled_on, days_supply = claim.days_supply,
       quantity = claim.quantity, amount_paid = claim.amount_paid, rx_number = claim.rx_number,
     }
     row.fill, row.errors = fills.read(form, { medication_id = true, pharmacy_id = true })
     for _, field in ipairs({ 'filled_on', 'days_supply', 'quantity', 'amount_paid', 'rx_number' }) do
       if row.errors[field] then row.problems[#row.problems + 1] = row.errors[field] end
     end
+    if row.errors.plan_id then row.problems[#row.problems + 1] = row.errors.plan_id end
     if text.key(claim.drug_name) == '' then
       row.problems[#row.problems + 1] = 'The name of the medication was not read.'
     end
@@ -306,7 +308,9 @@ local function review_page(found, person, pasted, typed, err)
   local ready, asked = 0, 0
   for _, row in ipairs(found.rows) do if row.ready then ready = ready + 1 end end
   for _, subject in ipairs(found.medications) do if not subject.known then asked = asked + 1 end end
+  local plan = person.plan_id and pv.get_row('plan', person.plan_id)
   return pv.render('paste_review', {
+    plan_name = plan and plan.name,
     section = 'history', found = found, person = person, pasted = pasted, typed = typed,
     err = err, new_pharmacy = NEW_PHARMACY, names = suggestions.medication_names(),
     summary = page.counted(#found.rows, 'fill', 'fills') .. ' found. ' .. ready .. ' ready to add. '

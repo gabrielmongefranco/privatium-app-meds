@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/views/history.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-09-27
+Last Modified: 2026-10-01
 Summary: The history of fills, with filters, the total paid under the filters, and the total
          paid by each person in each year.
 Notes: See README file for documentation and full license information.
@@ -62,6 +62,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
       <th scope="col" role="columnheader">Medication</th>
       <th scope="col" role="columnheader">For</th>
       <th scope="col" role="columnheader">Pharmacy</th>
+      <th scope="col" role="columnheader">Plan</th>
       <th scope="col" role="columnheader">Quantity</th>
       <th scope="col" role="columnheader">Days supply</th>
       <th scope="col" role="columnheader">You paid</th>
@@ -75,6 +76,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
           <? if row.rx_number then ?><span class="pv-meta meds-line">Rx <?= row.rx_number ?></span><? end ?></td>
         <td role="cell"><span class="pv-cell-label" aria-hidden="true">For</span><?= row.person_name ?></td>
         <td role="cell"><span class="pv-cell-label" aria-hidden="true">Pharmacy</span><?= row.pharmacy_name ?></td>
+        <td role="cell"><span class="pv-cell-label" aria-hidden="true">Plan</span><?= row.plan_name or 'Not given' ?></td>
         <td role="cell"><span class="pv-cell-label" aria-hidden="true">Quantity</span><?= row.quantity or 'Not given' ?></td>
         <td role="cell"><span class="pv-cell-label" aria-hidden="true">Days supply</span><?= row.days_supply or 'Not given' ?></td>
         <td role="cell"><span class="pv-cell-label" aria-hidden="true">You paid</span><? if row.amount_paid then ?><?= fmt.money(row.amount_paid) ?><? else ?>Not given<? end ?></td>
