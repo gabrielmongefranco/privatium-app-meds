@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/views/paste_review.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-10-01
+Last Modified: 2026-10-03
 Summary: The review of pasted fills: what was read, what it matched, and what will be added.
          Every value from the text is escaped by the output tag.
 Notes: See README file for documentation and full license information.
@@ -26,7 +26,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 <?= render('_nav', { section = section }) ?>
 <h1>Check the fills</h1>
 <p class="pv-help"><? if plan_name then ?>Each added fill uses this person's plan: <?= plan_name ?>.<? else ?>This person has no plan. Added fills have no payer recorded.<? end ?></p>
-<p>These fills were read from the text you pasted, for <strong><?= person.display_name ?></strong>.
+<p>Fills found in the text you pasted for <strong><?= person.display_name ?></strong>.
    Nothing is added yet.</p>
 <p class="pv-notice pv-notice-info" role="status"><?= icon('info-circle') ?> <span><?= summary ?></span></p>
 <? if err then ?>
@@ -41,7 +41,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 
   <h2>Medications</h2>
   <? if #found.medications == 0 then ?>
-    <p class="pv-empty">No fill in this text can be added, so there is no medication to choose.</p>
+    <p class="pv-empty">No fills can be added from this text.</p>
   <? end ?>
   <p>The portal writes each name its own way. Tell the app once which medication a name
      means, and the app remembers it for the next paste.</p>
@@ -73,7 +73,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
              These medications are the closest. The best match comes first.</p>
         <? end ?>
         <?= render('_medication_picker', { prefix = subject.prefix, typed = typed,
-              legend = 'Medication for the name ' .. subject.name, candidates = subject.candidates,
+              legend = 'Which medication is ' .. subject.name .. '?', candidates = subject.candidates,
               pick = subject.used and subject.pick or nil, explicit = true }) ?>
       </div>
     <? end ?>
@@ -81,7 +81,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 
   <h2>Pharmacies</h2>
   <? if #found.pharmacies == 0 then ?>
-    <p class="pv-empty">No fill in this text can be added, so there is no pharmacy to choose.</p>
+    <p class="pv-empty">No fills can be added from this text.</p>
   <? end ?>
   <? for _, subject in ipairs(found.pharmacies) do ?>
     <div class="pv-card meds-claim">
@@ -91,7 +91,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
            This pharmacy is in the app.</p>
       <? else ?>
         <? local refused = subject.used and subject.problem ?>
-        <label for="f-<?= subject.field ?>">Pharmacy for <?= subject.name or 'these fills' ?></label>
+        <label for="f-<?= subject.field ?>">Which pharmacy is <?= subject.name or 'this' ?>?</label>
         <select id="f-<?= subject.field ?>" name="<?= subject.field ?>"<? if refused then ?> aria-invalid="true" aria-describedby="f-<?= subject.field ?>-err"<? end ?>>
           <? if subject.can_add then ?>
             <option value="<?= new_pharmacy ?>"<? if typed[subject.field] == new_pharmacy then ?> selected<? end ?>>Add <?= subject.name ?>, with the address and phone number that were pasted</option>
@@ -149,9 +149,9 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
     </fieldset>
   <? end ?>
 
-  <p>Adding a fill lowers the refills left of its medication by one. A medication that is
-     not on the list of <?= person.display_name ?> is added to it, with the status Taking
-     regularly.</p>
+  <p>Adding a fill lowers the refills left of its medication by one. A product that is on
+     no list of <?= person.display_name ?> is added to the list, with the status Taking
+     regularly and the full name of the product as its name.</p>
   <p class="pv-actions">
     <button type="submit" class="pv-btn pv-btn-primary"><?= icon('check-lg') ?> Add fills</button>
     <a class="pv-btn" href="<?= url('/fills/paste?person=' .. person.id) ?>">Start over</a>

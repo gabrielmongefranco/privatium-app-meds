@@ -3,10 +3,10 @@ This file is part of Prescription Tracker
 docs/data-model.md
 Author(s): Gabriel Mongefranco
 Created: 2026-09-26
-Last Modified: 2026-10-01
+Last Modified: 2026-10-03
 Summary: Every table and view the app stores: grain, columns, meaning, which fields hold
          personal or health information, how the refill dates are worked out, and what
-         the sample data holds.
+         the starter catalog holds.
 Notes: See README file for documentation and full license information.
 
 Copyright © 2026 Gabriel Mongefranco
@@ -61,30 +61,34 @@ explains what the design protects and what it leaves to the owner of the compute
 
 ```mermaid
 erDiagram
-    person ||--o{ person_medication : takes
-    medication ||--o{ person_medication : "is taken as"
+    person ||--o{ person_medication : tracks
+    person_medication ||--|{ person_medication_product : "stands for"
+    medication ||--o{ person_medication_product : "is a product of"
     medication ||--o{ medication_alias : "is also called"
     pharmacy |o--o{ person_medication : "is the current pharmacy of"
     prescriber |o--o{ person_medication : prescribes
     plan |o--o{ person : "is the default payer of"
     plan |o--o{ fill : pays
-    person ||--o{ fill : receives
-    medication ||--o{ fill : "is filled as"
+    person_medication ||--o{ fill : receives
+    medication |o--o{ fill : "was dispensed as"
     pharmacy ||--o{ fill : dispenses
-    person ||--o{ prior_authorization : holds
-    medication ||--o{ prior_authorization : "is covered by"
+    person_medication ||--o{ prior_authorization : "is covered by"
 ```
 
 The diagram shows the same facts as this list:
 
-- A person has any number of `person_medication` rows, fills and prior authorizations.
-- A medication has any number of `person_medication` rows, fills, prior authorizations
-  and other names.
+- A person tracks any number of medications. Each is a `person_medication` row with the
+  name the person prefers.
+- A tracked medication stands for one or more catalog products, through
+  `person_medication_product`. A medication that comes in two carton sizes is one
+  tracked medication with two products. One product belongs to at most one tracked
+  medication of a person, so its fills are never counted twice.
+- A tracked medication has any number of fills and prior authorizations. A fill may name
+  the product that was dispensed.
+- A catalog product has any number of other names.
 - A pharmacy has any number of fills. Every fill names one pharmacy.
-- A `person_medication` row names one person and one medication. It may name a pharmacy
-  and a prescriber.
-- A prior authorization names one person and one medication. A prior authorization is an
-  insurer's approval to cover a medication for a set period.
+- A `person_medication` row may name a pharmacy and a prescriber.
+- A prior authorization is an insurer's approval to cover a medication for a set period.
 - A plan can be the default payer of several people and the payer of several fills.
 - The `profile` table stands alone.
 
@@ -222,12 +226,13 @@ Grain: one row per prescriber.
 
 #### `person_medication`
 
-Grain: one row per person per medication they take or took.
+Grain: one row per medication a person tracks, taken now or in the past. This is what
+the Medications page lists. Its products are the rows of `person_medication_product`.
 
 | Column | Type | Required | Meaning | Personal or health information |
 |---|---|---|---|---|
 | `person_id` | `VARCHAR` | Yes | The person | Health |
-| `medication_id` | `VARCHAR` | Yes | The medication | Health |
+| `display_name` | `VARCHAR` | Yes | The preferred name, shown everywhere. It starts as the full name of the first product. Unique within one person; two people may use the same name. | Health |
 | `medication_type` | `VARCHAR` | No | The kind of product and how long it is taken, such as `Prescription Medication - Long Term` | Health |
 | `status` | `VARCHAR` | Yes | One of the five [status values](#status-values) | Health |
 | `pharmacy_id` | `VARCHAR` | No | The pharmacy used now | No |
@@ -237,15 +242,33 @@ Grain: one row per person per medication they take or took.
 | `when_to_take` | `VARCHAR` | No | The time of day, such as `Morning` | Health |
 | `refills_left` | `BIGINT` | Yes | Refills left on the current prescription, zero or more | Health |
 
-#### `fill`
+The forms refuse a second tracked medication of the same person with the same preferred
+name, compared without regard to case, spacing or punctuation.
 
-Grain: one row per fill of one medication for one person. A fill is one pickup or one
-delivery.
+#### `person_medication_product`
+
+Grain: one row per tracked medication per catalog product. Every tracked medication has
+at least one row here; the forms refuse to take the last product off. One product
+belongs to at most one tracked medication of a person, which the forms check, because
+the schema cannot declare it.
 
 | Column | Type | Required | Meaning | Personal or health information |
 |---|---|---|---|---|
-| `person_id` | `VARCHAR` | Yes | The person | Health |
-| `medication_id` | `VARCHAR` | Yes | The medication | Health |
+| `person_medication_id` | `VARCHAR` | Yes | The tracked medication | Health |
+| `medication_id` | `VARCHAR` | Yes | The catalog product | Health |
+
+A tracked medication is a specialty or controlled medication when any of its products
+carries the mark.
+
+#### `fill`
+
+Grain: one row per fill of one tracked medication. A fill is one pickup or one delivery.
+The person is the one of the tracked medication.
+
+| Column | Type | Required | Meaning | Personal or health information |
+|---|---|---|---|---|
+| `person_medication_id` | `VARCHAR` | Yes | The tracked medication | Health |
+| `medication_id` | `VARCHAR` | No | The product that was dispensed, one of the products of the tracked medication. Empty when it is not known. | Health |
 | `pharmacy_id` | `VARCHAR` | Yes | The pharmacy | No |
 | `filled_on` | `DATE` | Yes | Date on the pharmacy label | Health |
 | `rx_number` | `VARCHAR` | No | Prescription number | Health |
@@ -258,12 +281,12 @@ delivery.
 
 #### `prior_authorization`
 
-Grain: one row per approval window for one person and one medication.
+Grain: one row per approval window for one tracked medication. An insurer approves the
+drug for one member, whatever carton it comes in.
 
 | Column | Type | Required | Meaning | Personal or health information |
 |---|---|---|---|---|
-| `person_id` | `VARCHAR` | Yes | The person the insurer approved | Health |
-| `medication_id` | `VARCHAR` | Yes | The medication | Health |
+| `person_medication_id` | `VARCHAR` | Yes | The tracked medication | Health |
 | `valid_from` | `DATE` | No | First day the approval covers. Empty when the household does not know it. | Health |
 | `valid_to` | `DATE` | Yes | The expiration date: the last day the approval covers, on or after the first day | Health |
 
@@ -292,12 +315,14 @@ keeps the log readable without a lookup. No table holds the choices.
 
 | View | Grain | Purpose |
 |---|---|---|
-| `v_active_medication` | One row per `person_medication` row in use | Everything about a medication in use, in readable columns, with its refill status |
+| `v_active_medication` | One row per `person_medication` row in use | Everything about a tracked medication in use, in readable columns, with its refill status and its marks as 1 or 0 |
+| `v_tracked_product` | One row per tracked medication per product | The products of each tracked medication with their names, marks and dose form; `position` orders them by short name |
+| `v_entry_mark` | One row per tracked medication with a product | The count of products, and the specialty and controlled marks as 1 or 0, taken from the products |
 | `v_supply` | One row per `person_medication` row | The last fill, eligibility (`next_fill_on`), exhaustion (`lasts_until`) and allowance in days |
-| `v_last_fill` | One row per person per medication with at least one fill | The latest fill |
+| `v_last_fill` | One row per tracked medication with at least one fill | The latest fill |
 | `v_fill_order` | One row per fill | Date/id sequence, days supply and payer membership |
 | `v_supply_fill` | One row per fill | Physical and payer supply end dates for each possible start |
-| `v_supply_frame` | One row per person per medication with a fill | Earliest eligibility under the rolling frame |
+| `v_supply_frame` | One row per tracked medication with a fill | Earliest eligibility under the rolling frame |
 | `v_medication` | One row per medication | The catalog with the full name |
 | `v_medication_name` | One row per medication per distinct name | Every name a medication answers to |
 | `v_reminder_default` | Exactly one row | The reminder and early refill defaults |
@@ -314,8 +339,9 @@ them, any SQLite tool can run the other views against the cache file.
 
 #### How the dates are worked out
 
-The app tracks two dates for each person and medication. They are estimates from recorded
-fills and rules, rather than a guarantee that a claim will be paid.
+The app works out two dates for each tracked medication, over the fills of all of its
+products. They are estimates from recorded fills and rules, rather than a guarantee that
+a claim will be paid.
 
 1. The last fill is the one with the latest date. Ties use the greater record id.
 2. Every fill adds supply. It starts on its date or when previous supply ends, whichever
@@ -333,7 +359,8 @@ fills and rules, rather than a guarantee that a claim will be paid.
    For other frames, eligibility can also begin when the last counted fill leaves.
 7. A controlled medication counts every fill across payers, without a frame limit.
    Its allowance is `controlled_early_days`, initially zero. A zero-percent payer for
-   an ordinary medication waits for all physical supply to run out.
+   an ordinary medication waits for all physical supply to run out. A tracked
+   medication is controlled, or specialty, when any of its products is marked so.
 
 Plan settings override household settings. Empty overrides use 25 percent and 180 days
 until you change the household defaults. Controlled medications use only their household
@@ -359,8 +386,8 @@ For a gap followed by early fills, take 30-day fills on January 1, February 10 a
 March 5, 2026. Supply from January runs out before February 10, so the gap contributes
 nothing. Physical supply lasts until April 11. Eligibility begins April 4.
 
-`v_active_medication` also exposes the raw `is_controlled` mark, `plan_name`,
-`allowance`, and both day counts. Dates remain calendar dates; day counts are integers.
+`v_active_medication` also exposes the marks `is_specialty` and `is_controlled` as 1 or
+0, the count of `products`, `plan_name`, `allowance`, and both day counts. Dates remain calendar dates; day counts are integers.
 `days_until_next_fill` may be negative while `days_until_runs_out` is still positive.
 
 #### How the refill status is worked out
@@ -389,9 +416,10 @@ Privatium merges changes from several devices row by row, and the later change w
 whole row. Two devices that edit the same record before they sync keep one of the two
 edits.
 
-### Sample data
+### The starter catalog
 
-`apps/meds/sample/seed.jsonl` holds a starter catalog and nothing else.
+`apps/meds/lib/starter_catalog.lua` holds a starter catalog and nothing else. The app loads
+it by itself the first time a page needs the catalog and finds it empty.
 The catalog has 2,507 medications and 524 other names for them. It holds the 200 drugs
 most prescribed in the United States, and the drugs of the owner's list, at every strength
 that RxTerms lists. It also holds entries written by hand, such as continuous glucose
@@ -408,15 +436,14 @@ still use them. Check the label in your hand before you rely on an entry.
 
 ### Conclusion
 
-You now know each table and view, which fields are sensitive, and how the two refill
-dates are worked out. Change `schema.sql` and this page together.
+You now know each table and view, which fields are sensitive, how a tracked medication
+relates to its catalog products, and how the two refill dates are worked out. Change `schema.sql` and this page together.
 
 ### Additional resources
 
 - [Using the app](usage.md)
 - [The app folder](../apps/meds/README.md)
 - [App design](design/README.md), the planned screens.
-- [Import of the legacy database](design/import.md)
 - [Privatium's app contract](https://github.com/gabrielmongefranco/privatium/blob/main/spec/app-contract.md), the normative definition of an app and its data.
 - [Privatium's data dictionary](https://github.com/gabrielmongefranco/privatium/blob/main/spec/data-dictionary.md), which defines the column types.
 - [Privatium's security page](https://github.com/gabrielmongefranco/privatium/blob/main/docs/security.md)

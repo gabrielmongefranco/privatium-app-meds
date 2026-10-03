@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/views/plans.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-10-01
-Last Modified: 2026-10-01
+Last Modified: 2026-10-03
 Summary: Lists the payers and their refill overrides.
 Notes: See README file for documentation and full license information.
 
@@ -26,7 +26,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 <p><a href="<?= url('/setup') ?>">Back to Setup</a></p>
 <h1>Insurance plans</h1>
 <?= render('_notice', { notice = notice }) ?>
-<p>Each plan sets when a refill can be paid. Empty settings use the household defaults.</p>
+<p>Each plan sets how early a refill can be paid. Leave a setting empty to use the number from Reminder settings.</p>
 <p><a class="pv-btn pv-btn-primary" href="<?= url('/setup/plans/new') ?>"><?= icon('plus-lg') ?> Add an insurance plan</a></p>
 <? if #plans == 0 then ?>
   <p class="pv-empty">No plan is recorded.</p>

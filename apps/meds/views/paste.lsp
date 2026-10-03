@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/views/paste.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-09-27
+Last Modified: 2026-10-03
 Summary: The page where the text of a portal page is pasted.
 Notes: See README file for documentation and full license information.
 
@@ -23,15 +23,15 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 --?>
 
 <?= render('_nav', { section = section }) ?>
-<h1>Paste fills from a portal</h1>
+<h1>Copy refill history from patient portal</h1>
 <?= render('_notice', { notice = notice }) ?>
 <? if err then ?>
   <p id="paste-err" class="pv-error" role="alert"><?= icon('exclamation-triangle') ?> <?= err ?></p>
 <? end ?>
 
-<p>The portal of an insurer or a pharmacy lists the fills it paid for. Copy that list and
-   paste it here, and the app reads the fills from it. Nothing is added until you have
-   checked what the app read.</p>
+<p>Use this screen to import your refill history from your patient, pharmacy or insurance
+   portal. Medications will be automatically matched to your medication list and existing
+   refills will be skipped, but you will be able to make edits before importing.</p>
 <ol>
   <li>In the portal, open the details of each fill.</li>
   <li>Select the list, from the first date to the end of the last fill, and copy it.</li>
@@ -44,7 +44,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 <? else ?>
 <form method="post" action="<?= url('/fills/paste/read') ?>" novalidate>
   <?= csrf() ?>
-  <?= render('_select', { name = 'person_id', label = 'Whose portal page is it', value = typed.person_id,
+  <?= render('_select', { name = 'person_id', label = 'This refill history belongs to:', value = typed.person_id,
         options = people, required = true, empty_label = 'Choose a person' }) ?>
   <label for="f-pasted">Text of the portal page</label>
   <textarea id="f-pasted" name="pasted" class="meds-paste" required autocomplete="off" spellcheck="false"

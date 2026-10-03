@@ -3,7 +3,7 @@
 # tests/test_catalog.py
 # Author(s): Gabriel Mongefranco
 # Created: 2026-10-01
-# Last Modified: 2026-10-01
+# Last Modified: 2026-10-03
 # Summary: Checks public catalog marks against invented reference responses.
 # Notes: See README file for documentation and full license information.
 #
@@ -64,3 +64,50 @@ class CatalogMarkTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class StarterModuleTests(unittest.TestCase):
+    """The Lua module that carries the starter catalog, written by tools/starter_lua.py."""
+
+    def setUp(self):
+        import sys
+        tools = str(SOURCE.parent)
+        if tools not in sys.path:
+            sys.path.insert(0, tools)
+        import starter_lua
+        self.writer = starter_lua
+
+    def test_module_round_trips_and_escapes(self):
+        import subprocess, shutil, tempfile
+        events = [
+            {"op": "put", "tbl": "medication", "id": "01J8MEDS0000000000TEST0001",
+             "d": {"short_name": 'Example "quoted" 5 mg', "generic_name": "Exampline\\slash",
+                   "is_controlled": True, "brand_name": None}},
+            {"op": "put", "tbl": "medication_alias", "id": "01J8MEDS0000000000TEST0002",
+             "d": {"medication_id": "01J8MEDS0000000000TEST0001", "alias": "Example\nline"}},
+        ]
+        with tempfile.TemporaryDirectory() as folder:
+            path = pathlib.Path(folder) / 'starter_catalog.lua'
+            self.assertEqual(self.writer.write_module(events, str(path), '2026-10-03'), 2)
+            self.assertEqual(self.writer.read_counts(str(path)), {'medication': 1, 'medication_alias': 1})
+            text = path.read_text(encoding='utf-8')
+            self.assertIn('short_name="Example \\"quoted\\" 5 mg"', text)
+            self.assertNotIn('brand_name', text)
+            if shutil.which('lua5.4'):
+                script = ('local t = dofile(%r); assert(#t == 2); assert(t[1].d.generic_name == "Exampline\\\\slash");'
+                          'assert(t[2].d.alias == "Example\\nline"); assert(t[1].d.is_controlled == true); print("ok")'
+                          % str(path))
+                self.assertEqual(subprocess.run(['lua5.4', '-e', script], capture_output=True, text=True).stdout.strip(), 'ok')
+
+    def test_a_delete_is_refused(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as folder:
+            with self.assertRaises(ValueError):
+                self.writer.write_module([{"op": "del", "tbl": "medication", "id": "x", "d": {}}],
+                                         str(pathlib.Path(folder) / 'm.lua'), '2026-10-03')
+
+    def test_shipped_module_holds_the_catalog(self):
+        counts = self.writer.read_counts(self.writer.MODULE)
+        self.assertGreater(counts.get('medication', 0), 2000)
+        self.assertGreater(counts.get('medication_alias', 0), 0)
+        self.assertEqual(set(counts), {'medication', 'medication_alias'})

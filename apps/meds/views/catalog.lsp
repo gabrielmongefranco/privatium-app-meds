@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/views/catalog.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-10-01
+Last Modified: 2026-10-03
 Summary: The medication catalog, with a search that finds a medication by any of its names,
          offers close matches as questions, and can learn a new name.
 Notes: See README file for documentation and full license information.
@@ -33,7 +33,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 </p>
 
 <form method="get" action="<?= url('/setup/catalog') ?>" role="search" class="meds-search">
-  <label for="q">Find a medication by any of its names</label>
+  <label for="q">Find a medication</label>
   <input id="q" name="q" type="search" value="<?= filter ?>" maxlength="100" autocomplete="off"
          list="medication-names">
   <?= render('_medication_names', { names = names }) ?>
@@ -44,14 +44,14 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 </form>
 
 <? if #medications == 0 and filter == '' then ?>
-  <p class="pv-empty">The catalog is empty. Add the first medication to begin.</p>
+  <p class="pv-empty">The catalog is empty. Choose Add a medication to add one.</p>
 <? elseif #medications == 0 then ?>
-  <p class="pv-empty">No medication answers to "<?= filter ?>".</p>
+  <p class="pv-empty">No medications found.</p>
 <? else ?>
   <? if shortened then ?>
-    <p class="pv-meta">The catalog holds <?= total ?>. This page shows the first <?= #medications ?>, with the ones in use first. Search to find any other.</p>
+    <p class="pv-meta">The catalog holds <?= total ?>. This page shows the first <?= #medications ?>, with the ones in use first. Search to find the others.</p>
   <? else ?>
-    <p class="pv-meta"><?= found ?><? if filter ~= '' then ?> answer to "<?= filter ?>"<? end ?>.</p>
+    <p class="pv-meta"><?= found ?> found<? if filter ~= '' then ?> for "<?= filter ?>"<? end ?>.</p>
   <? end ?>
   <table class="pv-records" role="table">
     <caption class="pv-visually-hidden">Medications in the catalog, by short name</caption>

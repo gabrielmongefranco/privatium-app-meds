@@ -2,9 +2,10 @@
 -- apps/meds/lib/fills.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-10-01
+-- Last Modified: 2026-10-03
 -- Summary: Checks the values of a fill and writes it. The form and the reader of pasted fills
---          both save through here, so a fill is checked the same way however it arrives.
+--          both save through here, so a fill is checked the same way however it arrives, and a
+--          fill for a product on no list adds the tracked medication beside it.
 -- Notes: See README file for documentation and full license information.
 --
 -- Copyright © 2026 Gabriel Mongefranco
@@ -47,19 +48,29 @@ end
 
 --- Check the values of a fill.
 -- @param form table  The values as typed or as read from pasted text, keyed by column.
--- @param pending table|nil  The columns whose record is added in the same batch as the
---        fill, as { pharmacy_id = true }. Such a record cannot be looked up yet, so the
---        caller checks it and sets the column before the fill is written.
+--        `product_id` names the product that was dispensed; it must be a product of the
+--        tracked medication.
+-- @param pending table|nil  The columns whose record is added or resolved in the same
+--        batch as the fill, as { pharmacy_id = true }. Such a record cannot be looked up
+--        yet, so the caller checks it and sets the column before the fill is written.
 -- @return table, table  The row for the log, and the problems keyed by column. The row
 --         is complete only when the second table is empty.
 function fills.read(form, pending)
   local row, errors = {}, {}
   pending = pending or {}
-  if not pending.person_id then
-    row.person_id, errors.person_id = read_id(form.person_id, 'person', 'a person')
+  if not pending.person_medication_id then
+    row.person_medication_id, errors.entry_id =
+      read_id(form.person_medication_id, 'person_medication', 'a medication')
   end
-  if not pending.medication_id then
-    row.medication_id, errors.medication_id = read_id(form.medication_id, 'medication', 'a medication')
+  if not pending.medication_id and text.clean(form.product_id) then
+    row.medication_id = text.clean(form.product_id)
+    local entry_id = row.person_medication_id or text.clean(form.person_medication_id)
+    local known = entry_id and pv.query1([[
+      SELECT count(*) AS products FROM person_medication_product
+       WHERE person_medication_id = ? AND medication_id = ?]], { entry_id, row.medication_id })
+    if not known or known.products == 0 then
+      row.medication_id, errors.product_id = nil, 'Choose a product of this medication from the list.'
+    end
   end
   if not pending.pharmacy_id then
     row.pharmacy_id, errors.pharmacy_id = read_id(form.pharmacy_id, 'pharmacy', 'a pharmacy')
@@ -108,69 +119,56 @@ function fills.recorded(person_id, rx_number, filled_on)
   if not key then return false end
   local found = pv.query1([[
     SELECT count(*) AS fills
-      FROM fill
-     WHERE person_id = ?
-       AND upper(replace(replace(rx_number, '-', ''), ' ', '')) = ?
-       AND filled_on = ?]],
+      FROM fill f
+      JOIN person_medication pm ON pm.id = f.person_medication_id   -- many:1
+     WHERE pm.person_id = ?
+       AND upper(replace(replace(f.rx_number, '-', ''), ' ', '')) = ?
+       AND f.filled_on = ?]],
     { person_id, key, filled_on })
   return found.fills > 0
 end
 
---- Whether a person already has a fill of a medication on a date.
+--- Whether a tracked medication already has a fill on a date.
 -- Many fills carry no prescription number, such as the ones a person typed from
--- memory. The person, the medication and the date name the fill then.
+-- memory. The tracked medication and the date name the fill then.
 -- @return boolean
-function fills.on_day(person_id, medication_id, filled_on)
-  if not person_id or not medication_id or not filled_on then return false end
+function fills.on_day(person_medication_id, filled_on)
+  if not person_medication_id or not filled_on then return false end
   local found = pv.query1([[
     SELECT count(*) AS fills
       FROM fill
-     WHERE person_id = ?
-       AND medication_id = ?
+     WHERE person_medication_id = ?
        AND filled_on = ?]],
-    { person_id, medication_id, filled_on })
+    { person_medication_id, filled_on })
   return found.fills > 0
 end
 
---- The medications a person filled under a prescription number.
+--- The tracked medications a person filled under a prescription number.
 -- A prescription is for one medication, so a number that is known names it.
--- @return table  A list of medication ids. Grain: one per medication, most often one.
-function fills.medications_of_rx(person_id, rx_number)
+-- @return table  A list of person_medication ids. Grain: one per tracked medication,
+--         most often one.
+function fills.entries_of_rx(person_id, rx_number)
   local key = fills.rx_key(rx_number)
   if not key then return {} end
   local ids = {}
   for _, row in ipairs(pv.query([[
-      SELECT DISTINCT medication_id
-        FROM fill
-       WHERE person_id = ?
-         AND upper(replace(replace(rx_number, '-', ''), ' ', '')) = ?
-       ORDER BY medication_id]], { person_id, key })) do
-    ids[#ids + 1] = row.medication_id
+      SELECT DISTINCT f.person_medication_id
+        FROM fill f
+        JOIN person_medication pm ON pm.id = f.person_medication_id   -- many:1
+       WHERE pm.person_id = ?
+         AND upper(replace(replace(f.rx_number, '-', ''), ' ', '')) = ?
+       ORDER BY f.person_medication_id]], { person_id, key })) do
+    ids[#ids + 1] = row.person_medication_id
   end
   return ids
 end
 
--- The list entry that goes with a new fill: the one the person has, with the new
--- refills left, or a new one when the medication is not on the list yet.
-local function entry_for(row, refills_left)
-  local entry = entries.of(row.person_id, row.medication_id)
-  if not entry then
-    return nil, {
-      person_id = row.person_id, medication_id = row.medication_id,
-      status = 'taking_regularly', pharmacy_id = row.pharmacy_id,
-      refills_left = refills_left or 0,
-    }
-  end
-  local id = entry.id
-  entry.id = nil
-  -- With no count given, a fill uses up one refill. The count never goes below zero.
-  entry.refills_left = refills_left or math.max(entry.refills_left - 1, 0)
-  return id, entry
-end
-
---- Add fills inside a batch, with the list entries that go with them.
--- Several fills of one medication share one list entry, which is written once, after
--- every fill has lowered its count.
+--- Add fills inside a batch, with the tracked medications that go with them.
+-- A fill names its tracked medication in `person_medication_id`, or carries
+-- `new_entry` = { person_id, medication_id, display_name, status, pharmacy_id } when the
+-- product is on no list of the person; the tracked medication is then added first.
+-- Several fills of one tracked medication share one row of it, which is written once,
+-- after every fill has lowered its count.
 -- @param tx table    The batch.
 -- @param rows table  Rows that fills.read returned with no problems.
 -- @param refills_left integer|nil  The refills left after the fill, when the person
@@ -179,19 +177,34 @@ end
 function fills.add_all(tx, rows, refills_left)
   local ids, touched, order = {}, {}, {}
   for _, row in ipairs(rows) do
-    ids[#ids + 1] = tx.append('fill', row)
-    local key = row.person_id .. ' ' .. row.medication_id
+    local key = row.person_medication_id
+      or ('new ' .. row.new_entry.person_id .. ' ' .. tostring(row.new_entry.medication_id))
     local state = touched[key]
-    if state then
-      state.entry.refills_left = math.max(state.entry.refills_left - 1, 0)
-    else
-      local id, entry = entry_for(row, refills_left)
-      touched[key] = { id = id, entry = entry }
+    if not state then
+      state = { id = row.person_medication_id, fills = 0 }
+      if not state.id then
+        -- A tracked medication added here starts with the refills typed, or none.
+        local fields = row.new_entry
+        fields.refills_left = refills_left or 0
+        state.id, state.added = entries.add(tx, fields), true
+      end
+      touched[key] = state
       order[#order + 1] = key
     end
+    row.person_medication_id, row.new_entry = state.id, nil
+    state.fills = state.fills + 1
+    ids[#ids + 1] = tx.append('fill', row)
   end
   for _, key in ipairs(order) do
-    tx.append('person_medication', touched[key].id, touched[key].entry)
+    local state = touched[key]
+    if not state.added then
+      local entry = entries.stored(state.id)
+      local id = entry.id
+      entry.id = nil
+      -- With no count given, each fill uses up one refill. The count never goes below zero.
+      entry.refills_left = refills_left or math.max(entry.refills_left - state.fills, 0)
+      tx.append('person_medication', id, entry)
+    end
   end
   return ids
 end
@@ -204,7 +217,7 @@ end
 --        written. It adds the records the fill points to that are new, and sets their
 --        ids on the row.
 -- @return string|nil, string|nil  The id of the fill, or nil and a message. Writes the
---         fill, its list entry and the new records in one batch.
+--         fill, its tracked medication and the new records in one batch.
 function fills.save_new(row, refills_left, before)
   local ids
   local saved, refusal = store.together('fill', function(tx)

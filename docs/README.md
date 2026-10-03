@@ -23,13 +23,11 @@ detail.
 - [How to run the tests](how-to/run-the-tests.md): the lint, the unit tests and the smoke
   test.
 - [How to build the starter catalog](how-to/build-the-starter-catalog.md): the script
-  that writes the sample data, its sources and their licenses.
+  that writes the catalog the app ships, its sources and their licenses.
 - [App design](design/README.md): what each screen does, the refill status rules, and
   the owner's decisions.
 - [Compliance](compliance.md): the security and accessibility controls in place, the
   evidence for each, and what a person still has to check.
-- [Import of the legacy database](design/import.md): how the records of the owner's
-  legacy database reach the app.
 - [Documentation template](doc-template.md): starting structure for a knowledge base page.
 - [Skill authoring examples](skill-examples.md): optional recipes for common project types.
 

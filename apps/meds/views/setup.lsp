@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/views/setup.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-10-01
+Last Modified: 2026-10-03
 Summary: The Setup page: one link to each thing a household sets up once and changes rarely.
 Notes: See README file for documentation and full license information.
 
@@ -24,23 +24,23 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 
 <?= render('_nav', { section = section }) ?>
 <h1>Setup</h1>
-<p><a class="pv-btn" href="<?= url('/setup/plans') ?>">Insurance plans</a></p>
 <?= render('_notice', { notice = notice }) ?>
 
 <ul class="pv-launcher meds-links">
+  <li><a href="<?= url('/setup/plans') ?>">
+    <?= icon('wallet2') ?>
+    <span>Insurance plans</span>
+  </a></li>
   <li><a href="<?= url('/setup/people') ?>">
     <?= icon('people') ?>
-    <span>People</span>
-    <small>The members of the household. <?= counts.people ?> in the app.</small>
+    <span>Family</span>
   </a></li>
   <li><a href="<?= url('/setup/catalog') ?>">
     <?= icon('capsule') ?>
     <span>Medication catalog</span>
-    <small>Every product, with its other names. <?= counts.medications ?> in the app.</small>
   </a></li>
   <li><a href="<?= url('/setup/reminders') ?>">
     <?= icon('calendar-event') ?>
     <span>Reminder settings</span>
-    <small>How many days ahead a refill counts as due.</small>
   </a></li>
 </ul>

@@ -2,9 +2,9 @@
 -- apps/meds/lib/routes/authorizations.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-09-27
--- Summary: The screens for prior authorizations: the list with the state of each one, and
---          the form that adds, changes or removes one.
+-- Last Modified: 2026-10-03
+-- Summary: The screens for prior authorizations: the list, and the form that adds, changes or
+--          removes one for a tracked medication.
 -- Notes: See README file for documentation and full license information.
 --
 -- Copyright © 2026 Gabriel Mongefranco
@@ -30,13 +30,15 @@ local people_filter   = require 'people_filter'
 local quick_add       = require 'quick_add'
 local store           = require 'store'
 local suggestions     = require 'suggestions'
+local starter         = require 'starter'
 local text            = require 'text'
 local validate        = require 'validate'
 
 --- Configuration ---
-local LIST   = '/authorizations'
-local FIELDS = { 'person_id', 'medication_id', 'valid_from', 'valid_to' }
--- A medication with an approval and no list entry is one the person is about to start.
+local LIST      = '/authorizations'
+local NEW_ENTRY = 'new'   -- The choice of the medication drop-down that finds or adds one
+local FIELDS    = { 'entry_id', 'person_id', 'medication_id', 'valid_from', 'valid_to' }
+-- A product with an approval and no tracked medication is one the person is about to start.
 local STATUS_OF_NEW_ENTRY = 'not_started'
 
 --- Reads ---
@@ -45,8 +47,8 @@ local STATUS_OF_NEW_ENTRY = 'not_started'
 local function everything(person_id)
   return pv.query([[
     SELECT pa.id, pa.valid_from, pa.valid_to,
-           p.display_name AS person_name,
-           m.short_name   AS medication_name,
+           p.display_name  AS person_name,
+           pm.display_name AS medication_name,
            CASE WHEN pa.valid_to < date('now', 'localtime') THEN 'Expired'
                 WHEN pa.valid_from > date('now', 'localtime') THEN 'Not started'
                 WHEN pa.valid_to = date('now', 'localtime') THEN 'Due: expires today'
@@ -56,25 +58,62 @@ local function everything(person_id)
                 THEN 'Due soon: expires in ' || CAST(julianday(pa.valid_to) - julianday(date('now', 'localtime')) AS INTEGER) || ' days'
                 ELSE 'Active' END AS state
       FROM prior_authorization pa
-      JOIN person p     ON p.id = pa.person_id        -- many:1
-      JOIN medication m ON m.id = pa.medication_id    -- many:1
-     CROSS JOIN v_reminder_setting r                  -- exactly one row
-     WHERE ?1 = '' OR pa.person_id = ?1
+      JOIN person_medication pm ON pm.id = pa.person_medication_id   -- many:1
+      JOIN person p     ON p.id = pm.person_id                        -- many:1
+     CROSS JOIN v_reminder_setting r                                  -- exactly one row
+     WHERE ?1 = '' OR pm.person_id = ?1
      ORDER BY pa.valid_to DESC, pa.id]], { person_id })
+end
+
+-- Every tracked medication, for the drop-down of the form.
+-- Grain: one row per person_medication row, by person and then by name.
+local function listed()
+  local options = {}
+  for _, row in ipairs(pv.query([[
+      SELECT pm.id, p.display_name || ': ' || pm.display_name AS label
+        FROM person_medication pm
+        JOIN person p ON p.id = pm.person_id   -- many:1
+       ORDER BY p.display_name COLLATE NOCASE, pm.display_name COLLATE NOCASE, pm.id]])) do
+    options[#options + 1] = { value = row.id, label = row.label }
+  end
+  return options
+end
+
+-- A tracked medication with its person, or nil.
+local function listed_one(id)
+  return id and pv.query1([[
+    SELECT pm.id, pm.display_name, pm.person_id, p.display_name AS person_name
+      FROM person_medication pm
+      JOIN person p ON p.id = pm.person_id   -- many:1
+     WHERE pm.id = ?]], { id }) or nil
 end
 
 --- Validation ---
 
--- Reads an authorization with the records it may add beside it: a person and a
--- medication.
+-- Reads an authorization with the records it may add beside it: a person, a product
+-- and the tracked medication.
 -- @return table, table, table  The row, the problems, and what to add in the batch.
-local function read(form)
+local function read(form, fixed_entry)
   local row, errors, adding = {}, {}, {}
-  adding.person_id, adding.person, errors.person_id =
-    quick_add.read(form, 'person_id', quick_add.PERSON, true)
-  adding.pick = medication_pick.read(form, 'medication', true)
-  errors.medication_id = adding.pick.problem
-  row.person_id, row.medication_id = adding.person_id, adding.pick.id
+  local chosen = text.clean(form.entry_id)
+  if fixed_entry then
+    adding.entry_id = fixed_entry.id
+  elseif chosen and chosen ~= NEW_ENTRY then
+    if entries.stored(chosen) then adding.entry_id = chosen
+    else errors.entry_id = 'Choose a medication from the list.' end
+  else
+    adding.person_id, adding.person, errors.person_id =
+      quick_add.read(form, 'person_id', quick_add.PERSON, true)
+    adding.pick = medication_pick.read(form, 'medication', true)
+    errors.medication_id = adding.pick.problem
+    local found = entries.with_product(adding.person_id, adding.pick.id)
+    if found then adding.entry_id = found.id end
+    if not adding.entry_id and not errors.entry_id and not errors.person_id and not errors.medication_id
+       and not adding.person_id and not adding.person then
+      errors.entry_id = 'Choose a medication from the list, or choose Another medication.'
+    end
+  end
+  row.person_medication_id = adding.entry_id
 
   -- Only the expiration date is required. A renewal notice often names no first day.
   row.valid_from, errors.valid_from = validate.date(form.valid_from, 'the first day')
@@ -85,19 +124,18 @@ local function read(form)
   return row, errors, adding
 end
 
--- Writes an authorization and the new records beside it in one batch. A medication
--- that is not on the list of the person is added to it, so the Refills page can warn
--- when the authorization ends.
+-- Writes an authorization and the new records beside it in one batch. A product that
+-- is on no list of the person is added to it, named after the product, so the Refills
+-- page can warn when the authorization ends.
 -- @return boolean, string|nil  True, or false and a message.
 local function save(id, row, adding)
   return store.together('prior_authorization', function(tx)
-    row.person_id     = quick_add.write(tx, quick_add.PERSON, adding.person_id, adding.person)
-    row.medication_id = medication_pick.write(tx, adding.pick)
-    local on_list = adding.person_id and adding.pick.id
-      and entries.of(adding.person_id, adding.pick.id)
-    if not on_list then
-      tx.append('person_medication', {
-        person_id = row.person_id, medication_id = row.medication_id,
+    if not adding.entry_id then
+      local person_id = quick_add.write(tx, quick_add.PERSON, adding.person_id, adding.person)
+      local _, full_name = medication_pick.names(adding.pick)
+      local product_id = medication_pick.write(tx, adding.pick)
+      row.person_medication_id = entries.add(tx, {
+        person_id = person_id, medication_id = product_id, display_name = full_name,
         status = STATUS_OF_NEW_ENTRY, refills_left = 0,
       })
     end
@@ -106,18 +144,20 @@ local function save(id, row, adding)
   end)
 end
 
-local function form_page(heading, action, typed, errors, pick)
+local function form_page(heading, action, typed, errors, entry, pick)
   return pv.render('authorization_form', {
-    section  = 'authorizations',
-    heading  = heading,
-    action   = action,
-    typed    = typed,
-    errors   = errors,
-    problems = page.problems(errors, FIELDS),
-    pick     = pick,
-    people   = quick_add.options(quick_add.PERSON),
-    in_use   = medication_pick.in_use(text.clean(typed.medication_id)),
-    names    = suggestions.medication_names(),
+    section   = 'authorizations',
+    heading   = heading,
+    action    = action,
+    typed     = typed,
+    errors    = errors,
+    problems  = page.problems(errors, FIELDS),
+    entry     = entry,
+    pick      = pick,
+    listed   = not entry and listed() or {},
+    new_entry = NEW_ENTRY,
+    people    = quick_add.options(quick_add.PERSON),
+    names     = not entry and suggestions.medication_names() or {},
   })
 end
 
@@ -133,15 +173,15 @@ pv.get(LIST, function(req)
   })
 end)
 
--- The form can start from a list entry, which names the person and the medication.
+-- The form can start from a tracked medication, which names the person too.
 pv.get(LIST .. '/new', function(req)
-  local entry = req.query.entry and pv.get_row('person_medication', req.query.entry)
+  starter.ensure()
   return form_page('Add a prior authorization', url(LIST .. '/new'), {
-    person_id     = entry and entry.person_id or text.clean(req.query.person),
-    medication_id = entry and entry.medication_id,
+    entry_id   = text.clean(req.query.entry),
+    person_id  = text.clean(req.query.person),
     -- Most approvals start with a month and run for a year, so the form starts there.
-    valid_from    = clock.month_start(),
-    valid_to      = clock.month_start_next_year(),
+    valid_from = clock.month_start(),
+    valid_to   = clock.month_start_next_year(),
   }, {})
 end)
 
@@ -152,27 +192,30 @@ pv.post(LIST .. '/new', function(req)
     if saved then return pv.redirect(url(LIST .. '?notice=saved')) end
     errors.valid_to = refusal
   end
-  return form_page('Add a prior authorization', url(LIST .. '/new'), req.form, errors, adding.pick)
+  return form_page('Add a prior authorization', url(LIST .. '/new'), req.form, errors, nil, adding.pick)
 end)
 
 pv.get(LIST .. '/:id/edit', function(req)
   local authorization = pv.get_row('prior_authorization', req.params.id)
   if not authorization then return pv.redirect(url(LIST .. '?notice=missing')) end
   return form_page('Change a prior authorization',
-    url(LIST .. '/' .. authorization.id .. '/edit'), authorization, {})
+    url(LIST .. '/' .. authorization.id .. '/edit'), authorization, {},
+    listed_one(authorization.person_medication_id))
 end)
 
 pv.post(LIST .. '/:id/edit', function(req)
   local authorization = pv.get_row('prior_authorization', req.params.id)
   if not authorization then return pv.redirect(url(LIST .. '?notice=missing')) end
-  local row, errors, adding = read(req.form)
+  -- The tracked medication of an authorization does not change in this form.
+  local entry = listed_one(authorization.person_medication_id)
+  local row, errors, adding = read(req.form, entry)
   if not next(errors) then
     local saved, refusal = save(authorization.id, row, adding)
     if saved then return pv.redirect(url(LIST .. '?notice=saved')) end
     errors.valid_to = refusal
   end
   return form_page('Change a prior authorization',
-    url(LIST .. '/' .. authorization.id .. '/edit'), req.form, errors, adding.pick)
+    url(LIST .. '/' .. authorization.id .. '/edit'), req.form, errors, entry)
 end)
 
 pv.get(LIST .. '/:id/remove', function(req)

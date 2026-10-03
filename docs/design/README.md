@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 docs/design/README.md
 Author(s): Gabriel Mongefranco
 Created: 2026-09-26
-Last Modified: 2026-10-01
+Last Modified: 2026-10-03
 Summary: Design of the app's screens: tasks, the medication box, adding records from
          inside a form, pasting fills from a portal, the catalog as a copy of a drug
          reference, refill status rules, accessibility and privacy plans, what was
@@ -28,7 +28,7 @@ and for developers who change the app. [The usage page](../usage.md) shows how t
 screens. The [data model](../data-model.md) describes the tables and views.
 
 Every screen on this page is built, except where a note marked **Planned** says
-otherwise. The [import page](import.md) covers the owner's legacy database.
+otherwise.
 
 ### Goals
 
@@ -60,12 +60,22 @@ A prior authorization is an insurer's approval to cover a medication for a set p
 ### Navigation
 
 The app has six sections. One navigation bar lists them on every page, in this order:
-**Refills**, **Medications**, **History**, **Authorizations**, **Contacts**, **Setup**.
+**Medications**, **Refills**, **History**, **Authorizations**, **Contacts**, **Setup**.
 The bar marks the current section with `aria-current="page"` and an underline.
 
 Pages that list records for several people show a person filter under the heading. The
 filter is a row of links: **Everyone**, then one link per person. The app hides the
-filter when the household has one person.
+filter when the household has one person. A small script, `static/person_tab.js`, keeps
+the person chosen last in the local storage of the browser, as an id, and opens a page
+that names no person on that tab. The **Everyone** link carries an empty `person`
+parameter, so choosing it is remembered too. Without scripts, every page opens on
+Everyone. The script is a stopgap until Privatium offers person profiles; [issue 10](https://github.com/gabrielmongefranco/privatium-app-meds/issues/10) tracks its removal.
+
+Every medication name carries the icon of its dose form, chosen by `lib/form_icon.lua`
+from the form, the route and the package of the product. The icon carries the form as
+its label, so a screen reader hears "Tablet" rather than a picture. Every icon comes from
+the Bootstrap Icons set that Privatium ships, except the syringe for an injection, which
+`views/_form_icon.lsp` draws itself.
 
 Every internal link goes through `url()`, so the app works in host mode and in solo mode.
 
@@ -75,7 +85,7 @@ All names and numbers in the examples are invented.
 
 #### Refills
 
-This is the home page. It shows what needs attention now, most urgent first.
+It shows what needs attention now, most urgent first.
 
 The page holds these parts, in reading order:
 
@@ -110,14 +120,14 @@ adds a person.
 #### Record a fill
 
 The form opens from a row's **Record fill** button, or from the button at the top of the
-home page. From a row, the person and the medication are already chosen. The form copies
+Refills page. From a row, the person and the medication are already chosen. The form copies
 five values from the last fill of that medication, so most fills need a date and an
 amount only. From the button at the top, the form starts with
 [the medication box](#the-medication-box).
 
 | Field | Required | Starts as | Check |
 |---|---|---|---|
-| Who is it for | Yes | The row's person | A person in the app, or the name of a new one |
+| Person | Yes | The row's person | A person in the app, or the name of a new one |
 | Medication | Yes | The row's medication, or the medication box | In the catalog, or a new medication |
 | Date filled | Yes | Today | A real date that is not in the future |
 | Pharmacy | Yes | Pharmacy of the last fill | A pharmacy in the app, or the name of a new one |
@@ -138,7 +148,7 @@ thousands separators before it checks the number.
 
 Saving writes the fill, the new refills left and any record the form added together, in
 one batch. The app then
-returns to the home page, which confirms the save in a status message: "Saved the fill
+returns to the Refills page, which confirms the save in a status message: "Saved the fill
 for Examplol (Exampline) 10 mg. The next fill date is October 24, 2026, and the supply lasts until October 31, 2026."
 
 If a check fails, the form comes back with everything you typed still in place. Each
@@ -277,6 +287,19 @@ two steps.
 One paste can hold about 64 kilobytes of text, which is roughly 100 fills with their
 details. The page says so when a paste is too long, and asks you to paste it in parts.
 
+#### Tracked medications and products
+
+What a person takes is a tracked medication: a `person_medication` row with the name the
+person prefers. It stands for one or more products of the catalog, through
+`person_medication_product`. A medication that comes in a carton of 2 and a carton of 6
+is one tracked medication with two products, because the insurer counts the fills of
+both together. Fills and prior authorizations point at the tracked medication; a fill
+also keeps the product that was dispensed.
+
+Two rules keep the counts right, and the forms enforce them because the schema cannot:
+a product belongs to at most one tracked medication of a person, and a preferred name is
+unique within one person. Two people may track the same product and use the same name.
+
 #### The medication box
 
 A medication can be known by several names. A label may print the brand name, a
@@ -284,27 +307,34 @@ statement may print the generic name, and a person may use an abbreviation. The 
 one catalog entry for the product and any number of other names for it. The catalog is
 the list of products the app knows. It does not say who takes them.
 
-Every form that needs a medication holds the same box. No form sends you to another page
-to find a medication or to add one. The box has three parts:
+Every form that needs a product holds the same box. No form sends you to another page to
+find a product or to add one. The box has two parts:
 
 | Part | What it does |
 |---|---|
-| **Choose one that is already in use** | A drop-down of the medications that are on a list or have a fill |
-| **Type a name to search the catalog** | A text box that suggests names while you type. It offers every short name and every other name. |
-| **Add a new medication** | Fields for the brand name, the generic name, the strength, the package and the specialty mark. The app builds the short name. |
+| **Medication name** | A text box that suggests names while you type. It offers every short name and every other name. |
+| **Add a new medication** | Fields for the brand name, the generic name, the strength, the package, and the controlled and specialty marks, with the lookup in the drug references. The app builds the short name. |
+
+The form that tracks a medication wraps the box in the product picker,
+`views/_product_picker.lsp`. The products chosen so far travel in hidden fields, one per
+round trip: **Add this product** adds the product the box names, and each product has a
+**Remove** button. Nothing is written to the catalog until the form is saved. The
+preferred name starts as the full name of the first product. The fill and authorization
+forms show the box under a drop-down of the tracked medications, for a product that
+nobody tracks yet.
 
 The typed name is compared with the short name, the generic name, the brand name and the
 other names. Capital letters, punctuation and extra spaces do not matter.
 
 | What you type | What the app does |
 |---|---|
-| A name that exactly one medication answers to, such as "exm" when it is another name of one product | Picks that medication and saves the form |
+| A name that exactly one medication answers to, such as "exm" when it is another name of one product | Picks that medication |
 | A name that several medications answer to, such as "exampline" | The form comes back and lists them, so you pick the strength you mean |
 | A name close to one it knows, such as "Examplal" | The form comes back and offers the closest matches |
 | A name it does not know | The form comes back and opens **Add a new medication** |
 
-When more than one part is filled in, the more deliberate act wins: the fields of a new
-medication, then the typed name, then the drop-down.
+When both parts are filled in, the more deliberate act wins: the fields of a new
+medication, then the typed name.
 
 A new medication whose short name is already in the catalog picks the medication that
 has it. The catalog never holds the same short name twice.
@@ -322,19 +352,26 @@ for a medication. The medication page also shows the full name and the other nam
 
 #### Medications
 
-This page lists what each person takes. It groups the rows by status, in this order:
+This page lists what each person tracks. It groups the rows by status, in this order:
 Taking regularly, Taking as needed, On hold, Not started. A closed disclosure holds the
-rows with the status No longer taking.
+rows with the status No longer taking, each with a **Restart** button that sets the
+status back to Taking regularly.
 
-Each row shows the medication, the instructions, when to take it, what it is for, the
-prescriber, the refill status and the next fill date. The page has two actions: **Add a medication** and
-**Print list**. The second appears when one person is selected.
+Each row shows the medication with its form icon, its products when there are several,
+the instructions, when to take it, what it is for, the prescriber, the refill status and
+the next fill date. The page has two actions, **Track a new medication** and
+**Print list**, and a search box at the right of them. The second button appears when one
+person is selected. The search narrows the list by the preferred name, every name of the
+products, the prescriber and the person; `static/filter.js` does it as you type and opens
+the closed disclosure when a match is inside it, and the server does the same when the
+form is sent. Each row carries its search text in `data-search`.
 
-The form that adds a medication is one page. It starts with
-[the medication box](#the-medication-box) and the person. It then asks for the status,
-the instructions, when to take it, what the medication is for and the refills left. It
-ends with the prescriber, the pharmacy and the type. The person, the prescriber and the
-pharmacy can each be a new one, added by name.
+The form that tracks a medication is one page. It starts with the person, then
+[the product picker](#the-medication-box) and the preferred name. It then asks for the
+status, the instructions, when to take it, what the medication is for and the refills
+left. It ends with the prescriber, the pharmacy and the type. The person, the prescriber
+and the pharmacy can each be a new one, added by name. The same form changes a tracked
+medication, products included; a product with fills and the last product stay.
 
 #### Medication page
 
@@ -348,10 +385,13 @@ Each medication a person takes has its own page. It holds these parts, in readin
 4. **Who to call**: the prescriber and the pharmacy, with phone links.
 5. **Prior authorizations**: each approval window with its state, and
    **Add an authorization**.
-6. **Fill history**: a table, newest first, with the total paid.
-7. **About this medication**: the full name, the other names and the catalog details.
+6. **Fill history**: a table, newest first, with the total paid, and the product of each
+   fill when the medication has several.
+7. **Products**: the catalog products the medication stands for, each linked to its
+   catalog page, with a **Remove** button when there are several.
 
-The page has three actions: **Record fill**, **Edit** and **Remove**.
+The page has three actions: **Record fill**, **Change** and **Remove**. A tracked
+medication with fills or prior authorizations is not removed; its status changes instead.
 
 #### Printable medication list
 
@@ -396,20 +436,20 @@ only for a medication on a list.
 
 #### Contacts
 
-This page lists the pharmacies and the prescribers. Each entry shows the name, the
+This page lists the prescribers, then the pharmacies. Each entry shows the name, the
 clinic, the phone and fax numbers, the address, the email address, the website and the
 National Provider Identifier (NPI). A phone number is a link that starts a call on a
 phone. A website is a link only when it starts with `http://` or `https://`.
 
 #### Setup
 
-This page links to three places:
+This page links to four places, each a box of the launcher list:
 
-- **People**: the household members.
-- **Medication catalog**: every product the household has used, with its other names.
-  The sample data adds a starter catalog of common medications.
-- **Reminder settings**: six reminder day counts and three early refill settings.
 - **Insurance plans**: names, refill overrides and reference-safe removal.
+- **Family**: the household members.
+- **Medication catalog**: every product the household has used, with its other names.
+  The starter catalog of common medications loads by itself when the catalog is empty.
+- **Reminder settings**: six reminder day counts and three early refill settings.
 
 The app asks for no household name.
 
@@ -417,10 +457,11 @@ A catalog entry has **Specialty** and **Controlled** checkboxes. Controlled supp
 across payers and has no early allowance unless the household sets one. A specialty medication takes longer to
 arrive, so its refill is due earlier.
 
-Two catalog entries that are the same product can be merged. Merging moves the fills,
-the list entries, the prior authorizations and the other names from one entry to the
-other. It then hides the emptied entry. The page shows what will move and asks you to
-confirm.
+Two catalog entries that are the same product can be merged. Merging points the fills
+and the tracked medications that hold one entry at the other, moves the other names, and
+hides the emptied entry. A tracked medication that held both keeps one link. The page
+shows what will move, warns when a person would end up with the product on two tracked
+medications, and asks you to confirm.
 
 #### Choices in forms
 
@@ -434,7 +475,7 @@ goes away once no record uses it. No separate screen manages the choices.
 
 A field that points to a person, a pharmacy or a prescriber works the same way. Its
 drop-down has the choice **-- Add new --**, which shows a text box for the name. The
-drop-down of the medication box has **-- Find another or add new --**, which shows the
+drop-down of the medication box has **-- Another medication --**, which shows the
 name to type and the fields of a new medication.
 
 The script `static/forms.js` hides the boxes until that choice is made. It empties a box
@@ -480,7 +521,7 @@ The catalog gets its entries in three ways.
 
 | Way | What it adds |
 |---|---|
-| The starter catalog | About 2,507 entries, loaded once into an empty app |
+| The starter catalog | About 2,507 entries, loaded by the app into an empty catalog |
 | The lookup in a form | One entry at a time, when you add a medication the catalog lacks |
 | Your own typing | Anything else |
 
@@ -664,17 +705,15 @@ shows the phone number, because the next step is a new prescription.
 A fill with no days supply counts as 1 day in every view, so a report always has a date.
 The medication still appears under Missing information until someone adds the number.
 
-#### Differences from the legacy view
-
-The app deliberately differs from `ActiveMedicationsView`:
+#### The rules in short
 
 - Physical supply stacks across every fill. Gaps earn no credit.
 - Refill eligibility uses the last payer's count, a rolling frame, and an early allowance.
 - Overdue begins after physical supply ends. Due follows eligibility.
-- Today is the node's local date. The legacy view uses Coordinated Universal Time (UTC).
+- Today is the node's local date.
 - Default reminder counts are 3 and 7 days, or 5 and 10 for specialty medications.
 - Only medications taken regularly raise refill alerts. Missing days supply counts as one day.
-- Merged entries share their fill history and can have different dates from the source view.
+- Merged entries share their fill history.
 
 ### Accessibility plan
 
@@ -738,11 +777,11 @@ dates, medications, the conditions they treat, prescription numbers and claim nu
 - **Addresses.** A page address holds record ids only. It never holds a name, a date or a
   medication.
 - **Logs.** Diagnostic messages hold record ids and counts, never field values.
-- **Sample data.** `sample/seed.jsonl` holds a starter catalog only, and no person.
+- **Starter catalog.** `lib/starter_catalog.lua` holds a starter catalog only, and no person.
 - **Lookup.** The browser sends the name typed into the lookup box to a public drug
   reference, without cookies and without the address of the page. What comes back is
   shown as text, never as markup, and is checked by the server like any typed value.
-- **Import.** The [import page](import.md) keeps real records out of this repository.
+- **Real records.** No record of a real household is in this repository. Synthetic data only, in the tests and the pages.
 
 This design makes no claim of compliance with any health privacy law.
 
@@ -758,9 +797,6 @@ rows.
 | `privatium lint apps/meds` | 0 findings |
 | Unit tests of the Lua modules | All passed |
 | Smoke test of every screen over HTTP | All passed |
-| Both dates against the legacy view, on the owner's data, with an empty days supply counted as zero | Every row matched |
-| The same, with an empty days supply counted as 1 day | Every row matched |
-| Conversion of every legacy row under the schema's constraints | Every row converted. The total amount paid was unchanged. |
 | `date('now', 'localtime')` inside the node | Returned the local time |
 | Loading invented rows through the data API on the node's own address | Accepted |
 | Loading the same rows a second time | Nothing appended |
@@ -786,11 +822,9 @@ The owner made these decisions on 2026-09-27.
 | Short name | The brand name, the generic name in brackets, then the strength. |
 | Birth date | Kept, optional. |
 | Choices and strength | Choices are picked or typed in the form. Strength is text, as the label prints it. |
-| Import | A Python script for one use by the owner. |
-| Fills for a medication on nobody's list | The import adds a list entry with the status No longer taking. |
 | Day counts | Due at 0 to 3 days and due soon at 4 to 7. For a specialty medication, 0 to 5 and 6 to 10. |
 | Readable view | `v_active_medication`, with the new column names. |
-| Sample data | Holds a starter catalog of medications that are common in the United States. |
+| Starter catalog | Medications that are common in the United States. The app loads it by itself when the catalog is empty. There is no separate sample data file. |
 | Fills from a portal | Pasted as text, read by the app, reviewed, then added. |
 | Amounts from a portal | What the plan paid and the deductible are shown in the review and not stored. |
 | Portal names | A reader is named after its layout. No company name appears in this repository. |
@@ -822,12 +856,10 @@ Each step ended with a clean `privatium lint`, passing tests and updated documen
 1. Tables, views and the starter catalog, with the data model page. Done.
 2. Setup screens for people, pharmacies, prescribers and the catalog. Done.
 3. The medication search, the other names and the merge. Done.
-4. The one-time import. Done. The script is kept outside this repository. See the
-   [import page](import.md).
 5. Medications and the medication page. Done.
 6. Record a fill, and History. Done.
 7. Paste fills. Done, for one layout of portal page.
-8. Refills, as the home page. Done.
+8. Refills. Done.
 9. Authorizations. Done.
 10. The printable medication list and the spending table. Done.
 11. Adding records from inside a form, the medication box, suggestions in text boxes,
@@ -838,6 +870,21 @@ Each step ended with a clean `privatium lint`, passing tests and updated documen
     built from them. Done. See
     [The catalog and the drug references](#the-catalog-and-the-drug-references).
 14. A check of the lookup inside a browser. **Planned.**
+15. Tracked medications with their products, the search and the Restart button of the
+    Medications page, the remembered person tab, and the icons of the dose forms. Done.
+
+#### Tracked medication decisions, October 3, 2026
+
+| Subject | Decision |
+|---|---|
+| What a person takes | A tracked medication with a preferred name, standing for one or more catalog products. Fills and prior authorizations point at it. |
+| Products per person | A product belongs to one tracked medication of a person. A preferred name is unique within a person. |
+| Preferred name | Starts as the full name of the first product, and the owner changes it in the form. |
+| The product of a fill | Kept on the fill, so carton sizes stay apart in the history. |
+| Navigation | Medications first, with the capsule icon; Refills second, with the bag icon. |
+| Remembered person | The browser keeps the person tab chosen last, by id, until profiles arrive. |
+| Form icons | One Bootstrap icon per dose form, labelled with the form; a hand-drawn syringe for injections. |
+| Portal wording | "Copy refill history from patient portal", with the owner's explanation. |
 
 #### Refill rule decisions, October 1, 2026
 
@@ -854,14 +901,12 @@ Each step ended with a clean `privatium lint`, passing tests and updated documen
 ### Conclusion
 
 You now know what the app shows, how it decides that a refill is due, and what is
-still planned. Read the [data model](../data-model.md) next, then the
-[import page](import.md).
+still planned. Read the [data model](../data-model.md) next.
 
 ### Additional resources
 
 - [Using the app](../usage.md)
 - [Data model](../data-model.md)
-- [Import of the legacy database](import.md)
 - [How to run the tests](../how-to/run-the-tests.md)
 - [Compliance](../compliance.md)
 - [The schema, as SQL](../../apps/meds/schema.sql)

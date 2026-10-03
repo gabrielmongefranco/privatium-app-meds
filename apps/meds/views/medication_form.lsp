@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/views/medication_form.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-10-01
+Last Modified: 2026-10-03
 Summary: The form that adds or changes a medication of the catalog.
 Notes: See README file for documentation and full license information.
 
@@ -68,7 +68,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
              aria-describedby="f-is_controlled-help"<? if typed.is_controlled == 'yes' then ?> checked<? end ?>>
       This is a controlled medication
     </label>
-    <p id="f-is_controlled-help" class="pv-help">By default it is filled when supply runs out, with no early refill. Every fill counts whoever paid.</p>
+    <p id="f-is_controlled-help" class="pv-help">A controlled medication can usually be refilled only when the supply runs out.</p>
   </fieldset>
   <details<? if errors.rxcui then ?> open<? end ?>>
     <summary>Reference codes</summary>

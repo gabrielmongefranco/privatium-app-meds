@@ -3,8 +3,8 @@ This file is part of Prescription Tracker
 docs/how-to/build-the-starter-catalog.md
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-10-01
-Summary: How to build the starter catalog of the sample data, what it is built from, and
+Last Modified: 2026-10-03
+Summary: How to build the starter catalog the app ships, what it is built from, and
          the licenses of its sources.
 Notes: See README file for documentation and full license information.
 
@@ -20,8 +20,8 @@ See <https://www.gnu.org/licenses/fdl-1.3.html>. See README for full license inf
 
 [Back to project README](../../README.md)
 
-This page shows how to rebuild `apps/meds/sample/seed.jsonl`, the starter catalog that an
-owner can load into an empty app. It is for developers. You need it when you add a drug
+This page shows how to rebuild `apps/meds/lib/starter_catalog.lua`, the starter catalog
+that the app loads into an empty catalog by itself. It is for developers. You need it when you add a drug
 to the lists, or when you want newer strengths from the drug reference.
 
 Nobody who only uses the app has to do this. The file is part of the repository.
@@ -85,8 +85,8 @@ The catalog currently has 231 controlled products and 22 specialty suggestions.
    build_seed: 61 entries written by hand, 229 syringes and needles, 2217 entries from RxTerms, 454 brand names as other names
    ```
 
-4. Run the checks in [How to run the tests](run-the-tests.md). The smoke test loads
-   the new file and reads its counts from it.
+4. Run the checks in [How to run the tests](run-the-tests.md). The smoke test opens the
+   catalog on an empty app, which loads the new module, and reads its counts from it.
 5. Update the counts in [the data model](../data-model.md) and
    [the usage page](../usage.md), if they changed.
 

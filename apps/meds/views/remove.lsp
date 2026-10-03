@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/views/remove.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-09-27
+Last Modified: 2026-10-03
 Summary: The page that asks before a record is removed, or explains why it cannot be yet.
 Notes: See README file for documentation and full license information.
 
@@ -42,8 +42,6 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 <? else ?>
   <p>You are about to remove <strong><?= name ?></strong>.</p>
   <? if note then ?><p><?= note ?></p><? end ?>
-  <p>Removing hides the record in the app. Privatium keeps the original line in its log,
-     so the record stays on the disk.</p>
   <form method="post" action="<?= action ?>">
     <?= csrf() ?>
     <p class="pv-actions">

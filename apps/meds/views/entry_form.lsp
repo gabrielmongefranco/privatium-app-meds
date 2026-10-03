@@ -3,8 +3,9 @@ This file is part of Prescription Tracker
 apps/meds/views/entry_form.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-09-27
-Summary: The form that adds a medication to the list of a person, or changes one.
+Last Modified: 2026-10-03
+Summary: The form that adds a medication to the tracking list of a person, or changes one:
+         its catalog products, its preferred name, and how it is taken.
 Notes: See README file for documentation and full license information.
 
 Copyright © 2026 Gabriel Mongefranco
@@ -28,26 +29,25 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 
 <form method="post" action="<?= action ?>" novalidate>
   <?= csrf() ?>
-  <? if medication then ?>
-    <div class="pv-card">
-      <dl>
-        <dt>Medication</dt><dd><?= medication.short_name ?></dd>
-        <? if fixed_person then ?><dt>For</dt><dd><?= fixed_person ?></dd><? end ?>
-      </dl>
-    </div>
-    <? if errors.medication_id then ?>
-      <p id="f-medication_id" class="pv-error" role="alert"><?= icon('exclamation-triangle') ?> <?= errors.medication_id ?></p>
-    <? end ?>
+  <? -- The first submit button of a form answers the Enter key. This one saves, so Enter
+     -- in a field never removes a product. A name typed into the product box is added
+     -- before anything is saved. ?>
+  <button type="submit" class="pv-visually-hidden" name="action" value="save" tabindex="-1">Save</button>
+  <? if fixed then ?>
+    <div class="pv-card"><dl>
+      <dt>Person</dt><dd><?= fixed.person_name ?></dd>
+    </dl></div>
   <? else ?>
-    <?= render('_medication_names', { names = names }) ?>
-    <?= render('_medication_picker', { prefix = 'medication', typed = typed, options = in_use, pick = pick,
-          err = errors.medication_id }) ?>
-  <? end ?>
-  <? if not fixed_person then ?>
     <?= render('_select_or_new', { name = 'person_id', legend = 'Who takes it', noun = 'person',
           value = typed.person_id, typed_new = typed.person_id_new, options = offered.people,
           required = true, err = errors.person_id, empty_label = 'Choose a person' }) ?>
   <? end ?>
+  <?= render('_medication_names', { names = names }) ?>
+  <?= render('_product_picker', { prefix = 'product', typed = typed, chosen = chosen, pick = pick,
+        err = errors.products, add_button = add_action }) ?>
+  <?= render('_field', { name = 'display_name', label = 'Preferred name', value = typed.display_name,
+        err = errors.display_name, required = true, maxlength = 200,
+        help = 'The name you call this medication. You can shorten it.' }) ?>
   <?= render('_select', { name = 'status', label = 'Status', value = typed.status,
         options = offered.statuses, required = true, err = errors.status,
         empty_label = 'Choose a status',
@@ -57,7 +57,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
         help = 'As the label says, such as: Take one tablet by mouth every day.' }) ?>
   <?= render('_choice', { name = 'when_to_take', legend = 'When to take it', value = typed.when_to_take,
         typed_new = typed.when_to_take_new, offered = offered.when_to_take, err = errors.when_to_take }) ?>
-  <?= render('_field', { name = 'prescribed_for', label = 'What it is for', value = typed.prescribed_for,
+  <?= render('_field', { name = 'prescribed_for', label = 'Reason for taking it', value = typed.prescribed_for,
         err = errors.prescribed_for, maxlength = 200, suggestions = offered.purposes }) ?>
   <?= render('_field', { name = 'refills_left', label = 'Refills left', value = typed.refills_left,
         err = errors.refills_left, required = true, inputmode = 'numeric', maxlength = 2,
@@ -76,7 +76,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
         err = errors.medication_type }) ?>
 
   <p class="pv-actions">
-    <button type="submit" class="pv-btn pv-btn-primary"><?= icon('check-lg') ?> Save</button>
+    <button type="submit" class="pv-btn pv-btn-primary" name="action" value="save"><?= icon('check-lg') ?> Save</button>
     <a class="pv-btn" href="<?= url('/medications') ?>">Cancel</a>
   </p>
 </form>

@@ -2,7 +2,7 @@
 -- apps/meds/lib/routes/home.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-10-01
+-- Last Modified: 2026-10-03
 -- Summary: The home page, which is the Refills page once the household has people, and
 --          the household name and the reminder settings, which share the one profile row.
 -- Notes: See README file for documentation and full license information.
@@ -33,6 +33,7 @@ local store    = require 'store'
 local validate = require 'validate'
 
 --- Configuration ---
+local REFILLS = '/refills'   -- The Refills page; the Medications page is the home page
 local DAY_COUNT_MAX = 365   -- A reminder more than a year ahead is a typing mistake
 
 -- Values are bounded to catch typing mistakes before they affect refill dates. `label` completes the sentence
@@ -84,12 +85,10 @@ end
 local function fill_notice(fill_id)
   if type(fill_id) ~= 'string' then return nil end
   local saved = pv.query1([[
-    SELECT m.short_name AS medication_name, s.next_fill_on, s.lasts_until
+    SELECT pm.display_name AS medication_name, s.next_fill_on, s.lasts_until
       FROM fill f
-      JOIN medication m ON m.id = f.medication_id          -- many:1
-      JOIN person_medication pm                            -- many:1; the list entry of the pair
-        ON pm.person_id = f.person_id AND pm.medication_id = f.medication_id
-      JOIN v_supply s ON s.person_medication_id = pm.id    -- 1:1
+      JOIN person_medication pm ON pm.id = f.person_medication_id   -- many:1
+      JOIN v_supply s ON s.person_medication_id = pm.id             -- 1:1
      WHERE f.id = ?
      LIMIT 1]], { fill_id })
   if not saved then return nil end
@@ -98,7 +97,7 @@ local function fill_notice(fill_id)
     .. tostring(fmt.date(saved.lasts_until)) .. '.'
 end
 
-pv.get('/', function(req)
+pv.get(REFILLS, function(req)
   local filter = people_filter.read(req)
   if #filter.people == 0 then
     return pv.render('index', { section = 'home', greeting = clock.greeting(clock.hour()) })
@@ -144,7 +143,6 @@ pv.get('/', function(req)
   end
   return pv.render('refills', {
     section  = 'home',
-    greeting = clock.greeting(clock.hour()),
     notice   = fill_notice(req.query.filled) or page.notice(req.query.notice),
     filter   = filter,
     groups   = groups,
@@ -219,12 +217,8 @@ end)
 --- Setup ---
 
 pv.get('/setup', function(req)
-  local counts = pv.query1([[
-    SELECT (SELECT count(*) FROM person)     AS people,
-           (SELECT count(*) FROM medication) AS medications]])
   return pv.render('setup', {
     section = 'setup',
     notice  = page.notice(req.query.notice),
-    counts  = counts,
   })
 end)

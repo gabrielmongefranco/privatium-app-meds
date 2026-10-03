@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/views/merge_choose.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-09-27
+Last Modified: 2026-10-03
 Summary: The first page of a merge: choose the medication that stays.
 Notes: See README file for documentation and full license information.
 
@@ -36,7 +36,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 </form>
 
 <? if #candidates == 0 then ?>
-  <p class="pv-empty">No other medication answers to "<?= filter ?>".</p>
+  <p class="pv-empty">No medications found.</p>
 <? else ?>
   <ul class="meds-cards">
     <? for _, medication in ipairs(candidates) do ?>
