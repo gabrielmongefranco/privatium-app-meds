@@ -292,7 +292,7 @@ expect_text "a change keeps the id" "\"id\":\"$alex\""
 
 expect_status "removal asks first" 200 "$(get "/setup/people/$alex/remove")"
 expect_text "removal page names the record" "Alex Example"
-expect_text "removal page says the log keeps the record" "Privatium keeps the original line in its log"
+expect_no_text "removal page does not mention the log" "Privatium keeps the original line in its log"
 expect_status "a fill for the person is recorded" 200 "$(curl -s -m 10 -o /dev/null -w '%{http_code}' \
   -H 'Content-Type: application/json' \
   -d "{\"events\":[{\"op\":\"put\",\"tbl\":\"pharmacy\",\"id\":\"01J8MEDS0000000000TEST0001\",\"d\":{\"name\":\"Example Pharmacy\",\"phone\":\"(555) 555-0100\"}},{\"op\":\"put\",\"tbl\":\"person_medication\",\"id\":\"01J8MEDS0000000000TEST0010\",\"d\":{\"person_id\":\"$alex\",\"display_name\":\"Amoxicillin suspension\",\"status\":\"not_taking\",\"refills_left\":0}},{\"op\":\"put\",\"tbl\":\"person_medication_product\",\"id\":\"01J8MEDS0000000000TEST0011\",\"d\":{\"person_medication_id\":\"01J8MEDS0000000000TEST0010\",\"medication_id\":\"01J8MEDS0000000000MED00001\"}},{\"op\":\"put\",\"tbl\":\"fill\",\"d\":{\"person_medication_id\":\"01J8MEDS0000000000TEST0010\",\"medication_id\":\"01J8MEDS0000000000MED00001\",\"pharmacy_id\":\"01J8MEDS0000000000TEST0001\",\"filled_on\":\"2026-09-01\",\"days_supply\":30}}]}" \
@@ -349,9 +349,9 @@ expect_text "a long catalog shows its first page" "This page shows the first 100
 expect_status "catalog filtered by another name" 200 "$(get '/setup/catalog?q=apap')"
 expect_text "two medications answer to the other name" "2 medications"
 expect_status "catalog filtered by a percent sign" 200 "$(get '/setup/catalog?q=%25')"
-expect_text "a percent sign alone finds nothing" "No medication answers"
+expect_text "a percent sign alone finds nothing" "No medications found."
 expect_status "catalog filtered by an underscore" 200 "$(get '/setup/catalog?q=_')"
-expect_text "an underscore alone finds nothing" "No medication answers"
+expect_text "an underscore alone finds nothing" "No medications found."
 expect_status "catalog filtered by SQL" 200 "$(get "/setup/catalog?q=%27%20OR%201%3D1%20--")"
 expect_no_text "SQL in the filter is compared as text and lists no catalog" "The catalog holds"
 expect_status "catalog filtered by markup" 200 "$(get '/setup/catalog?q=%3Cimg%20src%3Dx%3E')"
@@ -416,7 +416,7 @@ expect_status "search by the taught name" 200 "$(get '/setup/catalog?q=ATORVA-20
 expect_text "the taught name finds the medication" "Lipitor (Atorvastatin) 20 mg"
 expect_no_text "the taught name is now known" "Teach the app this name"
 expect_status "a name the medication has is refused" 200 "$(post /setup/catalog/new "/setup/catalog/$lipitor/names" 'alias=LIPITOR')"
-expect_text "a name the medication has says why" "already answers to that one"
+expect_text "a name the medication has says why" "already has that name"
 expect_status "an empty other name is refused" 200 "$(post /setup/catalog/new "/setup/catalog/$lipitor/names" 'alias= ')"
 expect_status "markup as another name is saved as text" 303 "$(post /setup/catalog/new "/setup/catalog/$lipitor/names" 'alias=<b>bold</b>')"
 expect_status "medication page with other names" 200 "$(get "/setup/catalog/$lipitor")"
@@ -444,9 +444,9 @@ expect_status "merge page offers the other entry" 200 "$(get "/setup/catalog/$du
 expect_text "merge page names the entry that stays" "Lipitor (Atorvastatin) 20 mg"
 expect_status "merge asks first" 200 "$(get "/setup/catalog/$duplicate/merge/$lipitor")"
 expect_text "merge says how many fills move" "1 fill will name the medication that stays."
-expect_text "merge says which tracked medication changes" "1 tracked medication will hold the medication that stays"
-expect_text "merge warns of a person who ends up with the product twice" "1 person will have the medication that stays on two tracked medications"
-expect_text "merge says it cannot be undone" "cannot be undone in the app"
+expect_text "merge says which medication changes" "1 medication on a list will point to the one that stays"
+expect_text "merge warns of a person who ends up with the product twice" "1 person will have the product that stays on two medications"
+expect_text "merge says it cannot be undone" "A merge cannot be undone."
 expect_status "a medication is not merged into itself" 303 "$(get "/setup/catalog/$lipitor/merge/$lipitor")"
 fills_before="$(count_of fill)"; entries_before="$(count_of person_medication)"; links_before="$(count_of person_medication_product)"
 expect_status "merge without the token is refused" 403 "$(curl -s -m 10 -o /dev/null -w '%{http_code}' -X POST "$APP/setup/catalog/$duplicate/merge/$lipitor")"
@@ -508,7 +508,7 @@ expect_text "the Everyone link names an empty person" 'medications?person="'
 expect_status "the filter script is served" 200 "$(get /static/filter.js)"
 expect_status "the person script is served" 200 "$(get /static/person_tab.js)"
 expect_status "the form that tracks a medication" 200 "$(get "/medications/new?person=$alex")"
-expect_text "the form has its heading" "Add to your medications tracking list"
+expect_text "the form has its heading" "Track new medication"
 expect_text "the form suggests names while a person types" 'list="medication-names"'
 expect_text "the suggestions hold the short names" 'value="Prinivil (Lisinopril) 10 mg"'
 expect_text "the suggestions hold the other names" 'value="Albuterol inhaler"'
@@ -532,7 +532,7 @@ expect_status "a misspelled name picks nothing" 200 "$(post /setup/people/new /m
 expect_text "a misspelled name offers the close medication" "Prinivil (Lisinopril) 10 mg"
 expect_status "a name nobody knows is refused" 200 "$(post /setup/people/new /medications/new \
   "person_id=$alex" 'product_name=zzzqqq' 'action=add_product' 'status=taking_regularly' 'refills_left=1')"
-expect_text "a name nobody knows says what to do" "No medication answers to this name."
+expect_text "a name nobody knows says what to do" "No medication found with this name."
 expect_status "markup as a name is refused" 200 "$(post /setup/people/new /medications/new \
   "person_id=$alex" 'product_name=<script>alert(7)</script>' 'action=add_product' 'status=taking_regularly' 'refills_left=1')"
 expect_no_text "markup as a name is never sent as markup" "<script>alert(7)</script>"
@@ -551,10 +551,10 @@ expect_text "the typed name became a product" "name=\"product_1_id\" value=\"$pr
 expect_status "a product is removed from the form" 200 "$(post /setup/people/new /medications/new \
   "person_id=$alex" "product_1_id=$prinivil" 'action=remove_product_1' 'status=taking_regularly' 'refills_left=1')"
 expect_no_text "the removed product is gone from the form" "name=\"product_1_id\""
-expect_text "a form with no product says so" "No product yet."
+expect_text "a form with no product says so" "No product chosen yet."
 expect_status "an entry with no product is refused" 200 "$(post /setup/people/new /medications/new \
   "person_id=$alex" 'display_name=Nothing' 'status=taking_regularly' 'refills_left=1')"
-expect_text "an entry with no product says why" "Add at least one product from the catalog."
+expect_text "an entry with no product says why" "Add at least one product."
 expect_status "a product id that names nothing is refused" 200 "$(post /setup/people/new /medications/new \
   "person_id=$alex" 'product_1_id=01J8MEDS0000000000N0NE0001' 'display_name=Nothing' 'status=taking_regularly' 'refills_left=1')"
 expect_text "a product id that names nothing says why" "Choose a medication from the list."
@@ -576,10 +576,10 @@ expect_status "an entry is added" 303 "$(post /setup/people/new /medications/new
   'prescribed_for=<i>blood pressure</i>' "pharmacy_id=$pharmacy")"
 expect_status "the same product twice for one person is refused" 200 "$(post /setup/people/new /medications/new \
   "person_id=$alex" "product_1_id=$prinivil" 'display_name=Lisinopril' 'status=taking_regularly' 'refills_left=1')"
-expect_text "the same product twice says which entry has it" "is already on the list of this person, under Prinivil"
+expect_text "the same product twice says which entry has it" "is already on the list for this person, under Prinivil"
 expect_status "the same preferred name twice for one person is refused" 200 "$(post /setup/people/new /medications/new \
   "person_id=$alex" "product_1_id=$glucophage" 'display_name= PRINIVIL ' 'status=taking_regularly' 'refills_left=1')"
-expect_text "the same preferred name twice says why" "already tracks a medication under this one"
+expect_text "the same preferred name twice says why" "already has a medication with this name"
 entry="$(entry_of Prinivil)"
 expect_status "page of a tracked medication" 200 "$(get "/medications/$entry")"
 expect_text "the page shows the instructions" "Take one tablet by mouth every day"
@@ -594,14 +594,14 @@ expect_text "the change form holds the preferred name" 'value="Prinivil"'
 expect_text "the change form names the person" "Alex Example"
 expect_status "saving with no product left is refused" 200 "$(post /setup/people/new "/medications/$entry/edit" \
   'display_name=Prinivil' 'status=taking_regularly' 'refills_left=1')"
-expect_text "saving with no product left says why" "Add at least one product from the catalog."
+expect_text "saving with no product left says why" "Add at least one product."
 expect_status "a second product is added to the entry" 303 "$(post /setup/people/new "/medications/$entry/edit" \
   "product_1_id=$prinivil" "product_2_id=01J8MEDS0000000000MED00010" 'display_name=Prinivil' 'status=taking_regularly' 'refills_left=1' \
   'instructions=Take one tablet by mouth every day' "pharmacy_id=$pharmacy")"
 expect_status "page with two products" 200 "$(get "/medications/$entry")"
 expect_text "the second product is listed" "Adderall"
 expect_text "a product among several has a Remove button" "the product Adderall"
-expect_text "the marks of the products reach the entry" "Every fill counts across payers."
+expect_text "the marks of the products reach the entry" "<dt>Controlled</dt><dd>Yes.</dd>"
 link_of() {   # link_of <tracked medication id> <product id>: prints the id of their link
   curl -s -m 10 "$APP/api/q/v_tracked_product" \
     | grep -o "{[^}]*\"person_medication_id\":\"$1\"[^}]*}" | grep "\"medication_id\":\"$2\"" \
@@ -623,7 +623,7 @@ expect_status "a new medication is added to the form" 200 "$(post /setup/people/
   'person_id_new=Robin Example' 'product_brand=Quickadd' 'product_generic=Quickaddine' \
   'product_strength=15 mg' 'action=add_product' 'status=taking_regularly' 'refills_left=2')"
 expect_text "a new medication is carried by its fields" 'name="product_1_generic" value="Quickaddine"'
-expect_text "a new medication is marked as new" "New to the catalog"
+expect_text "a new medication is marked as new" "New</span>"
 expect_text "the preferred name follows the new medication" 'value="Quickaddine (Quickadd) 15 mg"'
 expect_status "nothing is written while the form is open" "$before" \
   "$(count_of medication) $(count_of person) $(count_of prescriber) $(count_of pharmacy) $(count_of person_medication) $(count_of person_medication_product)"
@@ -644,7 +644,7 @@ expect_status "a person may use a preferred name that another person has" 303 "$
 expect_status "typed names that exist pick the records they name" 200 "$(post /setup/people/new /medications/new \
   'person_id_new=robin  EXAMPLE' 'product_1_generic=Quickaddine' 'product_1_brand=quickadd' \
   'product_1_strength=15 MG' 'display_name=Other' 'status=on_hold' 'refills_left=2' 'pharmacy_id_new=quick pharmacy')"
-expect_text "the same person and product are found" "is already on the list of this person, under Quickadd"
+expect_text "the same person and product are found" "is already on the list for this person, under Quickadd"
 expect_status "typed names that exist add nothing" "$(echo "$after" | awk '{print $1, $2, $3, $4, $5+1, $6+1}')" \
   "$(count_of medication) $(count_of person) $(count_of prescriber) $(count_of pharmacy) $(count_of person_medication) $(count_of person_medication_product)"
 # The lookup in the browser fills in fields of the form. They are checked like any other.
@@ -668,7 +668,7 @@ medications_before="$(count_of medication)"
 expect_status "the same identifier picks the medication that has it" 200 "$(post /setup/people/new /medications/new \
   "person_id=$alex" 'product_1_generic=Another Name' \
   'product_1_rxcui=99999901' 'product_1_source=rxterms' 'display_name=Another' 'status=on_hold' 'refills_left=0')"
-expect_text "the medication that has the identifier is on the list already" "is already on the list of this person, under Lookupol"
+expect_text "the medication that has the identifier is on the list already" "is already on the list for this person, under Lookupol"
 # One product in two cartons is two entries with one identifier.
 expect_status "a carton of a product that the catalog holds is added" 303 "$(post /setup/people/new /medications/new \
   "person_id=$alex" 'product_1_brand=Lookupol' 'product_1_generic=Lookupine' \
@@ -681,7 +681,7 @@ expect_status "the same carton again picks the entry that has it" 200 "$(post /s
   "person_id=$alex" 'product_1_generic=Another Name' \
   'product_1_package_size=6' 'product_1_package_type=Pack' \
   'product_1_rxcui=99999901' 'product_1_source=rxterms' 'display_name=Another' 'status=on_hold' 'refills_left=0')"
-expect_text "the carton is on the list already" "is already on the list of this person, under Lookupol 6 pack"
+expect_text "the carton is on the list already" "is already on the list for this person, under Lookupol 6 pack"
 expect_status "the same carton again adds nothing" "$((medications_before + 1))" "$(count_of medication)"
 medications_before="$(count_of medication)"
 expect_status "an identifier with letters is refused" 200 "$(post /setup/people/new /medications/new \
@@ -800,7 +800,7 @@ two="$(entry_of Lookupol)"
 six_product="$(product_of 'Lookupol (Lookupine) 5 mg 6 Pack')"
 expect_status "a product on another entry of the person is refused" 200 "$(post /setup/people/new "/medications/$two/edit" \
   "product_1_id=$lookupol" "product_2_id=$six_product" 'display_name=Lookupol' 'status=on_hold' 'refills_left=0')"
-expect_text "a product on another entry says which entry has it" "is already on the list of this person, under Lookupol 6 pack"
+expect_text "a product on another entry says which entry has it" "is already on the list for this person, under Lookupol 6 pack"
 six="$(entry_of 'Lookupol 6 pack')"
 expect_status "the other entry is removed first" 303 "$(post "/medications/$six/remove" "/medications/$six/remove")"
 expect_status "the second carton joins the tracked medication" 303 "$(post /setup/people/new "/medications/$two/edit" \
@@ -1032,7 +1032,7 @@ expect_text "history filters by tracked medication" "Alex Example: Prinivil"
 expect_status "history of one tracked medication" 200 "$(get "/fills?medication=$entry")"
 expect_text "history of one tracked medication shows its fills" "Rx 700001"
 expect_status "history for a year with no fill" 200 "$(get '/fills?year=1999')"
-expect_text "a year with no fill says so" "No fill matches."
+expect_text "a year with no fill says so" "No fills found."
 expect_status "history with a year that is not a year" 200 "$(get "/fills?year=%27%20OR%201=1")"
 expect_status "history with a page that is not a number" 200 "$(get '/fills?page=abc')"
 
@@ -1334,11 +1334,9 @@ expect_text "every fill of the long page is found" "60 fills found."
 
 ### Setup ###
 expect_status "setup page" 200 "$(get /setup)"
-expect_text "setup page counts the people" "The members of the household. 5 in the app"
 expect_text "setup page calls the people the family" "<span>Family</span>"
 expect_text "setup page has a box for the insurance plans" "<span>Insurance plans</span>"
-expect_text "setup page counts the plans" "refill rules. $(count_of plan) in the app"
-expect_text "setup page counts the medications" "with its other names. $(count_of medication) in the app"
+expect_no_text "setup page boxes carry no description" "in the app.</small>"
 expect_no_text "setup page has no plain button for the plans" '<p><a class="pv-btn" href="/a/meds/setup/plans">'
 expect_status "family page" 200 "$(get /setup/people)"
 expect_text "family page has its heading" "<h1>Family</h1>"

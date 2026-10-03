@@ -41,7 +41,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
     <div>
       <label for="q">Search the list</label>
       <input id="q" name="q" type="search" value="<?= filter_text ?>" maxlength="100" autocomplete="off"
-             aria-describedby="q-help" data-filter-input>
+             data-filter-input>
     </div>
     <button type="submit" class="pv-btn"><?= icon('search') ?> Find</button>
     <? if filter_text ~= '' then ?>
@@ -49,7 +49,6 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
     <? end ?>
   </form>
 </div>
-<p id="q-help" class="pv-help">Type part of a medication name, one of its other names, the prescriber or the person. The list narrows as you type.</p>
 <p class="pv-meta" role="status" data-filter-status><?= matched ?></p>
 <? if not filter.selected and #filter.people > 0 then ?>
   <p class="pv-help">Choose one person to print their list.</p>
@@ -67,9 +66,9 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 <? end ?>
 <? if shown == 0 and #stopped.rows == 0 then ?>
   <? if filter_text ~= '' then ?>
-    <p class="pv-empty">No medication matches "<?= filter_text ?>".</p>
+    <p class="pv-empty">No medications found.</p>
   <? else ?>
-    <p class="pv-empty">No medication is tracked yet. Track the first one to begin.</p>
+    <p class="pv-empty">No medications yet. Choose Track a new medication to begin.</p>
   <? end ?>
 <? end ?>
 

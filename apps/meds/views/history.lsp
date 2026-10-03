@@ -51,7 +51,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 
 <h2>Fills</h2>
 <? if #rows == 0 then ?>
-  <p class="pv-empty">No fill matches.</p>
+  <p class="pv-empty">No fills found.</p>
 <? else ?>
   <p class="pv-meta"><?= counted ?>. Total paid: <? if total.amount_paid then ?><?= fmt.money(total.amount_paid) ?><? else ?>not given<? end ?>.
     <? if pages > 1 then ?>Page <?= chosen.page ?> of <?= pages ?>.<? end ?></p>

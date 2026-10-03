@@ -30,21 +30,17 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
   <li><a href="<?= url('/setup/plans') ?>">
     <?= icon('wallet2') ?>
     <span>Insurance plans</span>
-    <small>The payers and their refill rules. <?= counts.plans ?> in the app.</small>
   </a></li>
   <li><a href="<?= url('/setup/people') ?>">
     <?= icon('people') ?>
     <span>Family</span>
-    <small>The members of the household. <?= counts.people ?> in the app.</small>
   </a></li>
   <li><a href="<?= url('/setup/catalog') ?>">
     <?= icon('capsule') ?>
     <span>Medication catalog</span>
-    <small>Every product, with its other names. <?= counts.medications ?> in the app.</small>
   </a></li>
   <li><a href="<?= url('/setup/reminders') ?>">
     <?= icon('calendar-event') ?>
     <span>Reminder settings</span>
-    <small>How many days ahead a refill counts as due.</small>
   </a></li>
 </ul>

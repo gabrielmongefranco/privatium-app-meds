@@ -81,7 +81,7 @@ local function uses(id)
     { id })
   local list = {}
   if counts.lists > 0 then
-    list[#list + 1] = page.counted(counts.lists, 'tracked medication', 'tracked medications')
+    list[#list + 1] = page.counted(counts.lists, 'medication on a family member\'s list', 'medications on family members\' lists')
   end
   if counts.fills > 0 then list[#list + 1] = page.counted(counts.fills, 'fill', 'fills') end
   return list
@@ -235,7 +235,7 @@ pv.post(LIST .. '/:id/names', function(req)
   local id = medication.medication_id
   local alias, problem = validate.text(req.form.alias, 'the other name', NAME_MAX, true)
   if alias and name_known(id, alias) then
-    problem = 'Type another name. This medication already answers to that one.'
+    problem = 'This medication already has that name. Type another one.'
   end
   if not problem then
     local saved, refusal = store.save('medication_alias', nil, { medication_id = id, alias = alias })
@@ -294,10 +294,10 @@ local function sentences(plan)
     if count > 0 then list[#list + 1] = page.counted(count, singular, plural) .. ending end
   end
   add(#plan.fills, 'fill', 'fills', ' will name the medication that stays.')
-  add(#plan.links_moved, 'tracked medication', 'tracked medications', ' will hold the medication that stays in place of the one that goes.')
-  add(#plan.links_dropped, 'tracked medication holds', 'tracked medications hold',
-      ' both medications already, and will keep the one that stays.')
-  add(#plan.shared, 'person', 'people', ' will have the medication that stays on two tracked medications afterwards. Take it off one of them.')
+  add(#plan.links_moved, 'medication on a list', 'medications on lists', ' will point to the one that stays.')
+  add(#plan.links_dropped, 'medication on a list has', 'medications on lists have',
+      ' both products already, and will keep the one that stays.')
+  add(#plan.shared, 'person', 'people', ' will have the product that stays on two medications afterwards. Take it off one of them.')
   add(#plan.aliases_moved + #plan.names_added, 'name', 'names', ' will become other names of the medication that stays.')
   return list
 end

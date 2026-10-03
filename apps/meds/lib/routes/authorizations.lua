@@ -109,7 +109,7 @@ local function read(form, fixed_entry)
     if found then adding.entry_id = found.id end
     if not adding.entry_id and not errors.entry_id and not errors.person_id and not errors.medication_id
        and not adding.person_id and not adding.person then
-      errors.entry_id = 'Choose a medication from the list, or find one for a person.'
+      errors.entry_id = 'Choose a medication from the list, or choose Another medication.'
     end
   end
   row.person_medication_id = adding.entry_id

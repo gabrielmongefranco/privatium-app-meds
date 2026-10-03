@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/views/merge_confirm.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-09-27
+Last Modified: 2026-10-03
 Summary: The second page of a merge: what will move, and the button that does it.
 Notes: See README file for documentation and full license information.
 
@@ -43,8 +43,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
   <? end ?>
   <li><?= source.short_name ?> will be removed from the catalog.</li>
 </ul>
-<p>A merge cannot be undone in the app. Privatium keeps every original line in its log.
-   Merge only when both entries are the same product at the same strength.</p>
+<p>A merge cannot be undone. Merge only when both entries are the same product at the same strength.</p>
 
 <form method="post" action="<?= url('/setup/catalog/' .. source.medication_id .. '/merge/' .. target.medication_id) ?>">
   <?= csrf() ?>

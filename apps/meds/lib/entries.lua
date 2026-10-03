@@ -99,7 +99,7 @@ local function with_products(rows, person_id)
     row.form_icon, row.form_label = form_icon.of(first.form, first.route, first.package_type)
     -- The search looks through the preferred name, the person, the prescriber, and
     -- every name of every product. Spaces around the key let a word match whole.
-    local parts = { row.medication_name, row.person_name }
+    local parts = { row.medication_name or '', row.person_name or '' }
     if row.prescriber_name then parts[#parts + 1] = row.prescriber_name end
     for _, product in ipairs(row.products) do parts[#parts + 1] = product.full_name end
     for _, name in ipairs(row.names) do parts[#parts + 1] = name end

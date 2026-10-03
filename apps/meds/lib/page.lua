@@ -29,11 +29,11 @@ local page = {}
 -- can appear on a page. A code that is not listed here shows nothing.
 local NOTICES = {
   saved   = 'Saved.',
-  removed = 'Removed. Privatium keeps the original record in its log.',
+  removed = 'Removed.',
   missing = 'That record is not in the app. It may have been removed.',
   named   = 'Saved. The search now finds this medication by that name.',
   unread  = 'The app found no fills in that text. Open the details of each fill in the portal, then copy the list again.',
-  merged  = 'Merged. The fills, the tracked medications and the names now belong to this medication.',
+  merged  = 'Merged. Everything from the other entry now belongs to this medication.',
 }
 
 --- The sentence for a notice code.

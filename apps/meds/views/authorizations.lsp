@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/views/authorizations.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-09-27
+Last Modified: 2026-10-03
 Summary: The list of prior authorizations, with the state of each one in words.
 Notes: See README file for documentation and full license information.
 
@@ -39,7 +39,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
     <caption class="pv-visually-hidden">Prior authorizations, latest first</caption>
     <thead role="rowgroup"><tr role="row">
       <th scope="col" role="columnheader">Medication</th>
-      <th scope="col" role="columnheader">For</th>
+      <th scope="col" role="columnheader">Person</th>
       <th scope="col" role="columnheader">First day</th>
       <th scope="col" role="columnheader">Expires on</th>
       <th scope="col" role="columnheader">State</th>
@@ -49,7 +49,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
     <? for _, row in ipairs(authorizations) do ?>
       <tr role="row">
         <td role="cell"><span class="pv-cell-label" aria-hidden="true">Medication</span><?= row.medication_name ?></td>
-        <td role="cell"><span class="pv-cell-label" aria-hidden="true">For</span><?= row.person_name ?></td>
+        <td role="cell"><span class="pv-cell-label" aria-hidden="true">Person</span><?= row.person_name ?></td>
         <td role="cell"><span class="pv-cell-label" aria-hidden="true">First day</span><? if row.valid_from then ?><?= fmt.date(row.valid_from) ?><? else ?>Not known<? end ?></td>
         <td role="cell"><span class="pv-cell-label" aria-hidden="true">Expires on</span><?= fmt.date(row.valid_to) ?></td>
         <td role="cell"><span class="pv-cell-label" aria-hidden="true">State</span><?= row.state ?></td>

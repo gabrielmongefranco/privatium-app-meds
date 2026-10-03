@@ -127,7 +127,7 @@ amount only. From the button at the top, the form starts with
 
 | Field | Required | Starts as | Check |
 |---|---|---|---|
-| Who is it for | Yes | The row's person | A person in the app, or the name of a new one |
+| Person | Yes | The row's person | A person in the app, or the name of a new one |
 | Medication | Yes | The row's medication, or the medication box | In the catalog, or a new medication |
 | Date filled | Yes | Today | A real date that is not in the future |
 | Pharmacy | Yes | Pharmacy of the last fill | A pharmacy in the app, or the name of a new one |
@@ -312,12 +312,12 @@ find a product or to add one. The box has two parts:
 
 | Part | What it does |
 |---|---|
-| **Type a name to search the catalog** | A text box that suggests names while you type. It offers every short name and every other name. |
+| **Medication name** | A text box that suggests names while you type. It offers every short name and every other name. |
 | **Add a new medication** | Fields for the brand name, the generic name, the strength, the package, and the controlled and specialty marks, with the lookup in the drug references. The app builds the short name. |
 
 The form that tracks a medication wraps the box in the product picker,
 `views/_product_picker.lsp`. The products chosen so far travel in hidden fields, one per
-round trip: **Add to this entry** adds the product the box names, and each product has a
+round trip: **Add this product** adds the product the box names, and each product has a
 **Remove** button. Nothing is written to the catalog until the form is saved. The
 preferred name starts as the full name of the first product. The fill and authorization
 forms show the box under a drop-down of the tracked medications, for a product that
@@ -475,7 +475,7 @@ goes away once no record uses it. No separate screen manages the choices.
 
 A field that points to a person, a pharmacy or a prescriber works the same way. Its
 drop-down has the choice **-- Add new --**, which shows a text box for the name. The
-drop-down of the medication box has **-- Find another or add new --**, which shows the
+drop-down of the medication box has **-- Another medication --**, which shows the
 name to type and the fields of a new medication.
 
 The script `static/forms.js` hides the boxes until that choice is made. It empties a box

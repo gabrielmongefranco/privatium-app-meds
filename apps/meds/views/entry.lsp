@@ -27,7 +27,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 <p><a href="<?= url('/medications?person=' .. entry.person_id) ?>">Back to the medications of <?= entry.person_name ?></a></p>
 <h1><?= render('_form_icon', { icon_name = entry.form_icon, label = entry.form_label }) ?> <?= entry.medication_name ?></h1>
 <?= render('_notice', { notice = notice }) ?>
-<p>For <?= entry.person_name ?>. Status: <strong><?= entry.status_label ?></strong>.</p>
+<p>Taken by <?= entry.person_name ?>. Status: <strong><?= entry.status_label ?></strong>.</p>
 
 <p class="pv-actions">
   <a class="pv-btn pv-btn-primary" href="<?= url('/fills/new?entry=' .. entry.id) ?>"><?= icon('plus-lg') ?> Record fill</a>
@@ -50,7 +50,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 <div class="pv-card"><dl>
   <dt>Instructions</dt><dd><?= entry.instructions or 'Not given' ?></dd>
   <dt>When</dt><dd><?= entry.when_to_take or 'Not given' ?></dd>
-  <dt>What it is for</dt><dd><?= entry.prescribed_for or 'Not given' ?></dd>
+  <dt>Reason</dt><dd><?= entry.prescribed_for or 'Not given' ?></dd>
   <? if entry.medication_type then ?><dt>Type</dt><dd><?= entry.medication_type ?></dd><? end ?>
 </dl></div>
 
@@ -70,8 +70,8 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
     <dt>Missing</dt><dd>The last fill has no days supply, so it counts as 1 day. Change the fill to add it.</dd>
   <? end ?>
   <dt>Refills left</dt><dd><?= entry.refills_left ?><? if entry.refills_left == 0 then ?>. Ask for a new prescription.<? end ?></dd>
-  <? if entry.is_controlled then ?><dt>Controlled</dt><dd>Yes. Every fill counts across payers.</dd><? end ?>
-  <? if entry.is_specialty then ?><dt>Specialty</dt><dd>Yes. Its refill is due earlier.</dd><? end ?>
+  <? if entry.is_controlled then ?><dt>Controlled</dt><dd>Yes.</dd><? end ?>
+  <? if entry.is_specialty then ?><dt>Specialty</dt><dd>Yes. Refills are due earlier because delivery takes longer.</dd><? end ?>
 </dl></div>
 <p class="pv-help">The next fill date estimates when the plan will pay, using its refill rules. Lasts until is when all recorded supply runs out.</p>
 
@@ -140,9 +140,9 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 <? end ?>
 
 <h2>Products</h2>
-<p class="pv-help">The catalog entries this medication stands for. A fill of any of them counts under this medication.</p>
+<p class="pv-help">The products this medication comes as. A fill of any of them counts here.</p>
 <? if #products == 0 then ?>
-  <p class="pv-empty">No product is linked. Choose <strong>Change</strong> to add one.</p>
+  <p class="pv-empty">No product yet. Choose <strong>Change</strong> to add one.</p>
 <? else ?>
   <ul class="meds-products">
     <? for _, product in ipairs(products) do ?>
@@ -156,4 +156,4 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
     <? end ?>
   </ul>
 <? end ?>
-<p class="pv-help">To add a product, such as another carton size of the same medication, choose <strong>Change</strong>.</p>
+<p class="pv-help">To add another package size, choose <strong>Change</strong>.</p>

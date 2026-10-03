@@ -106,12 +106,12 @@ function product_pick.handle(form)
   local pick = medication_pick.read(form, product_pick.PREFIX, true)
   if pick.problem then return chosen, pick, nil, true end
   if #chosen >= product_pick.MAX then
-    return chosen, nil, 'A medication can hold ' .. product_pick.MAX .. ' products at most.', true
+    return chosen, nil, 'A medication can have ' .. product_pick.MAX .. ' products at most.', true
   end
   local product = described(form, product_pick.PREFIX, pick)
   for _, other in ipairs(chosen) do
     if same(other, product) then
-      return chosen, nil, 'This product is on the entry already.', true
+      return chosen, nil, 'This product is already on this medication.', true
     end
   end
   chosen[#chosen + 1] = product

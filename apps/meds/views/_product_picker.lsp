@@ -25,18 +25,18 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 --?>
 
 <fieldset class="meds-choice" id="f-products">
-  <legend>Catalog products</legend>
-  <p class="pv-help">The catalog entries this medication stands for: the product on the label, or several when one medication comes in more than one carton. Every fill is counted under this medication.</p>
+  <legend>Products</legend>
+  <p class="pv-help">The product named on the pharmacy label. Add more than one when the same medication comes in different package sizes.</p>
   <? if err then ?>
     <p id="f-products-err" class="pv-error" role="alert"><?= icon('exclamation-triangle') ?> <?= err ?></p>
   <? end ?>
   <? if #chosen == 0 then ?>
-    <p class="pv-empty">No product yet. Find one in the catalog below, or add it to the catalog.</p>
+    <p class="pv-empty">No product chosen yet. Search for it below.</p>
   <? else ?>
-    <ul class="meds-products" aria-label="Products on this entry">
+    <ul class="meds-products" aria-label="Products of this medication">
       <? for index, product in ipairs(chosen) do ?>
         <li>
-          <span><?= product.full_name ?><? if product.new_row then ?> <span class="pv-badge pv-badge-muted"><?= icon('plus-circle') ?> New to the catalog</span><? end ?></span>
+          <span><?= product.full_name ?><? if product.new_row then ?> <span class="pv-badge pv-badge-muted"><?= icon('plus-circle') ?> New</span><? end ?></span>
           <? for name, value in pairs(product.fields) do ?>
             <? if value then ?><input type="hidden" name="product_<?= index ?>_<?= name ?>" value="<?= value ?>"><? end ?>
           <? end ?>
@@ -47,5 +47,5 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
   <? end ?>
 </fieldset>
 <?= render('_medication_picker', { prefix = prefix, typed = typed, pick = pick,
-      legend = #chosen == 0 and 'Find the product' or 'Find another product',
+      legend = #chosen == 0 and 'Find the product' or 'Add another product',
       add_button = add_button }) ?>

@@ -26,7 +26,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 <?= render('_nav', { section = section }) ?>
 <h1>Check the fills</h1>
 <p class="pv-help"><? if plan_name then ?>Each added fill uses this person's plan: <?= plan_name ?>.<? else ?>This person has no plan. Added fills have no payer recorded.<? end ?></p>
-<p>These fills were read from the text you pasted, for <strong><?= person.display_name ?></strong>.
+<p>Fills found in the text you pasted for <strong><?= person.display_name ?></strong>.
    Nothing is added yet.</p>
 <p class="pv-notice pv-notice-info" role="status"><?= icon('info-circle') ?> <span><?= summary ?></span></p>
 <? if err then ?>
@@ -41,7 +41,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 
   <h2>Medications</h2>
   <? if #found.medications == 0 then ?>
-    <p class="pv-empty">No fill in this text can be added, so there is no medication to choose.</p>
+    <p class="pv-empty">No fills can be added from this text.</p>
   <? end ?>
   <p>The portal writes each name its own way. Tell the app once which medication a name
      means, and the app remembers it for the next paste.</p>
@@ -73,7 +73,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
              These medications are the closest. The best match comes first.</p>
         <? end ?>
         <?= render('_medication_picker', { prefix = subject.prefix, typed = typed,
-              legend = 'Medication for the name ' .. subject.name, candidates = subject.candidates,
+              legend = 'Which medication is ' .. subject.name .. '?', candidates = subject.candidates,
               pick = subject.used and subject.pick or nil, explicit = true }) ?>
       </div>
     <? end ?>
@@ -81,7 +81,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 
   <h2>Pharmacies</h2>
   <? if #found.pharmacies == 0 then ?>
-    <p class="pv-empty">No fill in this text can be added, so there is no pharmacy to choose.</p>
+    <p class="pv-empty">No fills can be added from this text.</p>
   <? end ?>
   <? for _, subject in ipairs(found.pharmacies) do ?>
     <div class="pv-card meds-claim">
@@ -91,7 +91,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
            This pharmacy is in the app.</p>
       <? else ?>
         <? local refused = subject.used and subject.problem ?>
-        <label for="f-<?= subject.field ?>">Pharmacy for <?= subject.name or 'these fills' ?></label>
+        <label for="f-<?= subject.field ?>">Which pharmacy is <?= subject.name or 'this' ?>?</label>
         <select id="f-<?= subject.field ?>" name="<?= subject.field ?>"<? if refused then ?> aria-invalid="true" aria-describedby="f-<?= subject.field ?>-err"<? end ?>>
           <? if subject.can_add then ?>
             <option value="<?= new_pharmacy ?>"<? if typed[subject.field] == new_pharmacy then ?> selected<? end ?>>Add <?= subject.name ?>, with the address and phone number that were pasted</option>

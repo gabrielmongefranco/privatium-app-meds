@@ -60,9 +60,9 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 <? for _, group in ipairs(groups) do ?>
   <? if #group.rows > 0 and group.key ~= 'not_due' then ?>
     <h2 id="<?= group.key ?>"><?= group.title ?></h2>
-    <? if group.key == 'as_needed' then ?><p class="pv-help">Taken as needed. The dates are for reference and raise no alert.</p><? end ?>
+    <? if group.key == 'as_needed' then ?><p class="pv-help">Taken as needed. These dates are for reference only.</p><? end ?>
     <? if group.key == 'missing' then ?><p class="pv-help">Record a fill with a days supply, and the app can work out a refill date.</p><? end ?>
-    <? if group.key == 'paused' then ?><p class="pv-help">On hold or not started. The dates are for reference and raise no alert.</p><? end ?>
+    <? if group.key == 'paused' then ?><p class="pv-help">On hold or not started. These dates are for reference only.</p><? end ?>
     <?= render('_refills_table', { rows = group.rows, alert = group.alert, caption = group.title }) ?>
   <? end ?>
   <? if group.key == 'due_soon' and #asking > 0 then ?>

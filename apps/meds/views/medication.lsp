@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/views/medication.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-10-01
+Last Modified: 2026-10-03
 Summary: One medication of the catalog: its names and its details.
 Notes: See README file for documentation and full license information.
 
@@ -67,7 +67,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
   <?= csrf() ?>
   <?= render('_field', { name = 'alias', label = 'Add another name', value = typed_alias,
         err = alias_err, required = true, maxlength = 200,
-        help = 'A name as a label, a statement or a person writes it.' }) ?>
+        help = 'Another way this medication is written, such as on a label or an insurance statement.' }) ?>
   <button type="submit" class="pv-btn"><?= icon('plus-lg') ?> Add the name</button>
 </form>
 

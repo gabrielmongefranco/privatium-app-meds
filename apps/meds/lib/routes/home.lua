@@ -216,13 +216,8 @@ end)
 --- Setup ---
 
 pv.get('/setup', function(req)
-  local counts = pv.query1([[
-    SELECT (SELECT count(*) FROM person)     AS people,
-           (SELECT count(*) FROM medication) AS medications,
-           (SELECT count(*) FROM plan)       AS plans]])
   return pv.render('setup', {
     section = 'setup',
     notice  = page.notice(req.query.notice),
-    counts  = counts,
   })
 end)

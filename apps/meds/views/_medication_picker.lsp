@@ -52,31 +52,31 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
       <? if explicit then ?>
         <label class="meds-option" for="f-<?= prefix ?>-choice-other">
           <input id="f-<?= prefix ?>-choice-other" type="radio" name="<?= prefix ?>_choice" value="other"<? if chosen == 'other' then ?> checked<? end ?>>
-          <span>Another medication. I type its name below.</span>
+          <span>None of these. I will type the name below.</span>
         </label>
       <? end ?>
       <label class="meds-option" for="f-<?= prefix ?>-choice-new">
         <input id="f-<?= prefix ?>-choice-new" type="radio" name="<?= prefix ?>_choice" value="new"<? if chosen == 'new' then ?> checked<? end ?>>
-        <span>A new medication. I check its details below.</span>
+        <span>None of these. I will add a new medication below.</span>
       </label>
     </fieldset>
   <? end ?>
   <? if explicit then ?><div data-show-when="<?= prefix ?>_choice=other"><? end ?>
-  <label for="f-<?= prefix ?>-name">Type a name to search the catalog</label>
+  <label for="f-<?= prefix ?>-name">Medication name</label>
   <input id="f-<?= prefix ?>-name" name="<?= prefix ?>_name" type="text" value="<?= typed_in('_name') ?>"
          list="medication-names" autocomplete="off" maxlength="100" aria-describedby="<?= described ?>"
          <? if err then ?>aria-invalid="true"<? end ?>>
-  <p id="f-<?= prefix ?>-help" class="pv-help">Type a few letters of any name of the medication, then pick it from the suggestions. The catalog is the list of products the app knows.</p>
+  <p id="f-<?= prefix ?>-help" class="pv-help">Type a few letters and pick the medication from the suggestions.</p>
   <? if explicit then ?></div><div data-show-when="<?= prefix ?>_choice=new"><? end ?>
   <details<? if open_new or explicit then ?> open<? end ?>>
-    <summary>It is not in the catalog. Add a new medication</summary>
+    <summary>Not in the list? Add a new medication</summary>
     <? -- The lookup needs a script, so it stays hidden until the script shows it. ?>
     <div class="meds-lookup" data-lookup="<?= prefix ?>" hidden>
-      <label for="f-<?= prefix ?>-lookup">Look it up in a drug reference</label>
+      <label for="f-<?= prefix ?>-lookup">Look it up</label>
       <input id="f-<?= prefix ?>-lookup" type="search" autocomplete="off" maxlength="100"
              aria-describedby="f-<?= prefix ?>-lookup-help" data-lookup-term>
       <button type="button" class="pv-btn" data-lookup-search><?= icon('search') ?> Look up</button>
-      <p id="f-<?= prefix ?>-lookup-help" class="pv-help">Type a name and choose <strong>Look up</strong>. Pick a result, and the app fills in the fields below. You can also fill them in yourself.</p>
+      <p id="f-<?= prefix ?>-lookup-help" class="pv-help">Type the name and choose <strong>Look up</strong>, then pick a result. The details below fill in for you. You can also type them yourself.</p>
       <p role="status" class="pv-help" data-lookup-status></p>
       <ul class="meds-lookup-results" data-lookup-results></ul>
     </div>
@@ -106,24 +106,23 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
       <option value="Pack"></option><option value="Box"></option><option value="Bottle"></option>
       <option value="Tube"></option><option value="Vial"></option><option value="Pen"></option>
     </datalist>
-    <p id="f-<?= prefix ?>-package-help" class="pv-help">For a product that comes by the carton, such as 2 and Pack for a carton of two pens. A carton of 2 and a carton of 6 are two entries.</p>
+    <p id="f-<?= prefix ?>-package-help" class="pv-help">For medications sold by the box. For a box of two pens, type 2 as the size and Pack as the type.</p>
     <fieldset>
-    <legend>Medication marks</legend>
+    <legend>Special handling</legend>
     <label class="meds-option" for="f-<?= prefix ?>-controlled">
       <input id="f-<?= prefix ?>-controlled" name="<?= prefix ?>_controlled" type="checkbox" value="yes"
              aria-describedby="f-<?= prefix ?>-controlled-help"<? if typed_in('_controlled') == 'yes' then ?> checked<? end ?>>
       <span>This is a controlled medication</span>
     </label>
-    <p id="f-<?= prefix ?>-controlled-help" class="pv-help">By default it is filled when supply runs out, with no early refill. Every fill counts whoever paid.</p>
+    <p id="f-<?= prefix ?>-controlled-help" class="pv-help">A controlled medication can usually be refilled only when the supply runs out.</p>
     <label class="meds-option" for="f-<?= prefix ?>-specialty">
       <input id="f-<?= prefix ?>-specialty" name="<?= prefix ?>_specialty" type="checkbox" value="yes"<? if typed_in('_specialty') == 'yes' then ?> checked<? end ?>>
       <span>This is a specialty medication</span>
     </label>
     </fieldset>
-    <p class="pv-help">Saving adds the medication to the catalog. You can add its route, form and package there later.</p>
   </details>
   <? if explicit then ?></div><? end ?>
   <? if add_button then ?>
-    <p class="pv-actions"><button type="submit" class="pv-btn" name="action" value="<?= add_button ?>"><?= icon('plus-lg') ?> Add to this entry</button></p>
+    <p class="pv-actions"><button type="submit" class="pv-btn" name="action" value="<?= add_button ?>"><?= icon('plus-lg') ?> Add this product</button></p>
   <? end ?>
 </fieldset>

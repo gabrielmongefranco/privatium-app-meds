@@ -98,7 +98,7 @@ local function by_name(raw)
   end
   if #candidates == 0 then
     return { open_new = true, candidates = candidates,
-             problem = 'No medication answers to this name. Check the spelling, or add it as a new medication.' }
+             problem = 'No medication found with this name. Check the spelling, or add it as a new medication.' }
   end
   return { candidates = candidates,
            problem = 'Choose the medication you mean from the choices under the name.' }

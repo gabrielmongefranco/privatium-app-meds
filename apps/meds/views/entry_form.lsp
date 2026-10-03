@@ -35,7 +35,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
   <button type="submit" class="pv-visually-hidden" name="action" value="save" tabindex="-1">Save</button>
   <? if fixed then ?>
     <div class="pv-card"><dl>
-      <dt>For</dt><dd><?= fixed.person_name ?></dd>
+      <dt>Person</dt><dd><?= fixed.person_name ?></dd>
     </dl></div>
   <? else ?>
     <?= render('_select_or_new', { name = 'person_id', legend = 'Who takes it', noun = 'person',
@@ -47,7 +47,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
         err = errors.products, add_button = add_action }) ?>
   <?= render('_field', { name = 'display_name', label = 'Preferred name', value = typed.display_name,
         err = errors.display_name, required = true, maxlength = 200,
-        help = 'The name the app shows for this medication. It starts as the full name of the first product. Change it to the name you use.' }) ?>
+        help = 'The name you call this medication. You can shorten it.' }) ?>
   <?= render('_select', { name = 'status', label = 'Status', value = typed.status,
         options = offered.statuses, required = true, err = errors.status,
         empty_label = 'Choose a status',
@@ -57,7 +57,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
         help = 'As the label says, such as: Take one tablet by mouth every day.' }) ?>
   <?= render('_choice', { name = 'when_to_take', legend = 'When to take it', value = typed.when_to_take,
         typed_new = typed.when_to_take_new, offered = offered.when_to_take, err = errors.when_to_take }) ?>
-  <?= render('_field', { name = 'prescribed_for', label = 'What it is for', value = typed.prescribed_for,
+  <?= render('_field', { name = 'prescribed_for', label = 'Reason for taking it', value = typed.prescribed_for,
         err = errors.prescribed_for, maxlength = 200, suggestions = offered.purposes }) ?>
   <?= render('_field', { name = 'refills_left', label = 'Refills left', value = typed.refills_left,
         err = errors.refills_left, required = true, inputmode = 'numeric', maxlength = 2,

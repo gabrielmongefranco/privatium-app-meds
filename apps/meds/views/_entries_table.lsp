@@ -28,7 +28,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
   <thead role="rowgroup">
     <tr role="row">
       <th scope="col" role="columnheader">Medication</th>
-      <th scope="col" role="columnheader">For</th>
+      <th scope="col" role="columnheader">Person</th>
       <th scope="col" role="columnheader">How to take it</th>
       <th scope="col" role="columnheader">Prescriber</th>
       <th scope="col" role="columnheader">Refill</th>
@@ -42,7 +42,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
         <a href="<?= url('/medications/' .. row.id) ?>"><?= row.medication_name ?></a>
         <? if #row.products > 1 then ?><span class="pv-meta meds-line"><? for index, product in ipairs(row.products) do ?><? if index > 1 then ?>, <? end ?><?= product.short_name ?><? end ?></span><? end ?>
         <? if row.prescribed_for then ?><span class="pv-meta meds-line">For <?= row.prescribed_for ?></span><? end ?></td>
-      <td role="cell"><span class="pv-cell-label" aria-hidden="true">For</span><?= row.person_name ?></td>
+      <td role="cell"><span class="pv-cell-label" aria-hidden="true">Person</span><?= row.person_name ?></td>
       <td role="cell"><span class="pv-cell-label" aria-hidden="true">How to take it</span>
         <?= row.instructions or 'Not given' ?>
         <? if row.when_to_take then ?><span class="pv-meta meds-line"><?= row.when_to_take ?></span><? end ?></td>

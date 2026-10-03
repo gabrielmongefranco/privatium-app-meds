@@ -26,7 +26,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
   <caption class="pv-visually-hidden">Medications in the group <?= caption ?>, soonest first</caption>
   <thead role="rowgroup"><tr role="row">
     <th scope="col" role="columnheader">Medication</th>
-    <th scope="col" role="columnheader">For</th>
+    <th scope="col" role="columnheader">Person</th>
     <th scope="col" role="columnheader">Refill</th>
     <th scope="col" role="columnheader">Last fill</th>
     <th scope="col" role="columnheader">Refills left</th>
@@ -40,7 +40,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
         <a href="<?= url('/medications/' .. row.id) ?>"><?= row.medication_name ?></a>
         <? if row.is_controlled then ?><span class="pv-meta meds-line">Controlled</span><? end ?>
         <? if row.is_specialty then ?><span class="pv-meta meds-line">Specialty</span><? end ?></td>
-      <td role="cell"><span class="pv-cell-label" aria-hidden="true">For</span><?= row.person_name ?></td>
+      <td role="cell"><span class="pv-cell-label" aria-hidden="true">Person</span><?= row.person_name ?></td>
       <td role="cell"><span class="pv-cell-label" aria-hidden="true">Refill</span>
         <? if alert then ?>
           <?= render('_refill_badge', { badge = row.badge, icon_name = row.icon_name, phrase = row.phrase }) ?>

@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/views/reminders.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-10-01
+Last Modified: 2026-10-03
 Summary: The form for the reminder and early refill settings that decide when a refill or a prior authorization
          needs attention.
 Notes: See README file for documentation and full license information.
@@ -67,10 +67,10 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
           help = 'From 0 to 100. Plans can override this. Empty means ' .. defaults.early_fill_percent .. '.' }) ?>
     <?= render('_field', { name = 'supply_frame_days', label = 'Supply frame, in days', value = typed.supply_frame_days,
           err = errors.supply_frame_days, inputmode = 'numeric', maxlength = 4,
-          help = 'The rolling count on the next fill date. Use 0 for the last fill only, or 3650 for every fill. Empty means ' .. defaults.supply_frame_days .. '.' }) ?>
+          help = 'Fills within this many days count toward the next fill date. Use 0 to count the last fill only, or 3650 to count every fill. Empty means ' .. defaults.supply_frame_days .. '.' }) ?>
     <?= render('_field', { name = 'controlled_early_days', label = 'Days early for controlled medications', value = typed.controlled_early_days,
           err = errors.controlled_early_days, inputmode = 'numeric', maxlength = 3,
-          help = 'Every fill counts across payers, with no frame limit. Empty means ' .. defaults.controlled_early_days .. '.' }) ?>
+          help = 'How many days early a controlled medication may be refilled. Empty means ' .. defaults.controlled_early_days .. '.' }) ?>
   </fieldset>
   <p class="pv-actions">
     <button type="submit" class="pv-btn pv-btn-primary"><?= icon('check-lg') ?> Save</button>

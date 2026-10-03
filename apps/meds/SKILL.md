@@ -90,7 +90,7 @@ view, and must change in the same commit as `schema.sql`.
 | `GET`, `POST /setup/catalog/new`, `/:id/edit`, `/:id/remove` | `catalog` | Add, change, remove |
 | `GET /medications`, `/medications/:id` | `medications` | The lists, narrowed by `?q=`, and the page of one tracked medication |
 | `GET`, `POST /medications/new`, `/:id/edit`, `/:id/remove`, `POST /:id/status` | `medications` | Add, change, remove, change the status (also the Restart button) |
-| `GET`, `POST /medications/:id/products/:link_id/remove` | `medications` | Take a product off a tracked medication |
+| `GET`, `POST /medications/:id/products/:link_id/remove` | `medications` | Remove a product from a tracked medication |
 | `GET /people/:id/medication-list` | `medications` | The list made for paper |
 | `GET`, `POST /fills/paste`, `/fills/paste/read`, `/fills/paste/add` | `paste` | Pasted fills: paste, review, add |
 | `GET /fills` | `fills` | History, with filters, totals and paid by year |

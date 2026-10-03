@@ -90,12 +90,12 @@ one. It has two parts. Use one of them.
 
 | Part | Use it when |
 |---|---|
-| **Type a name to search the catalog** | It is in the catalog. Type a few letters of any of its names, then pick it from the suggestions. |
+| **Medication name** | It is in the catalog. Type a few letters of any of its names, then pick it from the suggestions. |
 | **Add a new medication** | It is not in the catalog. Look it up, or type the brand name, the generic name, or both, and the strength. For a product that comes by the carton, type the package too, such as 2 and Pack. Tick **controlled** or **specialty** when the label says so. |
 
 The catalog is the list of products the app knows. It says nothing about who takes them.
 A fill or a prior authorization form offers the medications a person tracks in a
-drop-down first, and shows the box when you choose **-- Find another or add new --**. A
+drop-down first, and shows the box when you choose **-- Another medication --**. A
 product that is on no list of the person is then added to the list with the fill, named
 after the product.
 
@@ -104,7 +104,7 @@ you mean. When the name is close to one the app knows, the form offers that medi
 and you decide.
 
 **Look up a medication.** Inside **Add a new medication**, type a name under
-**Look it up in a drug reference** and choose **Look up**. The app looks in its own
+**Look it up** and choose **Look up**. The app looks in its own
 catalog first. It asks the public drug references of the United States government only
 when the catalog holds nothing under the name, or when you choose
 **None of these. Search the drug references.** Pick a result, and the app fills in the
@@ -173,7 +173,7 @@ pharmacy, so the page reminds you to ask.
 
 For a medication that is not on the page, choose **Record a fill** at the top. The form
 then offers every tracked medication in a drop-down, by person. Choose
-**-- Find another or add new --** for a product that nobody tracks yet: pick the person
+**-- Another medication --** for a product that nobody tracks yet: pick the person
 and find the product, and saving the fill adds the medication to the person's list,
 with the status Taking regularly.
 
@@ -256,15 +256,15 @@ To track a medication:
 
 1. Choose **Track a new medication**.
 2. Choose who takes it.
-3. Under **Catalog products**, type the name of the product and choose
-   **Add to this entry**, or open **Add a new medication** for a product the catalog
+3. Under **Products**, type the name of the product and choose
+   **Add this product**, or open **Add a new medication** for a product the catalog
    lacks. Repeat for a second carton size. Each product shows with a **Remove** button.
    Pressing Enter in the name box adds the product too.
 4. Check the **Preferred name**. It starts as the full name of the first product. Type
    the name you use, such as the brand name alone. Two of your medications cannot share
    a name; another person's can.
 5. Choose the status. Add the instructions, when to take it, what it is for, the refills
-   left, the prescriber and the pharmacy.
+   left, the prescriber and the pharmacy. The form calls the purpose **Reason for taking it**.
 6. Choose **Save**.
 
 To find a medication in the list, type into the search box at the right of the buttons.
@@ -303,7 +303,7 @@ A prior authorization is an insurer's approval to cover a medication for a set p
 
 1. Choose **Authorizations**, then **Add an authorization**.
 2. Choose the tracked medication from the drop-down, by person. For a product that
-   nobody tracks yet, choose **-- Find another or add new --**, pick the person and find
+   nobody tracks yet, choose **-- Another medication --**, pick the person and find
    the product.
 4. Check the first day. The form starts with the first day of this month. Clear the
    field if you do not know the first day.
@@ -440,8 +440,8 @@ when you change the person's current plan. History shows the payer of each fill.
 Every **Remove** button opens a page that asks first. Choose **Remove** to go on, or
 **Keep it** to go back.
 
-Removing hides the record in the app. Privatium keeps the original line in its log, so
-the record stays on the disk.
+Removing hides the record in the app. Privatium keeps the original line in its log on
+the device, so the record stays on the disk.
 
 The app does not remove a person, a catalog product, a tracked medication, a pharmacy, a
 prescriber or a plan that other records still use. The page says what uses the record.

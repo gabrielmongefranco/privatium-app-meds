@@ -45,8 +45,8 @@ local REFILLS_MAX  = 99
 local FIELDS       = { 'person_id', 'products', 'product_id', 'display_name', 'status',
                        'medication_type', 'pharmacy_id', 'prescriber_id', 'prescribed_for',
                        'instructions', 'when_to_take', 'refills_left' }
-local ADD_HEADING    = 'Add to your medications tracking list'
-local CHANGE_HEADING = 'Change a tracked medication'
+local ADD_HEADING    = 'Track new medication'
+local CHANGE_HEADING = 'Change a medication'
 
 --- Reads ---
 
@@ -176,7 +176,7 @@ local function read(form, existing, lists)
     quick_add.read(form, 'prescriber_id', quick_add.PRESCRIBER)
   row.pharmacy_id, row.prescriber_id = adding.pharmacy_id, adding.prescriber_id
   row.prescribed_for, errors.prescribed_for =
-    validate.text(form.prescribed_for, 'what it is for', PURPOSE_MAX)
+    validate.text(form.prescribed_for, 'the reason', PURPOSE_MAX)
   row.instructions, errors.instructions =
     validate.text(form.instructions, 'the instructions', INSTRUCT_MAX)
   row.refills_left, errors.refills_left =
@@ -184,12 +184,12 @@ local function read(form, existing, lists)
   if adding.acted then return row, errors, adding end
 
   if not errors.products and #adding.chosen == 0 then
-    errors.products = 'Add at least one product from the catalog.'
+    errors.products = 'Add at least one product.'
   end
   -- A preferred name is unique within one person. Two people may use the same name.
   if row.person_id and row.display_name
      and entries.named(row.person_id, row.display_name, existing and existing.id) then
-    errors.display_name = 'Choose another preferred name. This person already tracks a medication under this one.'
+    errors.display_name = 'This person already has a medication with this name. Choose another name.'
   end
   -- One product belongs to one tracked medication of a person, or its fills would
   -- count twice.
@@ -197,8 +197,8 @@ local function read(form, existing, lists)
     for _, product in ipairs(adding.chosen) do
       local other = product.id and entries.with_product(row.person_id, product.id)
       if other and other.id ~= (existing and existing.id) then
-        errors.products = product.full_name .. ' is already on the list of this person, under '
-          .. other.display_name .. '. One product belongs to one tracked medication of a person.'
+        errors.products = product.full_name .. ' is already on the list for this person, under '
+          .. other.display_name .. '. A product can be on one medication per person.'
         break
       end
     end
@@ -419,10 +419,10 @@ pv.get(LIST .. '/:id/remove', function(req)
   if not entry then return pv.redirect(url(LIST .. '?notice=missing')) end
   return pv.render('remove', {
     section = 'medications',
-    heading = 'Remove a tracked medication',
+    heading = 'Remove a medication',
     name    = entry.medication_name .. ', on the list of ' .. entry.person_name,
     used_by = uses(entry.id),
-    note    = 'Its products stay in the catalog. To keep the medication on the list as one no longer taken, change its status instead.',
+    note    = 'To keep it on the list as no longer taking, change its status instead.',
     action  = url(LIST .. '/' .. entry.id .. '/remove'),
     back    = url(LIST .. '/' .. entry.id),
   })
@@ -459,7 +459,7 @@ end
 local function product_uses(entry, product)
   local list = {}
   if #entries.products(entry.id) == 1 then
-    list[#list + 1] = 'the tracked medication itself, which needs at least one product'
+    list[#list + 1] = 'this medication, which needs at least one product'
   end
   local fills = product_pick.fills_naming(entry.id, product.medication_id)
   if fills > 0 then list[#list + 1] = page.counted(fills, 'fill', 'fills') end
@@ -471,10 +471,10 @@ pv.get(LIST .. '/:id/products/:link_id/remove', function(req)
   if not entry then return pv.redirect(url(LIST .. '?notice=missing')) end
   return pv.render('remove', {
     section = 'medications',
-    heading = 'Take a product off a tracked medication',
+    heading = 'Remove a product',
     name    = product.full_name,
     used_by = product_uses(entry, product),
-    note    = 'The product stays in the catalog. Only its link to ' .. entry.medication_name .. ' goes.',
+    note    = 'The product is taken off ' .. entry.medication_name .. '. It stays in the catalog.',
     action  = url(LIST .. '/' .. entry.id .. '/products/' .. product.link_id .. '/remove'),
     back    = url(LIST .. '/' .. entry.id),
   })

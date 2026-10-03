@@ -32,22 +32,22 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
   <? if entry then ?>
     <div class="pv-card"><dl>
       <dt>Medication</dt><dd><?= entry.display_name ?></dd>
-      <dt>For</dt><dd><?= entry.person_name ?></dd>
+      <dt>Person</dt><dd><?= entry.person_name ?></dd>
     </dl></div>
     <? if #products > 1 then ?>
       <?= render('_select', { name = 'product_id', label = 'Product', value = typed.product_id,
             options = products, err = errors.product_id, empty_label = 'Not given',
-            help = 'Which package this fill was. The medication comes in more than one.' }) ?>
+            help = 'The package size of this fill.' }) ?>
     <? elseif #products == 1 then ?>
       <input type="hidden" name="product_id" value="<?= products[1].value ?>">
     <? end ?>
   <? else ?>
     <fieldset class="meds-choice" id="f-entry_id">
       <legend>Medication</legend>
-      <label for="f-entry_id-list">Choose a medication that is tracked</label>
+      <label for="f-entry_id-list">Medication</label>
       <select id="f-entry_id-list" name="entry_id"<? if errors.entry_id then ?> aria-invalid="true" aria-describedby="f-entry_id-err"<? end ?>>
         <option value="">Choose a medication</option>
-        <option value="<?= new_entry ?>"<? if typed.entry_id == new_entry or typed.medication_name or typed.medication_brand or typed.medication_generic or typed.medication_id then ?> selected<? end ?>>-- Find another or add new --</option>
+        <option value="<?= new_entry ?>"<? if typed.entry_id == new_entry or typed.medication_name or typed.medication_brand or typed.medication_generic or typed.medication_id then ?> selected<? end ?>>-- Another medication --</option>
         <? for _, option in ipairs(listed) do ?>
           <option value="<?= option.value ?>"<? if option.value == typed.entry_id then ?> selected<? end ?>><?= option.label ?></option>
         <? end ?>
@@ -57,13 +57,13 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
       <? end ?>
       <? -- With a script, these parts show only after the choice to find or add. Without one, they are always there. ?>
       <div data-show-when="entry_id=<?= new_entry ?>">
-        <?= render('_select_or_new', { name = 'person_id', legend = 'Who is it for', noun = 'person',
+        <?= render('_select_or_new', { name = 'person_id', legend = 'Person', noun = 'person',
               value = typed.person_id, typed_new = typed.person_id_new, options = people, required = true,
               err = errors.person_id, empty_label = 'Choose a person' }) ?>
         <?= render('_medication_names', { names = names }) ?>
         <?= render('_medication_picker', { prefix = 'medication', typed = typed, pick = pick,
               legend = 'Product', err = errors.medication_id }) ?>
-        <p class="pv-help">If the product is on no list of the person yet, saving the fill adds it to the list, with the status Taking regularly and the full name of the product as its name.</p>
+        <p class="pv-help">If this person does not track this medication yet, it is added to their list.</p>
       </div>
     </fieldset>
   <? end ?>
@@ -94,7 +94,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
   <?= render('_select_or_new', { name = 'plan_id', legend = 'Insurance plan', noun = 'plan',
         value = typed.plan_id, typed_new = typed.plan_id_new, options = plans,
         err = errors.plan_id, empty_label = 'No plan',
-        help = 'The payer for this fill. Set its refill rules under Setup, Insurance plans.' }) ?>
+        help = 'The insurance plan that paid for this fill.' }) ?>
 
   <details<? if errors.insurance_claim_number or errors.notes then ?> open<? end ?>>
     <summary>More details</summary>

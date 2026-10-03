@@ -38,7 +38,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
       <th scope="col" role="columnheader">Medication</th>
       <th scope="col" role="columnheader">How to take it</th>
       <th scope="col" role="columnheader">When</th>
-      <th scope="col" role="columnheader">What it is for</th>
+      <th scope="col" role="columnheader">Reason</th>
       <th scope="col" role="columnheader">Prescriber</th>
     </tr></thead>
     <tbody role="rowgroup">
@@ -61,7 +61,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
     <caption class="pv-visually-hidden">Medications on hold</caption>
     <thead role="rowgroup"><tr role="row">
       <th scope="col" role="columnheader">Medication</th>
-      <th scope="col" role="columnheader">What it is for</th>
+      <th scope="col" role="columnheader">Reason</th>
       <th scope="col" role="columnheader">Prescriber</th>
     </tr></thead>
     <tbody role="rowgroup">
