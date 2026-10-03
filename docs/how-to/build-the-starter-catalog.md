@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 docs/how-to/build-the-starter-catalog.md
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-09-27
+Last Modified: 2026-10-01
 Summary: How to build the starter catalog of the sample data, what it is built from, and
          the licenses of its sources.
 Notes: See README file for documentation and full license information.
@@ -34,12 +34,27 @@ Nobody who only uses the app has to do this. The file is part of the repository.
 | `clincalc_names_in_rxterms.txt` | The few drugs of that list that RxTerms files under another name |
 | `more_ingredients.txt` | More drugs, by ingredient |
 | `preferred_brands.txt` | The brand a short name shows when a drug has several brands. A brand of this list that no entry names is added with its own products. |
+| `specialty.txt` | Ingredients that suggest specialty handling; check these marks against your payer's rules |
 | `labeled_in_micrograms.txt` | Drugs whose labels print every strength up to 1 mg in micrograms |
 | `supplies.txt` | Syringes and needles, by family. The script makes one entry for each volume, gauge and length. |
 | `by_hand.jsonl` | Entries written by hand: the first catalog of the project, and products that no drug reference holds, such as continuous glucose monitors |
 
 RxTerms is a drug vocabulary of the United States National Library of Medicine. RxNorm is
 its drug list, which gives every product a number.
+
+### Controlled and specialty marks
+
+The builder reads openFDA's `dea_schedule` and product identifiers to mark controlled
+products. It asks once per ingredient, reading at most 100 National Drug Code (NDC)
+records, and caches the answer. Products missing from those records remain unmarked.
+Check the mark before relying on its reminder rules.
+
+Specialty marks come from generic names ending in `mab` or `cept`, and the small list
+in `specialty.txt`. Coverage differs by payer, so these are suggestions. Change either
+mark in the catalog. The browser lookup uses the same name rules and checks the
+controlled mark with an openFDA request by the chosen product's identifier.
+
+The catalog currently has 231 controlled products and 22 specialty suggestions.
 
 ### What you need
 
@@ -59,7 +74,7 @@ its drug list, which gives every product a number.
    python3 tools/build_seed.py
    ```
 
-   The first run asks the services about 4,500 times and takes a few minutes. The script
+   The first run asks the services about 5,000 times and takes a few minutes. The script
    keeps every answer in a folder for temporary files. A second run asks only for what
    is new.
 
@@ -70,7 +85,7 @@ its drug list, which gives every product a number.
    build_seed: 61 entries written by hand, 229 syringes and needles, 2217 entries from RxTerms, 454 brand names as other names
    ```
 
-4. Run the three checks in [How to run the tests](run-the-tests.md). The smoke test loads
+4. Run the checks in [How to run the tests](run-the-tests.md). The smoke test loads
    the new file and reads its counts from it.
 5. Update the counts in [the data model](../data-model.md) and
    [the usage page](../usage.md), if they changed.

@@ -2,7 +2,7 @@
 -- apps/meds/lib/fills.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-09-27
+-- Last Modified: 2026-10-01
 -- Summary: Checks the values of a fill and writes it. The form and the reader of pasted fills
 --          both save through here, so a fill is checked the same way however it arrives.
 -- Notes: See README file for documentation and full license information.
@@ -35,7 +35,7 @@ fills.DAYS_SUPPLY_MAX = 999
 fills.REFILLS_MAX     = 99
 local QUANTITY_PLACES, QUANTITY_WHOLE = 3, 15   -- The column is DECIMAL(18,3)
 local AMOUNT_PLACES, AMOUNT_WHOLE     = 2, 16   -- The column is DECIMAL(18,2)
-local RX_NUMBER_MAX, PLAN_MAX, CLAIM_MAX, NOTES_MAX = 40, 80, 60, 500
+local RX_NUMBER_MAX, CLAIM_MAX, NOTES_MAX = 40, 60, 500
 
 -- An id must name a record of its table.
 local function read_id(raw, tbl, label)
@@ -77,8 +77,9 @@ function fills.read(form, pending)
     validate.decimal(form.amount_paid, 'the amount you paid', AMOUNT_PLACES, AMOUNT_WHOLE)
   row.rx_number, errors.rx_number =
     validate.text(form.rx_number, 'the prescription number', RX_NUMBER_MAX)
-  row.insurance_plan, errors.insurance_plan =
-    validate.text(form.insurance_plan, 'the insurance plan', PLAN_MAX)
+  if not pending.plan_id and text.clean(form.plan_id) then
+    row.plan_id, errors.plan_id = read_id(form.plan_id, 'plan', 'a plan')
+  end
   row.insurance_claim_number, errors.insurance_claim_number =
     validate.text(form.insurance_claim_number, 'the claim number', CLAIM_MAX)
   row.notes, errors.notes = validate.text(form.notes, 'the notes', NOTES_MAX)

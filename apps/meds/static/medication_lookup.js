@@ -2,7 +2,7 @@
 // apps/meds/static/medication_lookup.js
 // Author(s): Gabriel Mongefranco
 // Created: 2026-09-27
-// Last Modified: 2026-09-27
+// Last Modified: 2026-10-01
 // Summary: Looks up a medication that the catalog lacks in a public drug reference, and
 //          fills in the fields of a new medication. Every form works without this file.
 // Notes: See README file for documentation and full license information.
@@ -259,6 +259,31 @@
       .catch(function () { return fallback; });
   }
 
+  // These marks guide reminders; coverage and missing reference records need a human check.
+  function marksOf(fields) {
+    var ingredients = text(fields.generic).toLowerCase().split(/[^a-z]+/);
+    fields.specialty = ingredients.some(function (word) {
+      return /(?:mab|cept)$/.test(word) ||
+        ['somatropin', 'teriparatide', 'glatiramer', 'interferon'].indexOf(word) !== -1;
+    });
+    fields.controlled = false;
+    if (!/^\d{1,8}$/.test(fields.rxcui || '')) {
+      fields.marksUnavailable = true;
+      return Promise.resolve(fields);
+    }
+    return getJson(OPENFDA_NDC + '?limit=' + LABELS_MAX + '&search=' +
+      encodeURIComponent('openfda.rxcui:"' + fields.rxcui + '"'))
+      .then(function (answer) {
+        var products = answer && answer.results;
+        if (!Array.isArray(products)) { fields.marksUnavailable = true; return fields; }
+        fields.controlled = products.some(function (product) {
+          return ['CI', 'CII', 'CIII', 'CIV', 'CV'].indexOf(product.dea_schedule) !== -1;
+        });
+        return fields;
+      })
+      .catch(function () { fields.marksUnavailable = true; return fields; });
+  }
+
   // Asks the references in order, from `position` on.
   function searchFrom(position, term) {
     if (position >= REFERENCES.length) { return Promise.resolve({ results: [] }); }
@@ -304,12 +329,17 @@
     setField(lookup, 'source', reference.source);
     setField(lookup, 'route', fields.route);
     setField(lookup, 'dose_form', fields.doseForm);
+    ['controlled', 'specialty'].forEach(function (mark) {
+      var input = field(lookup, mark);
+      if (input) { input.checked = fields[mark] === true; }
+    });
     var choice = lookup.closest('fieldset').querySelector(
       'input[type="radio"][name="' + lookup.getAttribute('data-lookup') + '_choice"][value="new"]');
     if (choice) { choice.checked = true; }
     clearResults(lookup);
     say(lookup, 'Filled in from ' + reference.name + ': ' + label +
-      '. Check the fields below, then save.');
+      '. Check the fields and medication marks below, then save.' +
+      (fields.marksUnavailable ? ' The controlled mark could not be checked. Check it yourself.' : ''));
     var first = field(lookup, 'brand');
     if (first) { first.focus(); }
   }
@@ -323,7 +353,7 @@
     found.results.forEach(function (result) {
       resultButton(list, result.label, function () {
         say(lookup, 'Getting the details of ' + result.label + '.');
-        detailsOf(result).then(function (fields) { fill(lookup, fields, found.reference, result.label); });
+        detailsOf(result).then(marksOf).then(function (fields) { fill(lookup, fields, found.reference, result.label); });
       });
     });
     say(lookup, found.results.length + (found.results.length === 1 ? ' result' : ' results') +
@@ -366,6 +396,10 @@
   function pick(lookup, entry) {
     ['brand', 'generic', 'strength', 'package_size', 'package_type', 'rxcui', 'source', 'route',
       'dose_form'].forEach(function (ending) { setField(lookup, ending, ''); });
+    ['controlled', 'specialty'].forEach(function (mark) {
+      var input = field(lookup, mark);
+      if (input) { input.checked = false; }
+    });
     setField(lookup, 'name', entry.name);
     var other = lookup.closest('fieldset').querySelector(
       'input[type="radio"][name="' + lookup.getAttribute('data-lookup') + '_choice"][value="other"]');

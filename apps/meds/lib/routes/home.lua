@@ -2,7 +2,7 @@
 -- apps/meds/lib/routes/home.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-09-27
+-- Last Modified: 2026-10-01
 -- Summary: The home page, which is the Refills page once the household has people, and
 --          the household name and the reminder settings, which share the one profile row.
 -- Notes: See README file for documentation and full license information.
@@ -35,15 +35,18 @@ local validate = require 'validate'
 --- Configuration ---
 local DAY_COUNT_MAX = 365   -- A reminder more than a year ahead is a typing mistake
 
--- The day counts, in the order the form shows them. `label` completes the sentence
+-- Values are bounded to catch typing mistakes before they affect refill dates. `label` completes the sentence
 -- 'Write ... as a whole number'.
-local DAY_COUNTS = {
+local SETTINGS = {
   { name = 'due_within_days',                label = 'the days for due' },
   { name = 'due_soon_within_days',           label = 'the days for due soon' },
   { name = 'specialty_due_within_days',      label = 'the days for due, specialty' },
   { name = 'specialty_due_soon_within_days', label = 'the days for due soon, specialty' },
   { name = 'authorization_due_within_days',  label = 'the days for due, prior authorizations' },
   { name = 'authorization_notice_days',      label = 'the days for due soon, prior authorizations' },
+  { name = 'early_fill_percent', label = 'the early fill percent', max = 100 },
+  { name = 'supply_frame_days', label = 'the supply frame days', max = 3650 },
+  { name = 'controlled_early_days', label = 'the controlled days early' },
 }
 
 -- The reminder settings of this node. At most one row exists, and none until the
@@ -52,7 +55,8 @@ local function profile()
   return pv.query1([[
     SELECT id, due_within_days, due_soon_within_days,
            specialty_due_within_days, specialty_due_soon_within_days,
-           authorization_notice_days, authorization_due_within_days
+           authorization_notice_days, authorization_due_within_days,
+           early_fill_percent, supply_frame_days, controlled_early_days
       FROM profile
      LIMIT 1]])
 end
@@ -62,7 +66,7 @@ local function defaults()
   return pv.query1([[
     SELECT due_within_days, due_soon_within_days, specialty_due_within_days,
            specialty_due_soon_within_days, authorization_notice_days,
-           authorization_due_within_days
+           authorization_due_within_days, early_fill_percent, supply_frame_days, controlled_early_days
       FROM v_reminder_default]])
 end
 
@@ -80,7 +84,7 @@ end
 local function fill_notice(fill_id)
   if type(fill_id) ~= 'string' then return nil end
   local saved = pv.query1([[
-    SELECT m.short_name AS medication_name, s.next_fill_on
+    SELECT m.short_name AS medication_name, s.next_fill_on, s.lasts_until
       FROM fill f
       JOIN medication m ON m.id = f.medication_id          -- many:1
       JOIN person_medication pm                            -- many:1; the list entry of the pair
@@ -90,7 +94,8 @@ local function fill_notice(fill_id)
      LIMIT 1]], { fill_id })
   if not saved then return nil end
   return 'Saved the fill for ' .. saved.medication_name .. '. The next fill date is '
-    .. tostring(fmt.date(saved.next_fill_on)) .. '.'
+    .. tostring(fmt.date(saved.next_fill_on)) .. ', and the supply lasts until '
+    .. tostring(fmt.date(saved.lasts_until)) .. '.'
 end
 
 pv.get('/', function(req)
@@ -161,7 +166,7 @@ local function reminders_page(typed, errors)
     problems = page.problems(errors, {
       'due_within_days', 'due_soon_within_days', 'specialty_due_within_days',
       'specialty_due_soon_within_days', 'authorization_due_within_days',
-      'authorization_notice_days',
+      'authorization_notice_days', 'early_fill_percent', 'supply_frame_days', 'controlled_early_days',
     }),
     defaults = defaults(),
   })
@@ -174,9 +179,9 @@ end)
 pv.post('/setup/reminders', function(req)
   local me = profile() or {}
   local row, errors = {}, {}
-  for _, count in ipairs(DAY_COUNTS) do
+  for _, count in ipairs(SETTINGS) do
     row[count.name], errors[count.name] =
-      validate.whole_number(req.form[count.name], count.label, 0, DAY_COUNT_MAX)
+      validate.whole_number(req.form[count.name], count.label, 0, count.max or DAY_COUNT_MAX)
   end
 
   -- "Due soon" has to reach at least as far ahead as "due", or the two would overlap.

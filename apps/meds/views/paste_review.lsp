@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/views/paste_review.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-09-27
+Last Modified: 2026-10-01
 Summary: The review of pasted fills: what was read, what it matched, and what will be added.
          Every value from the text is escaped by the output tag.
 Notes: See README file for documentation and full license information.
@@ -25,6 +25,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 
 <?= render('_nav', { section = section }) ?>
 <h1>Check the fills</h1>
+<p class="pv-help"><? if plan_name then ?>Each added fill uses this person's plan: <?= plan_name ?>.<? else ?>This person has no plan. Added fills have no payer recorded.<? end ?></p>
 <p>These fills were read from the text you pasted, for <strong><?= person.display_name ?></strong>.
    Nothing is added yet.</p>
 <p class="pv-notice pv-notice-info" role="status"><?= icon('info-circle') ?> <span><?= summary ?></span></p>

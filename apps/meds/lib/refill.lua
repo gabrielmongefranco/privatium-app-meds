@@ -2,7 +2,7 @@
 -- apps/meds/lib/refill.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-09-27
+-- Last Modified: 2026-10-01
 -- Summary: The words and the group for a refill status. Pure Lua with no framework calls, so
 --          plain Lua can test it.
 -- Notes: See README file for documentation and full license information.
@@ -68,15 +68,21 @@ function refill.ask_for_more(status, refills_left, refill_status)
   return refill_status == 'overdue' or refill_status == 'due' or refill_status == 'due_soon'
 end
 
---- The words for a refill status and a number of days.
--- @param refill_status string  'overdue', 'due', 'due_soon', 'not_due' or 'no_fill'.
--- @param days integer|nil      Days until the next fill date; negative when it has passed.
--- @return string
-function refill.phrase(refill_status, days)
-  if refill_status == 'no_fill' or not days then return 'No fill recorded' end
+--- Describe refill eligibility and remaining physical supply.
+-- @param refill_status string  The status from v_active_medication.
+-- @param days integer|nil  Days until eligibility; negative after that date.
+-- @param runs_out integer|nil  Days until physical supply ends.
+-- @return string  Plain text for badges; reads no data and writes nothing.
+function refill.phrase(refill_status, days, runs_out)
+  if refill_status == 'no_fill' or not days or not runs_out then return 'No fill recorded' end
+  if refill_status == 'overdue' then
+    if runs_out == -1 then return 'Overdue by 1 day' end
+    return 'Overdue by ' .. -runs_out .. ' days'
+  end
   if days < 0 then
-    if days == -1 then return 'Overdue by 1 day' end
-    return 'Overdue by ' .. -days .. ' days'
+    if runs_out == 0 then return 'Fill now. Runs out today' end
+    if runs_out == 1 then return 'Fill now. Runs out in 1 day' end
+    return 'Fill now. Runs out in ' .. runs_out .. ' days'
   end
   if days == 0 then return 'Due today' end
   if days == 1 then return 'Due tomorrow' end

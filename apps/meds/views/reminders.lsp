@@ -3,8 +3,8 @@ This file is part of Prescription Tracker
 apps/meds/views/reminders.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-09-27
-Summary: The form for the five day counts that decide when a refill or a prior authorization
+Last Modified: 2026-10-01
+Summary: The form for the reminder and early refill settings that decide when a refill or a prior authorization
          needs attention.
 Notes: See README file for documentation and full license information.
 
@@ -28,7 +28,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 <h1>Reminder settings</h1>
 <?= render('_problems', { problems = problems }) ?>
 
-<p>Each number is a count of days. Leave a field empty to use the number the app starts with.</p>
+<p>Each number is a day count or a percent. Leave a field empty to use the number the app starts with.</p>
 
 <form method="post" action="<?= url('/setup/reminders') ?>" novalidate>
   <?= csrf() ?>
@@ -60,6 +60,18 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
           help = 'A prior authorization is due soon when it expires in this many days or fewer. Empty means ' .. defaults.authorization_notice_days .. '.' }) ?>
   </fieldset>
 
+  <fieldset>
+    <legend>Early refills</legend>
+    <?= render('_field', { name = 'early_fill_percent', label = 'Early fill percent', value = typed.early_fill_percent,
+          err = errors.early_fill_percent, inputmode = 'numeric', maxlength = 3,
+          help = 'From 0 to 100. Plans can override this. Empty means ' .. defaults.early_fill_percent .. '.' }) ?>
+    <?= render('_field', { name = 'supply_frame_days', label = 'Supply frame, in days', value = typed.supply_frame_days,
+          err = errors.supply_frame_days, inputmode = 'numeric', maxlength = 4,
+          help = 'The rolling count on the next fill date. Use 0 for the last fill only, or 3650 for every fill. Empty means ' .. defaults.supply_frame_days .. '.' }) ?>
+    <?= render('_field', { name = 'controlled_early_days', label = 'Days early for controlled medications', value = typed.controlled_early_days,
+          err = errors.controlled_early_days, inputmode = 'numeric', maxlength = 3,
+          help = 'Every fill counts across payers, with no frame limit. Empty means ' .. defaults.controlled_early_days .. '.' }) ?>
+  </fieldset>
   <p class="pv-actions">
     <button type="submit" class="pv-btn pv-btn-primary"><?= icon('check-lg') ?> Save</button>
     <a class="pv-btn" href="<?= url('/setup') ?>">Cancel</a>

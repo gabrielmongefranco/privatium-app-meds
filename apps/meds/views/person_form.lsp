@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/views/person_form.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-09-27
+Last Modified: 2026-10-01
 Summary: The form that adds or changes a person.
 Notes: See README file for documentation and full license information.
 
@@ -35,6 +35,10 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
         err = errors.birth_date, input_type = 'date', max = today,
         help = 'A pharmacy asks for it at pickup. It also prints on the medication list.' }) ?>
 
+  <?= render('_select_or_new', { name = 'plan_id', legend = 'Insurance plan', noun = 'plan',
+        value = typed.plan_id, typed_new = typed.plan_id_new, options = plans,
+        err = errors.plan_id, empty_label = 'No plan',
+        help = 'The plan this person uses now. New fills start with it.' }) ?>
   <p class="pv-actions">
     <button type="submit" class="pv-btn pv-btn-primary"><?= icon('check-lg') ?> Save</button>
     <a class="pv-btn" href="<?= url('/setup/people') ?>">Cancel</a>

@@ -2,7 +2,7 @@
 -- apps/meds/lib/merge.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-09-27
+-- Last Modified: 2026-10-01
 -- Summary: Merges one medication of the catalog into another when both are the same product.
 --          The plan says what will move; applying it writes every change in one batch.
 -- Notes: See README file for documentation and full license information.
@@ -41,7 +41,7 @@ local STATUS_RANK = {
 local function fills_of(id)
   return pv.query([[
     SELECT id, person_id, medication_id, pharmacy_id, filled_on, rx_number, quantity,
-           days_supply, amount_paid, insurance_plan, insurance_claim_number, notes
+           days_supply, amount_paid, plan_id, insurance_claim_number, notes
       FROM fill
      WHERE medication_id = ?]], { id })
 end

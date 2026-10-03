@@ -2,7 +2,7 @@
 -- apps/meds/lib/routes/fills.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-09-27
+-- Last Modified: 2026-10-01
 -- Summary: The screens for fills: the history with its totals, and the form that records,
 --          changes or removes a fill.
 -- Notes: See README file for documentation and full license information.
@@ -38,7 +38,7 @@ local validate          = require 'validate'
 local LIST      = '/fills'
 local PAGE_SIZE = 50
 local FIELDS    = { 'person_id', 'medication_id', 'filled_on', 'pharmacy_id', 'days_supply',
-                    'quantity', 'amount_paid', 'refills_left', 'rx_number', 'insurance_plan',
+                    'quantity', 'amount_paid', 'refills_left', 'rx_number', 'plan_id',
                     'insurance_claim_number', 'notes' }
 
 --- Reads ---
@@ -64,11 +64,13 @@ end
 -- out the decimal columns.
 local function starting_values(person_id, medication_id)
   local last = person_id and pv.query1([[
-    SELECT l.pharmacy_id, l.days_supply, l.rx_number, l.insurance_plan, f.quantity
+    SELECT l.pharmacy_id, l.days_supply, l.rx_number, l.plan_id, f.quantity
       FROM v_last_fill l
       JOIN fill f ON f.id = l.fill_id    -- 1:1
      WHERE l.person_id = ? AND l.medication_id = ?]], { person_id, medication_id }) or {}
   local entry = person_id and entries.of(person_id, medication_id)
+  local person = person_id and pv.get_row('person', person_id)
+  last.plan_id = (person and person.plan_id) or last.plan_id
   last.pharmacy_id = last.pharmacy_id or (entry and entry.pharmacy_id)
   last.refills_left = entry and math.max(entry.refills_left - 1, 0) or nil
   last.person_id, last.medication_id = person_id, medication_id
@@ -115,7 +117,7 @@ local function form_page(heading, action, typed, errors, chosen, is_new, pick)
     pick       = pick,
     in_use     = not chosen and medication_pick.in_use(text.clean(typed.medication_id)) or {},
     names      = not chosen and suggestions.medication_names() or {},
-    plans      = suggestions.insurance_plans(),
+    plans      = quick_add.options(quick_add.PLAN),
     people     = people(),
     pharmacies = pharmacies(),
     is_new     = is_new,
@@ -134,6 +136,8 @@ local function read_with_new(form, fixed_medication_id)
     quick_add.read(form, 'person_id', quick_add.PERSON, true)
   adding.pharmacy_id, adding.pharmacy, problems.pharmacy_id =
     quick_add.read(form, 'pharmacy_id', quick_add.PHARMACY, true)
+  adding.plan_id, adding.plan, problems.plan_id =
+    quick_add.read(form, 'plan_id', quick_add.PLAN)
   if fixed_medication_id then
     adding.pick = { id = fixed_medication_id }
   else
@@ -141,10 +145,11 @@ local function read_with_new(form, fixed_medication_id)
     problems.medication_id = adding.pick.problem
   end
 
-  local row, errors = fills.read(form, { person_id = true, pharmacy_id = true, medication_id = true })
+  local row, errors = fills.read(form, { person_id = true, pharmacy_id = true, medication_id = true, plan_id = true })
   for field, problem in pairs(problems) do errors[field] = problem end
   row.person_id, row.pharmacy_id, row.medication_id =
     adding.person_id, adding.pharmacy_id, adding.pick.id
+  row.plan_id = adding.plan_id
   return row, errors, adding
 end
 
@@ -153,6 +158,7 @@ local function write_new(adding)
   return function(tx, row)
     row.person_id   = quick_add.write(tx, quick_add.PERSON, adding.person_id, adding.person)
     row.pharmacy_id = quick_add.write(tx, quick_add.PHARMACY, adding.pharmacy_id, adding.pharmacy)
+    row.plan_id = quick_add.write(tx, quick_add.PLAN, adding.plan_id, adding.plan)
     row.medication_id = medication_pick.write(tx, adding.pick)
   end
 end
@@ -182,11 +188,13 @@ pv.get(LIST, function(req)
     SELECT f.id, f.filled_on, f.quantity, f.days_supply, f.amount_paid, f.rx_number,
            p.display_name AS person_name,
            m.short_name   AS medication_name,
-           ph.name        AS pharmacy_name
+           ph.name        AS pharmacy_name,
+           pl.name        AS plan_name
       FROM fill f
       JOIN person p     ON p.id = f.person_id          -- many:1
       JOIN medication m ON m.id = f.medication_id      -- many:1
       LEFT JOIN pharmacy ph ON ph.id = f.pharmacy_id   -- many:0..1
+      LEFT JOIN plan pl ON pl.id = f.plan_id           -- many:0..1
      WHERE (?1 = '' OR f.person_id = ?1)
        AND (?2 = '' OR f.medication_id = ?2)
        AND (?3 = '' OR f.pharmacy_id = ?3)
@@ -236,7 +244,8 @@ pv.get(LIST .. '/new', function(req)
       starting_values(person_id, chosen.medication_id), {}, chosen, true)
   end
   return form_page('Record a fill', url(LIST .. '/new'),
-    { person_id = person_id, filled_on = clock.today() }, {}, nil, true)
+    { person_id = person_id, filled_on = clock.today(),
+      plan_id = person_id and (pv.get_row('person', person_id) or {}).plan_id }, {}, nil, true)
 end)
 
 pv.post(LIST .. '/new', function(req)

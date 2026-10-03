@@ -2,7 +2,7 @@
 -- tests/lua/test_refill.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-09-27
+-- Last Modified: 2026-10-01
 -- Summary: Unit tests for apps/meds/lib/refill.lua.
 -- Notes: See README file for documentation and full license information.
 --
@@ -45,12 +45,17 @@ return function(equal)
       and not (keys.as_needed.alert or keys.missing.alert or keys.not_due.alert or keys.paused.alert), true)
 
   --- phrase ---
-  equal('one day late', refill.phrase('overdue', -1), 'Overdue by 1 day')
-  equal('four days late', refill.phrase('overdue', -4), 'Overdue by 4 days')
-  equal('today', refill.phrase('due', 0), 'Due today')
-  equal('tomorrow', refill.phrase('due', 1), 'Due tomorrow')
-  equal('in three days', refill.phrase('due', 3), 'Due in 3 days')
+  equal('one day late', refill.phrase('overdue', -8, -1), 'Overdue by 1 day')
+  equal('four days late', refill.phrase('overdue', -11, -4), 'Overdue by 4 days')
+  equal('today', refill.phrase('due', 0, 7), 'Due today')
+  equal('tomorrow', refill.phrase('due', 1, 8), 'Due tomorrow')
+  equal('in three days', refill.phrase('due', 3, 10), 'Due in 3 days')
   equal('no fill', refill.phrase('no_fill', nil), 'No fill recorded')
+
+  equal('eligible with supply left', refill.phrase('due', -3, 4), 'Fill now. Runs out in 4 days')
+  equal('one day of supply left', refill.phrase('due', -6, 1), 'Fill now. Runs out in 1 day')
+  equal('runs out today', refill.phrase('due', -7, 0), 'Fill now. Runs out today')
+  equal('missing physical supply', refill.phrase('due', 2, nil), 'No fill recorded')
 
   --- Asking for a new prescription ---
   equal('taken regularly, none left, due', refill.ask_for_more('taking_regularly', 0, 'due'), true)

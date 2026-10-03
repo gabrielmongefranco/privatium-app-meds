@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/views/_medication_picker.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-09-27
+Last Modified: 2026-10-01
 Summary: The medication box: a drop-down of the medications in use, a name to type,
          the choices when a name fits several, and the fields of a new medication.
 Notes: See README file for documentation and full license information.
@@ -123,10 +123,19 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
       <option value="Tube"></option><option value="Vial"></option><option value="Pen"></option>
     </datalist>
     <p id="f-<?= prefix ?>-package-help" class="pv-help">For a product that comes by the carton, such as 2 and Pack for a carton of two pens. A carton of 2 and a carton of 6 are two entries.</p>
+    <fieldset>
+    <legend>Medication marks</legend>
+    <label class="meds-option" for="f-<?= prefix ?>-controlled">
+      <input id="f-<?= prefix ?>-controlled" name="<?= prefix ?>_controlled" type="checkbox" value="yes"
+             aria-describedby="f-<?= prefix ?>-controlled-help"<? if typed_in('_controlled') == 'yes' then ?> checked<? end ?>>
+      <span>This is a controlled medication</span>
+    </label>
+    <p id="f-<?= prefix ?>-controlled-help" class="pv-help">By default it is filled when supply runs out, with no early refill. Every fill counts whoever paid.</p>
     <label class="meds-option" for="f-<?= prefix ?>-specialty">
       <input id="f-<?= prefix ?>-specialty" name="<?= prefix ?>_specialty" type="checkbox" value="yes"<? if typed_in('_specialty') == 'yes' then ?> checked<? end ?>>
       <span>This is a specialty medication</span>
     </label>
+    </fieldset>
     <p class="pv-help">Saving adds the medication to the catalog. You can add its route, form and package there later.</p>
   </details>
   <? if explicit then ?></div><? end ?>

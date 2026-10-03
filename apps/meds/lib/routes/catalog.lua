@@ -2,7 +2,7 @@
 -- apps/meds/lib/routes/catalog.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-09-27
+-- Last Modified: 2026-10-01
 -- Summary: The screens of the medication catalog: search, show, add, change, remove,
 --          other names, and the merge of two entries that are the same product.
 --          A catalog entry is a product; what a person takes is kept elsewhere.
@@ -47,7 +47,7 @@ local read     = catalog_entry.read
 -- Grain: one row per medication, one page of them.
 local function first_page()
   return pv.query([[
-    SELECT m.medication_id, m.short_name, m.full_name, m.is_specialty
+    SELECT m.medication_id, m.short_name, m.full_name, m.is_specialty, m.is_controlled
       FROM v_medication m
      ORDER BY (EXISTS (SELECT 1 FROM person_medication pm WHERE pm.medication_id = m.medication_id)
                OR EXISTS (SELECT 1 FROM fill f WHERE f.medication_id = m.medication_id)) DESC,
@@ -59,7 +59,7 @@ end
 local function one(id)
   return pv.query1([[
     SELECT medication_id, short_name, full_name, generic_name, brand_name, strength,
-           route, form, package_size, package_type, is_specialty, rxcui, source, retrieved_on
+           route, form, package_size, package_type, is_specialty, is_controlled, rxcui, source, retrieved_on
       FROM v_medication
      WHERE medication_id = ?]], { id })
 end
@@ -100,6 +100,7 @@ local function as_typed(medication)
   for key, value in pairs(medication) do typed[key] = value end
   typed.dose_form = medication.form
   typed.is_specialty = medication.is_specialty and 'yes' or nil
+  typed.is_controlled = medication.is_controlled and 'yes' or nil
   return typed
 end
 

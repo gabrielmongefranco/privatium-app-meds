@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 docs/compliance.md
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-09-27
+Last Modified: 2026-10-01
 Summary: The security and accessibility controls the app has, the evidence for each, the
          known gaps, and the checks a person still has to make.
 Notes: See README file for documentation and full license information.
@@ -27,7 +27,7 @@ claim of compliance with any law or standard.
 
 ### Review status
 
-| Subject | Status on 2026-09-27 |
+| Subject | Status on 2026-10-01 |
 |---|---|
 | Automated checks | Passing. See [How to run the tests](how-to/run-the-tests.md). |
 | Accessibility checks by a person | Not done |
@@ -47,6 +47,7 @@ paid. The [data model](data-model.md) marks each such column.
 | Every SQL statement binds its parameters | Every `pv.query` call uses a literal statement | Lint rule PV201 passes. The smoke test sends SQL in names, filters and ids. |
 | Output is escaped | Templates use the escaping tag only. No template uses `<?raw ?>`. | Lint rule PV202 reports nothing. The smoke test sends markup in names, other names, fields and pasted text. |
 | Every form that saves carries a token against cross-site request forgery | `csrf()` in every form | Lint rule PV204 passes. The smoke test posts without a token and with a wrong one, and gets status 403. |
+| Plan rules have bounded percent and frame values; payer ids must exist | `schema.sql`, `lib/quick_add.lua`, `lib/routes/plans.lua` | Synthetic smoke tests check forged ids, out-of-range rules, escaping, CSRF and referenced removals. |
 | Form values are checked on the server | `lib/validate.lua`, `lib/fills.lua` and the route modules | Unit tests cover empty, invalid and boundary values. |
 | A status is one of five allowed values | `CHECK` in `schema.sql`, and `choices.status_label` | The smoke test sends a status that does not exist. |
 | A record a form points to must exist | `read_id` in the route modules | The smoke test sends ids that name nothing. |
@@ -61,8 +62,15 @@ paid. The [data model](data-model.md) marks each such column.
 | Diagnostic messages hold no field values | `page.masked` in `lib/page.lua` | Unit tests |
 | The node calls no network service | The Lua of the app has no function that does | Lint rule PV504 passes. |
 | The browser calls three drug references, and nothing else | `permissions.remote` in `app.toml` lists them. `static/medication_lookup.js` names no other address. | Lint rule PV207 passes. |
-| The lookup sends the typed name only | `static/medication_lookup.js` sends no cookie and no page address | Read in the code. Not measured in a browser. |
+| The lookup sends public drug names and product identifiers only | `static/medication_lookup.js` sends no cookie and no page address | Read in the code. Not measured in a browser. |
 | What a drug reference answers is untrusted | The script writes it with `textContent`. The server checks every field it receives: `lib/catalog_entry.lua`, `lib/reference_words.lua`. | The smoke test sends markup as a source, a route and a dose form, and letters as an identifier. Unit tests cover the words of a reference. |
+
+### Refill-rule checks, October 1, 2026
+
+Synthetic tests check percent and frame bounds, payer references, CSRF, escaped plan
+names, and removal while referenced. SQLite tests compare 3,000 invented histories
+against an independent daily simulation, including frame special values and empty frames.
+No production data is used by the committed tests.
 
 ### Known gaps in security
 
@@ -70,8 +78,7 @@ paid. The [data model](data-model.md) marks each such column.
   computer and its backups. [Privatium's security page](https://github.com/gabrielmongefranco/privatium/blob/main/docs/security.md)
   explains what the framework protects.
 - Removing a record hides it. The original line stays in the log.
-- Text boxes suggest values that other records hold, such as insurance plans and what a
-  medication is for. Anyone who can open the app can already read those records.
+- Text boxes suggest values that other records hold, such as what a medication is for. Plan drop-downs show recorded payers. Anyone who can open the app can already read those records.
 - A lookup tells the drug reference which name was typed, from which internet address.
   The reference learns nothing else. The lookup is on for everyone.
 - A browser may keep pages in its history and its cache. On a shared device, close the
@@ -96,9 +103,20 @@ The target is the Web Content Accessibility Guidelines (WCAG) 2.2, level AA.
 | A refused form keeps what was typed and lists its problems | The smoke test checks both |
 | Buttons are at least 44 CSS pixels high | The shell's button style. Not measured in a browser. |
 
+### Browser checks, October 1, 2026
+
+Firefox submitted an insurance plan using keyboard input. Tab order reached each field
+and Save, whose focus outline was visible. Plan, person, catalog, fill and reminder
+forms had labels and no horizontal overflow at 320 pixels or 200 percent scaling.
+A synthetic mobile plan form was also checked visually. Plain HTTP forms are covered
+by the smoke test, including the path without client-side scripts.
+
+A screen reader pass remains needed. The live drug lookup and its suggested marks also
+need an end-user check before relying on them.
+
 ### Checks a person still has to make
 
-No automated check drives a browser, and automated tools find only part of the problems.
+The committed tests do not drive a browser. Automated checks find only part of the accessibility problems.
 These checks are open:
 
 1. Finish each main task with the keyboard only: see the refills, record a fill, paste

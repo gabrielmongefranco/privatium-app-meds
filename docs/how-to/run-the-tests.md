@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 docs/how-to/run-the-tests.md
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-09-27
+Last Modified: 2026-10-01
 Summary: How to run the lint, the unit tests and the smoke test, and what each one covers.
 Notes: See README file for documentation and full license information.
 
@@ -29,6 +29,7 @@ the root of the repository.
 |---|---|---|
 | Privatium | The lint and the smoke test | The version that the project README names |
 | Lua 5.4 | The unit tests | On many systems the command is `lua5.4`. Plain `lua` may be an older version. |
+| Python 3 | Supply regression tests | Standard library only |
 | Bash and curl | The smoke test | |
 
 ### Steps
@@ -50,7 +51,18 @@ the root of the repository.
    The last line gives the counts, such as "290 passed, 0 failed". The command
    exits with code 1 when a test fails, and with code 2 when Lua is older than 5.4.
 
-3. Run the smoke test:
+3. Check the supply views against an independent daily simulation:
+
+   ```sh
+   python3 tests/test_supply.py
+   python3 tests/test_catalog.py
+   ```
+
+   It uses in-memory SQLite and 3,000 invented histories. It checks payer changes,
+   gaps, frame boundaries, controlled fills, missing supply, and row counts.
+   Catalog tests use invented reference responses and make no network calls.
+
+4. Run the smoke test:
 
    ```sh
    PRIVATIUM=/path/to/privatium tests/smoke.sh
@@ -65,6 +77,7 @@ the root of the repository.
 |---|---|
 | Lint | The rules of Privatium for an app: bound SQL parameters, the `csrf()` token in every form, labels on every field, heading order, and more |
 | Unit tests | The Lua modules with no framework calls: cleaning text, checking dates, numbers, amounts, phone numbers, email and website addresses, building a short name, merging choices, matching names, refill words, reading a pasted portal page, taking apart a name as a portal wrote it, and the words of a drug reference |
+| Supply tests | SQL dates against daily simulation, date boundaries, frame special values, invalid rules and view grain |
 | Smoke test | The screens over HTTP, on a real node: adding, changing and removing records, empty and invalid input, the longest values, and requests that must be refused |
 
 The smoke test includes these checks of requests that must be refused:
@@ -97,7 +110,7 @@ the command. On macOS, install GNU coreutils first.
 
 ### Conclusion
 
-You can now run the three checks. A change is ready to commit when all three pass and the
+You can now run all checks. A change is ready to commit when they all pass and the
 documentation matches the change.
 
 ### Additional resources

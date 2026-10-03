@@ -2,7 +2,7 @@
 -- apps/meds/lib/medication_search.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-09-27
+-- Last Modified: 2026-10-01
 -- Summary: Finds the medications of the catalog that a typed name matches. Every screen that
 --          asks for a medication searches here, so all of them find the same things.
 -- Notes: See README file for documentation and full license information.
@@ -70,7 +70,7 @@ end
 -- One medication, as the screens show it.
 local function medication(id)
   return pv.query1([[
-    SELECT medication_id, short_name, full_name, is_specialty, brand_name, generic_name, strength
+    SELECT medication_id, short_name, full_name, is_specialty, is_controlled, brand_name, generic_name, strength
       FROM v_medication
      WHERE medication_id = ?]], { id })
 end

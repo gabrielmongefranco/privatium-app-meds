@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/views/fill_form.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-09-27
+Last Modified: 2026-10-01
 Summary: The form that records a fill or changes one. A new fill starts with the values of
          the last fill of the same medication, all of them visible.
 Notes: See README file for documentation and full license information.
@@ -73,8 +73,10 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
   <?= render('_field', { name = 'rx_number', label = 'Prescription number', value = typed.rx_number,
         err = errors.rx_number, maxlength = 40,
         help = 'The Rx number on the label. A new prescription has a new number.' }) ?>
-  <?= render('_field', { name = 'insurance_plan', label = 'Insurance plan', value = typed.insurance_plan,
-        err = errors.insurance_plan, maxlength = 80, suggestions = plans }) ?>
+  <?= render('_select_or_new', { name = 'plan_id', legend = 'Insurance plan', noun = 'plan',
+        value = typed.plan_id, typed_new = typed.plan_id_new, options = plans,
+        err = errors.plan_id, empty_label = 'No plan',
+        help = 'The payer for this fill. Set its refill rules under Setup, Insurance plans.' }) ?>
 
   <details<? if errors.insurance_claim_number or errors.notes then ?> open<? end ?>>
     <summary>More details</summary>

@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 docs/data-model.md
 Author(s): Gabriel Mongefranco
 Created: 2026-09-26
-Last Modified: 2026-09-27
+Last Modified: 2026-10-01
 Summary: Every table and view the app stores: grain, columns, meaning, which fields hold
          personal or health information, how the refill dates are worked out, and what
          the sample data holds.
@@ -66,6 +66,8 @@ erDiagram
     medication ||--o{ medication_alias : "is also called"
     pharmacy |o--o{ person_medication : "is the current pharmacy of"
     prescriber |o--o{ person_medication : prescribes
+    plan |o--o{ person : "is the default payer of"
+    plan |o--o{ fill : pays
     person ||--o{ fill : receives
     medication ||--o{ fill : "is filled as"
     pharmacy ||--o{ fill : dispenses
@@ -83,6 +85,7 @@ The diagram shows the same facts as this list:
   and a prescriber.
 - A prior authorization names one person and one medication. A prior authorization is an
   insurer's approval to cover a medication for a set period.
+- A plan can be the default payer of several people and the payer of several fills.
 - The `profile` table stands alone.
 
 ### Tables
@@ -104,10 +107,26 @@ that row. With no row, every default is in force.
 | `specialty_due_soon_within_days` | `BIGINT` | No | The due soon count for a specialty medication. Empty means 10. | No |
 | `authorization_notice_days` | `BIGINT` | No | A prior authorization is due soon when it expires in this many days or fewer. Empty means 30. | No |
 | `authorization_due_within_days` | `BIGINT` | No | A prior authorization is due when it expires in this many days or fewer. Empty means 14. | No |
+| `early_fill_percent` | `BIGINT` | No | Percent of the last fill allowed early, 0 to 100. Empty means 25. | No |
+| `supply_frame_days` | `BIGINT` | No | Rolling frame, 0 to 3650. Empty means 180. Zero counts the last fill only; 3650 counts every fill. | No |
+| `controlled_early_days` | `BIGINT` | No | Days early for controlled medications, 0 to 365. Empty means 0. | No |
 
-The six day counts must be zero or more. The view `v_reminder_default` holds the
+The six reminder day counts must be zero or more. Forms limit them to 365. The view `v_reminder_default` holds the
 defaults. The view `v_reminder_setting` returns the counts in force, with the defaults
 filled in.
+
+#### `plan`
+
+Grain: one row per insurance plan or other payer. Its `id` links people and fills.
+Plan names hold no member numbers. NULL settings inherit the household defaults.
+
+| Column | Type | Required | Meaning | Personal or health information |
+|---|---|---|---|---|
+| `name` | `VARCHAR` | Yes | A name you recognize, without personal details | No |
+| `early_fill_percent` | `BIGINT` | No | Early allowance, 0 to 100 percent. Zero waits for all physical supply to run out. | No |
+| `supply_frame_days` | `BIGINT` | No | Rolling frame, 0 to 3650 days. Zero counts the last fill only; 3650 counts every fill. | No |
+
+The app refuses removal while a person or fill points to the plan.
 
 #### `person`
 
@@ -117,6 +136,7 @@ Grain: one row per household member whose medications the household tracks.
 |---|---|---|---|---|
 | `display_name` | `VARCHAR` | Yes | The person's name as the app shows it | Personal |
 | `birth_date` | `DATE` | No | Date of birth | Personal |
+| `plan_id` | `VARCHAR` | No | `plan.id`, the current default payer. NULL means none. | Personal |
 
 #### `medication`
 
@@ -134,6 +154,7 @@ second row here.
 | `form` | `VARCHAR` | No | The form, such as `Tablet` | No |
 | `package_size` | `VARCHAR` | No | How much one package holds, as text, such as `2` or `60 mL` | No |
 | `package_type` | `VARCHAR` | No | The package, such as `Pack` or `Bottle` | No |
+| `is_controlled` | `BOOLEAN` | No | Every fill counts across payers, without a frame limit. NULL means unmarked. | No |
 | `is_specialty` | `BOOLEAN` | Yes | Whether this is a specialty medication, which takes longer to arrive and is due earlier | No |
 | `rxcui` | `VARCHAR` | No | The RxNorm concept unique identifier (RxCUI) of the product: digits, kept as text | No |
 | `source` | `VARCHAR` | No | The drug reference the row was copied from: `rxterms`, `rxnorm` or `openfda_ndc`. Empty when the owner typed the row. | No |
@@ -231,7 +252,7 @@ delivery.
 | `quantity` | `DECIMAL(18,3)` | No | Units dispensed, zero or more | Health |
 | `days_supply` | `BIGINT` | No | Days the fill should last, zero or more | Health |
 | `amount_paid` | `DECIMAL(18,2)` | No | What the household paid, zero or more, in the household's own currency | Personal |
-| `insurance_plan` | `VARCHAR` | No | Name of the insurance plan | Personal |
+| `plan_id` | `VARCHAR` | No | `plan.id`, the payer of this fill. NULL means unknown. | Personal |
 | `insurance_claim_number` | `VARCHAR` | No | Claim number | Personal |
 | `notes` | `VARCHAR` | No | Free text | Health |
 
@@ -272,13 +293,15 @@ keeps the log readable without a lookup. No table holds the choices.
 | View | Grain | Purpose |
 |---|---|---|
 | `v_active_medication` | One row per `person_medication` row in use | Everything about a medication in use, in readable columns, with its refill status |
-| `v_supply` | One row per `person_medication` row | The last fill, the next fill date and the recommended next fill date |
+| `v_supply` | One row per `person_medication` row | The last fill, eligibility (`next_fill_on`), exhaustion (`lasts_until`) and allowance in days |
 | `v_last_fill` | One row per person per medication with at least one fill | The latest fill |
-| `v_supply_window` | One row per person per medication with at least one fill | The fills that count toward the recommended next fill date |
+| `v_fill_order` | One row per fill | Date/id sequence, days supply and payer membership |
+| `v_supply_fill` | One row per fill | Physical and payer supply end dates for each possible start |
+| `v_supply_frame` | One row per person per medication with a fill | Earliest eligibility under the rolling frame |
 | `v_medication` | One row per medication | The catalog with the full name |
 | `v_medication_name` | One row per medication per distinct name | Every name a medication answers to |
-| `v_reminder_default` | Exactly one row | The five day counts the app starts with |
-| `v_reminder_setting` | Exactly one row | The five day counts in force |
+| `v_reminder_default` | Exactly one row | The reminder and early refill defaults |
+| `v_reminder_setting` | Exactly one row | The effective reminder and early refill settings |
 | `v_spending_by_year` | One row per person per year with at least one fill | Number of fills and total paid |
 | `v_row_count` | One row per table, `profile` included | Row counts |
 
@@ -291,17 +314,35 @@ them, any SQLite tool can run the other views against the cache file.
 
 #### How the dates are worked out
 
-1. The last fill is the fill with the latest date. When two fills share a date, the one
-   entered later wins.
-2. The next fill date is the date of the last fill plus its days supply. An empty days
-   supply counts as 1 day.
-3. The supply window opens at the start of the year of the last fill, or at the start of
-   the month three months before it, whichever is earlier.
-4. The supply in the window is the sum of the days supply of every fill in the window.
-5. The recommended next fill date is the first fill date in the window plus that sum, or
-   the next fill date when that is later.
+The app tracks two dates for each person and medication. They are estimates from recorded
+fills and rules, rather than a guarantee that a claim will be paid.
 
-This example uses invented fills of one medication for one person.
+1. The last fill is the one with the latest date. Ties use the greater record id.
+2. Every fill adds supply. It starts on its date or when previous supply ends, whichever
+   is later. Gaps earn no credit. `lasts_until` is when this physical supply runs out.
+3. The payer's count includes fills under the last fill's plan and fills with no plan.
+   If the last fill has no plan, every payer counts. Other plans add physical supply
+   but do not enter this payer's count.
+4. The allowance is the last fill's days supply times the effective early fill percent,
+   rounded down. At 25 percent, 30 days allows 7 days early, and 90 allows 22.
+5. The rolling frame is measured on the proposed next fill date, including its oldest
+   boundary day. Older fills leave the count the following day. `next_fill_on` is the
+   earliest date when the payer's remaining supply is within the allowance.
+6. Frame 0 counts the last fill only, including when several fills share its date.
+   Frame 3650 is a special value that counts every fill, even beyond ten years.
+   For other frames, eligibility can also begin when the last counted fill leaves.
+7. A controlled medication counts every fill across payers, without a frame limit.
+   Its allowance is `controlled_early_days`, initially zero. A zero-percent payer for
+   an ordinary medication waits for all physical supply to run out.
+
+Plan settings override household settings. Empty overrides use 25 percent and 180 days
+until you change the household defaults. Controlled medications use only their household
+allowance. A missing days supply counts as 1 day; a recorded zero stays zero.
+
+There is no January 1 reset. The rolling frame handles the history. Changing a person's
+plan affects new fills; the latest recorded fill determines the current payer's count.
+
+These fills are invented, under one plan with a 25 percent allowance and a 180-day frame.
 
 | Filled on | Days supply |
 |---|---|
@@ -310,33 +351,37 @@ This example uses invented fills of one medication for one person.
 | 2026-08-25 | 30 |
 | 2026-08-25 | 90 |
 
-The last fill is the second one of 2026-08-25, with 90 days. The next fill date is
-2026-11-23. The window opens on 2026-01-01 and holds all four fills, which add up to 180
-days. The recommended next fill date is 2026-12-28, which is 180 days after 2026-07-01.
+Both fills on August 25 count. Physical supply lasts until December 28, 2026.
+The last fill provides 90 days, so its allowance is 22 days. Eligibility begins
+December 6, 2026.
 
-Three effects of these rules are worth knowing:
+For a gap followed by early fills, take 30-day fills on January 1, February 10 and
+March 5, 2026. Supply from January runs out before February 10, so the gap contributes
+nothing. Physical supply lasts until April 11. Eligibility begins April 4.
 
-- When two fills share a date, the next fill date uses the days supply of the later one
-  only. The recommended next fill date counts both.
-- Supply left over from before the window opens is not counted.
-- After a gap with no medication, the sum gives a date that is too early. The next fill
-  date is later then, so it is the one returned.
+`v_active_medication` also exposes the raw `is_controlled` mark, `plan_name`,
+`allowance`, and both day counts. Dates remain calendar dates; day counts are integers.
+`days_until_next_fill` may be negative while `days_until_runs_out` is still positive.
 
 #### How the refill status is worked out
 
-`v_active_medication` compares the next fill date with today's date and the day counts.
+Overdue uses physical supply. Due and due soon use refill eligibility.
+Checks run in the order shown, with household reminder settings applied.
 
 | Refill status | Ordinary medication | Specialty medication |
 |---|---|---|
-| `overdue` | The next fill date is before today | The same |
-| `due` | The next fill date is today or up to 3 days away | Today or up to 5 days away |
-| `due_soon` | The next fill date is 4 to 7 days away | 6 to 10 days away |
-| `not_due` | The next fill date is more than 7 days away | More than 10 days away |
-| `no_fill` | No fill is recorded | The same |
+| `no_fill` | No physical supply date | The same |
+| `overdue` | `lasts_until` is before today | The same |
+| `due` | Eligibility has passed, is today, or is up to 3 days away | Up to 5 days away |
+| `due_soon` | Eligibility is 4 to 7 days away | 6 to 10 days away |
+| `not_due` | Eligibility is more than 7 days away | More than 10 days away |
 
-Today is `date('now', 'localtime')`, the date in the time zone of the computer that runs
-the query. SQLite's plain `date('now')` is the date in Coordinated Universal Time (UTC),
-which is already tomorrow in the evening in the Americas.
+After eligibility passes, a row with supply left reads "Fill now. Runs out in N days".
+On the exhaustion date it reads "Fill now. Runs out today". Overdue begins the next day
+and counts days from exhaustion, rather than from eligibility.
+
+Today is `date('now', 'localtime')`, the node computer's local calendar date.
+SQLite's plain `date('now')` uses Coordinated Universal Time (UTC).
 
 ### Several devices
 

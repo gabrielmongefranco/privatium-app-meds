@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 docs/usage.md
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-09-27
+Last Modified: 2026-10-01
 Summary: How to use the app: refills, medication lists, fills, pasted fills, prior
          authorizations, contacts and setup, and how to add a missing record from
          inside a form.
@@ -97,12 +97,10 @@ when the catalog holds nothing under the name, or when you choose
 **None of these. Search the drug references.** Pick a result, and the app fills in the
 brand name, the generic name and the strength. Check them, then save the form.
 
-The lookup needs a connection to the internet. It sends the name you typed and nothing
-else. Without a connection, fill in the fields yourself.
+The lookup needs a connection to the internet. It sends public drug names and product identifiers, with no household records. Without a connection, fill in the fields yourself.
 
-**Text that repeats.** Some text boxes suggest what you typed before: the insurance plan,
-the clinic, the instructions, what a medication is for, and the names and strengths in
-the catalog. Pick a suggestion, or type something new.
+**Text that repeats.** Some text boxes suggest previous values: the clinic, instructions,
+what a medication is for, and catalog names and strengths. Pick a suggestion, or type something new.
 
 ### See what needs a refill
 
@@ -110,8 +108,8 @@ Choose **Refills**. The page lists what needs attention, most urgent first.
 
 | Group | Meaning |
 |---|---|
-| Overdue | The next fill date has passed |
-| Due | The next fill date is today or up to 3 days away |
+| Overdue | Recorded physical supply has run out |
+| Due | Eligibility has passed, is today, or is up to 3 days away |
 | Due soon | The next fill date is 4 to 7 days away |
 | New prescriptions to ask for | No refill is left, and the next fill is overdue, due or due soon |
 | Prior authorizations | A prior authorization has expired, is due or is due soon |
@@ -125,8 +123,12 @@ Only a medication with the status Taking regularly raises an alert.
 
 Each row shows two dates:
 
-- The **next fill date** is the date of the last fill plus its days supply.
-- The **recommended** date also counts the supply that earlier fills built up.
+- The **next fill date** estimates when the payer will allow another fill.
+- **Lasts until** shows when all recorded supply runs out, whoever paid.
+
+Early fills add supply, while gaps do not. After eligibility passes, the row reads
+"Fill now. Runs out in N days" until supply runs out. Only then does it become overdue.
+The [data model](data-model.md#how-the-dates-are-worked-out) explains the calculation.
 
 When no refill is left, the row names the prescriber to ask for a new prescription.
 
@@ -147,7 +149,8 @@ pharmacy, so the page reminds you to ask.
 
 1. On the Refills page, choose **Record fill** in the row of the medication.
 2. Check the values. The form starts with the pharmacy, the days supply, the quantity,
-   the prescription number and the insurance plan of the last fill.
+   the prescription number of the last fill. The plan starts with the person's current
+   plan, then the last fill's plan, then no plan.
 3. Type the amount you paid. A currency sign is fine.
 4. Check **Refills left after this fill**. The form starts with one fewer than before.
    If you leave it empty, the app lowers the count by one.
@@ -207,6 +210,9 @@ The app also looks at the prescription number. When an earlier fill of the perso
 the same number, the app knows its medication. If the portal's name fits that medication
 too, it is chosen for you. If the name does not fit, the medication comes first in the
 list and you decide. Hyphens and spaces in a number do not matter.
+
+Each added fill uses the person's current plan. The review names it, or says there is
+no plan. Set the person's plan under **Setup**, **People** before pasting.
 
 Adding a pasted fill lowers the refills left of its medication by one. What the plan
 paid and the deductible are shown and not stored.
@@ -321,7 +327,10 @@ shows. The catalog page has the full form, with every field.
    "100 units/mL", and "875-125 mg" for a product with two drugs.
 6. For the route, the form and the package type, pick from the list or type a new choice
    in the box under it. A choice that you type appears in the list from then on.
-7. Tick **This is a specialty medication** if it is one.
+7. Check **Specialty** and **Controlled**. The starter catalog and lookup suggest these
+   marks from public references. Specialty lists vary, and missing products stay unmarked.
+   You can change either mark before saving. Controlled medications count every fill
+   across payers, and by default wait until supply runs out.
 8. Leave the short name empty. The app builds it, such as "Examplol (Exampline) 10 mg",
    or "Examplol (Exampline) 10 mg 2 Pack" when you gave a package.
    Type a short name only if you want a different one.
@@ -344,11 +353,28 @@ The fills, the list entries and the prior authorizations move to the entry that 
 The names of the entry that goes away become other names of the entry that stays. A merge
 cannot be undone in the app, so merge only entries with the same strength.
 
+### Set insurance plans
+
+1. Choose **Setup**, then **Insurance plans**, then **Add an insurance plan**.
+2. Enter a name you recognize, without member numbers or personal details.
+3. Enter its early fill percent and supply frame days, or leave them empty for household defaults.
+4. Choose **Save**. Open each person's form under **Setup**, **People** and choose their current plan.
+
+At 25 percent, a 30-day fill allows 7 days early, and 90 days allows 22. Use 0 percent
+for cash or over-the-counter purchases to wait for physical supply to run out.
+The frame starts at the proposed next fill date and looks back, initially 180 days.
+Use 0 for the last fill only, or 3650 for every fill. Controlled medications ignore
+plan overrides and count every fill, with their household days early setting.
+
+A plan drop-down can add a new plan by name in the same form. It starts with household
+rules. Set overrides under **Insurance plans** afterward. An existing fill keeps its payer
+when you change the person's current plan. History shows the payer of each fill.
+
 ### Change the reminder settings
 
 1. Choose **Setup**, then **Reminder settings**.
-2. Type a number from 0 to 365, or leave a field empty to use the number the app starts
-   with.
+2. Enter day counts from 0 to 365, a percent from 0 to 100, or a frame from 0 to 3650.
+   Leave a field empty to use the default.
 3. Choose **Save**.
 
 | Setting | The app starts with |
@@ -359,6 +385,9 @@ cannot be undone in the app, so merge only entries with the same strength.
 | Due soon, for a specialty medication | 10 days |
 | Due, for a prior authorization | 14 days |
 | Due soon, for a prior authorization | 30 days |
+| Early fill percent | 25 percent |
+| Supply frame | 180 days |
+| Days early for controlled medications | 0 days |
 
 ### Remove a record
 
@@ -368,7 +397,7 @@ Every **Remove** button opens a page that asks first. Choose **Remove** to go on
 Removing hides the record in the app. Privatium keeps the original line in its log, so
 the record stays on the disk.
 
-The app does not remove a person, a medication, a pharmacy or a prescriber that other
+The app does not remove a person, a medication, a pharmacy, a prescriber or a plan that other
 records still use. The page says what uses the record.
 
 ### When a form comes back

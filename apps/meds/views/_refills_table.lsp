@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/views/_refills_table.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-09-27
+Last Modified: 2026-10-01
 Summary: One group of the Refills page as a table, with a button that records a fill for each row.
 Notes: See README file for documentation and full license information.
 
@@ -37,6 +37,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
     <tr role="row">
       <td role="cell"><span class="pv-cell-label" aria-hidden="true">Medication</span>
         <a href="<?= url('/medications/' .. row.id) ?>"><?= row.medication_name ?></a>
+        <? if row.is_controlled then ?><span class="pv-meta meds-line">Controlled</span><? end ?>
         <? if row.is_specialty then ?><span class="pv-meta meds-line">Specialty</span><? end ?></td>
       <td role="cell"><span class="pv-cell-label" aria-hidden="true">For</span><?= row.person_name ?></td>
       <td role="cell"><span class="pv-cell-label" aria-hidden="true">Refill</span>
@@ -47,7 +48,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
         <? end ?>
         <? if row.next_fill_on then ?>
           <span class="pv-meta meds-line">Next fill date <?= fmt.date(row.next_fill_on) ?></span>
-          <span class="pv-meta meds-line">Recommended <?= fmt.date(row.recommended_next_fill_on) ?></span>
+          <span class="pv-meta meds-line">Lasts until <?= fmt.date(row.lasts_until) ?></span>
         <? end ?></td>
       <td role="cell"><span class="pv-cell-label" aria-hidden="true">Last fill</span>
         <? if row.last_filled_on then ?><?= fmt.date(row.last_filled_on) ?><? if row.last_fill_pharmacy_name then ?> at <?= row.last_fill_pharmacy_name ?><? end ?><? if row.last_days_supply then ?>, <?= row.last_days_supply ?> days<? end ?><? else ?>No fill recorded<? end ?></td>

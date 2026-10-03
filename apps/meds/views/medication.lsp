@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/views/medication.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-09-27
+Last Modified: 2026-10-01
 Summary: One medication of the catalog: its names and its details.
 Notes: See README file for documentation and full license information.
 
@@ -27,6 +27,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 <h1><?= medication.short_name ?></h1>
 <?= render('_notice', { notice = notice }) ?>
 
+<? if medication.is_controlled then ?><p class="pv-badge pv-badge-muted">Controlled</p><? end ?>
 <? if medication.is_specialty then ?>
   <p><span class="pv-badge pv-badge-muted"><?= icon('truck') ?> Specialty</span>
      A specialty medication takes longer to arrive, so its refill is due earlier.</p>

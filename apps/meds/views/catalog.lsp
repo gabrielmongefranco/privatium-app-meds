@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/views/catalog.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-09-27
+Last Modified: 2026-10-01
 Summary: The medication catalog, with a search that finds a medication by any of its names,
          offers close matches as questions, and can learn a new name.
 Notes: See README file for documentation and full license information.
@@ -59,7 +59,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
       <tr role="row">
         <th scope="col" role="columnheader">Medication</th>
         <th scope="col" role="columnheader">Full name</th>
-        <th scope="col" role="columnheader">Specialty</th>
+        <th scope="col" role="columnheader">Marks</th>
       </tr>
     </thead>
     <tbody role="rowgroup">
@@ -68,8 +68,9 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
         <td role="cell"><span class="pv-cell-label" aria-hidden="true">Medication</span>
           <a href="<?= url('/setup/catalog/' .. medication.medication_id) ?>"><?= medication.short_name ?></a></td>
         <td role="cell"><span class="pv-cell-label" aria-hidden="true">Full name</span><?= medication.full_name ?></td>
-        <td role="cell"><span class="pv-cell-label" aria-hidden="true">Specialty</span>
-          <? if medication.is_specialty then ?><span class="pv-badge pv-badge-muted"><?= icon('truck') ?> Specialty</span><? else ?>No<? end ?></td>
+        <td role="cell"><span class="pv-cell-label" aria-hidden="true">Marks</span>
+          <? if medication.is_controlled then ?><span class="pv-badge pv-badge-muted">Controlled</span><? end ?>
+          <? if medication.is_specialty then ?><span class="pv-badge pv-badge-muted"><?= icon('truck') ?> Specialty</span><? end ?><? if not medication.is_specialty and not medication.is_controlled then ?>None<? end ?></td>
       </tr>
     <? end ?>
     </tbody>

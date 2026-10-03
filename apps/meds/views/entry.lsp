@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/views/entry.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-09-27
+Last Modified: 2026-10-01
 Summary: The page of one medication of one person: how to take it, its refills, who to call,
          its prior authorizations and its fills.
 Notes: See README file for documentation and full license information.
@@ -64,15 +64,16 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
   <dd><? if entry.last_filled_on then ?><?= fmt.date(entry.last_filled_on) ?><? if entry.last_fill_pharmacy_name then ?> at <?= entry.last_fill_pharmacy_name ?><? end ?><? if entry.last_days_supply then ?>, <?= entry.last_days_supply ?> days<? end ?><? else ?>No fill recorded<? end ?></dd>
   <? if entry.next_fill_on then ?>
     <dt>Next fill date</dt><dd><?= fmt.date(entry.next_fill_on) ?></dd>
-    <dt>Recommended next fill date</dt><dd><?= fmt.date(entry.recommended_next_fill_on) ?></dd>
+    <dt>Lasts until</dt><dd><?= fmt.date(entry.lasts_until) ?></dd>
   <? end ?>
   <? if entry.days_supply_missing == 1 then ?>
     <dt>Missing</dt><dd>The last fill has no days supply, so it counts as 1 day. Change the fill to add it.</dd>
   <? end ?>
   <dt>Refills left</dt><dd><?= entry.refills_left ?><? if entry.refills_left == 0 then ?>. Ask for a new prescription.<? end ?></dd>
+  <? if entry.is_controlled then ?><dt>Controlled</dt><dd>Yes. Every fill counts across payers.</dd><? end ?>
   <? if entry.is_specialty then ?><dt>Specialty</dt><dd>Yes. Its refill is due earlier.</dd><? end ?>
 </dl></div>
-<p class="pv-help">The recommended next fill date counts the supply that earlier fills built up.</p>
+<p class="pv-help">The next fill date estimates when the plan will pay, using its refill rules. Lasts until is when all recorded supply runs out.</p>
 
 <h2>Who to call</h2>
 <div class="pv-card"><dl>
