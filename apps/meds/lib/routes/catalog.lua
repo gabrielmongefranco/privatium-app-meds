@@ -29,6 +29,7 @@ local merge           = require 'merge'
 local page            = require 'page'
 local store           = require 'store'
 local suggestions     = require 'suggestions'
+local starter         = require 'starter'
 local text            = require 'text'
 local validate        = require 'validate'
 
@@ -121,6 +122,7 @@ end
 --- Routes ---
 
 pv.get(LIST, function(req)
+  starter.ensure()
   local typed = medication_search.typed(req.query.q)
   local found = medication_search.find(typed)
   local medications = typed == '' and first_page() or found.matches

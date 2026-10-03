@@ -74,7 +74,5 @@ __pycache__/
 *.sqlite3
 *.sqlite3-*
 *.sqlite-*
-/import_legacy*.py
-/meds-import/
 /review*.csv
 /tmp/

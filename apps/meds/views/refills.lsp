@@ -33,7 +33,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
   <a class="pv-btn pv-btn-primary" href="<?= url('/fills/new' .. (filter.id ~= '' and ('?person=' .. filter.id) or '')) ?>"><?= icon('plus-lg') ?> Record a fill</a>
   <a class="pv-btn" href="<?= url('/fills/paste') ?>"><?= icon('clipboard-plus') ?> Copy refill history from patient portal</a>
 </p>
-<?= render('_people_filter', { filter = filter, base = '/' }) ?>
+<?= render('_people_filter', { filter = filter, base = '/refills' }) ?>
 
 <? if alerts == 0 then ?>
   <p class="pv-notice pv-notice-info"><?= icon('check-circle') ?>

@@ -6,7 +6,7 @@ Created: 2026-09-26
 Last Modified: 2026-10-03
 Summary: Every table and view the app stores: grain, columns, meaning, which fields hold
          personal or health information, how the refill dates are worked out, and what
-         the sample data holds.
+         the starter catalog holds.
 Notes: See README file for documentation and full license information.
 
 Copyright © 2026 Gabriel Mongefranco
@@ -416,9 +416,10 @@ Privatium merges changes from several devices row by row, and the later change w
 whole row. Two devices that edit the same record before they sync keep one of the two
 edits.
 
-### Sample data
+### The starter catalog
 
-`apps/meds/sample/seed.jsonl` holds a starter catalog and nothing else.
+`apps/meds/lib/starter_catalog.lua` holds a starter catalog and nothing else. The app loads
+it by itself the first time a page needs the catalog and finds it empty.
 The catalog has 2,507 medications and 524 other names for them. It holds the 200 drugs
 most prescribed in the United States, and the drugs of the owner's list, at every strength
 that RxTerms lists. It also holds entries written by hand, such as continuous glucose
@@ -443,7 +444,6 @@ relates to its catalog products, and how the two refill dates are worked out. Ch
 - [Using the app](usage.md)
 - [The app folder](../apps/meds/README.md)
 - [App design](design/README.md), the planned screens.
-- [Import of the legacy database](design/import.md)
 - [Privatium's app contract](https://github.com/gabrielmongefranco/privatium/blob/main/spec/app-contract.md), the normative definition of an app and its data.
 - [Privatium's data dictionary](https://github.com/gabrielmongefranco/privatium/blob/main/spec/data-dictionary.md), which defines the column types.
 - [Privatium's security page](https://github.com/gabrielmongefranco/privatium/blob/main/docs/security.md)

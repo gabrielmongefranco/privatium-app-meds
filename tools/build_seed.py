@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Summary: Builds apps/meds/sample/seed.jsonl, the starter catalog. It reads lists of
+Summary: Builds apps/meds/lib/starter_catalog.lua, the starter catalog. It reads lists of
          drugs by ingredient, asks RxTerms for every strength of each drug, asks RxNorm
          for the brand names, and adds the entries that were written by hand and the
          syringes and needles.
@@ -10,7 +10,7 @@ tools/build_seed.py
 
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-10-01
+Last Modified: 2026-10-03
 Notes: See README file for documentation and full license information.
 
 Usage, from the root of the repository:
@@ -52,10 +52,12 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import starter_lua  # noqa: E402  The module writer, beside this script
+
 ### Load Configuration ###
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SOURCES = os.path.join(ROOT, "tools", "seed")
-SEED = os.path.join(ROOT, "apps", "meds", "sample", "seed.jsonl")
 
 RXTERMS_SEARCH = "https://clinicaltables.nlm.nih.gov/api/rxterms/v3/search"
 RXNAV = "https://rxnav.nlm.nih.gov/REST"
@@ -842,7 +844,7 @@ def main():
         row["is_specialty"] = bool(row.get("is_specialty") or specialty_mark(
             row.get("generic_name", ""), specialty_ingredients))
     supplies = supplies_of()
-    lines = [json.dumps(row, ensure_ascii=False) for row in by_hand + supplies]
+    events = list(by_hand + supplies)
     alias_number = 0
     for entry in entries:
         medication_id = padded_id(ID_PREFIX_MEDICATION, entry["rxcui"])
@@ -858,17 +860,14 @@ def main():
         row.update({"is_specialty": specialty_mark(entry["generic_name"], specialty_ingredients),
                     "is_controlled": entry["rxcui"] in controlled_codes,
                     "rxcui": entry["rxcui"], "source": SOURCE_NAME})
-        lines.append(json.dumps(
-            {"op": "put", "tbl": "medication", "id": medication_id, "d": row}, ensure_ascii=False))
+        events.append({"op": "put", "tbl": "medication", "id": medication_id, "d": row})
         for alias in entry["aliases"]:
             alias_number += 1
-            lines.append(json.dumps(
-                {"op": "put", "tbl": "medication_alias",
-                 "id": padded_id(ID_PREFIX_ALIAS, alias_number),
-                 "d": {"medication_id": medication_id, "alias": alias}}, ensure_ascii=False))
+            events.append({"op": "put", "tbl": "medication_alias",
+                           "id": padded_id(ID_PREFIX_ALIAS, alias_number),
+                           "d": {"medication_id": medication_id, "alias": alias}})
 
-    with open(SEED, "w", encoding="utf-8") as handle:
-        handle.write("\n".join(lines) + "\n")
+    starter_lua.write_module(events, starter_lua.MODULE, time.strftime("%Y-%m-%d"))
 
     print("build_seed: asked the services", reference.asked, "times")
     print("build_seed:", len(hand_medications), "entries written by hand,",

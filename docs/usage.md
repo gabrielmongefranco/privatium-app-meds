@@ -32,8 +32,8 @@ Every page has the same bar at the top, with six links:
 
 | Link | What it holds |
 |---|---|
-| **Medications** | What each person tracks: their medications, with the catalog products behind each |
-| **Refills** | What needs a refill now. This is the home page. |
+| **Medications** | What each person tracks: their medications, with the catalog products behind each. This is the home page. |
+| **Refills** | What needs a refill now |
 | **History** | Every fill, and what you paid |
 | **Authorizations** | Prior authorizations and when they end |
 | **Contacts** | Prescribers and pharmacies |
@@ -53,13 +53,12 @@ medication shows the icon of its first product.
 
 ### Set up the app
 
-1. Load the starter catalog, if you want it. Open the Privatium menu, choose
-   **App settings**, find **Prescription Tracker** and choose **Load sample data**.
-   Privatium offers the button only while the app holds no records.
-2. Choose **Setup**, then **Family**, and add the first person. A first name is enough.
+1. Choose **Setup**, then **Family**, and add the first person. A first name is enough.
    The birth date is optional.
 
-The starter catalog holds about 2,507 medications: the 200 drugs most prescribed in the
+The catalog of medications fills itself. The first time you open a page that needs it,
+such as Track new medication or the catalog in Setup, the app loads its starter catalog.
+It holds about 2,507 medications: the 200 drugs most prescribed in the
 United States at every strength, and common supplies such as glucose monitor sensors, syringes and needles. It
 adds no person and no record about anyone.
 

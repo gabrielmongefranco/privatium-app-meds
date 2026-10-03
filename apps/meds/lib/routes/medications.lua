@@ -32,6 +32,7 @@ local product_pick      = require 'product_pick'
 local quick_add         = require 'quick_add'
 local store             = require 'store'
 local suggestions       = require 'suggestions'
+local starter           = require 'starter'
 local text              = require 'text'
 local validate          = require 'validate'
 
@@ -296,8 +297,13 @@ end
 
 --- Routes ---
 
-pv.get(LIST, function(req)
+-- The Medications page is the home page too. A household with no people sees the
+-- welcome instead, since there is nobody to track a medication for yet.
+local function list_page(req)
   local filter = people_filter.read(req)
+  if #filter.people == 0 then
+    return pv.render('index', { section = 'medications', greeting = clock.greeting(clock.hour()) })
+  end
   local typed = medication_search.typed(req.query.q)
   local rows = entries.filter(entries.list(filter.id), typed)
   local groups = {}
@@ -322,10 +328,14 @@ pv.get(LIST, function(req)
     -- section.
     stopped_open = typed ~= '' and #stopped.rows > 0,
   })
-end)
+end
+
+pv.get('/', list_page)
+pv.get(LIST, list_page)
 
 -- Registered before the routes that take an id, so 'new' is never read as one.
 pv.get(LIST .. '/new', function(req)
+  starter.ensure()
   local typed = { person_id = text.clean(req.query.person), status = 'taking_regularly', refills_left = 0 }
   -- A link from the catalog names the product to start with.
   typed.product_1_id = text.clean(req.query.medication)

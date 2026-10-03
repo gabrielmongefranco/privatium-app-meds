@@ -31,6 +31,7 @@ local people_filter     = require 'people_filter'
 local quick_add         = require 'quick_add'
 local store             = require 'store'
 local suggestions       = require 'suggestions'
+local starter           = require 'starter'
 local text              = require 'text'
 local validate          = require 'validate'
 local form_icon         = require 'form_icon'
@@ -302,6 +303,7 @@ end)
 -- Recording a fill starts from a tracked medication, or from the drop-down of them
 -- with the medication box for one that is on no list yet.
 pv.get(LIST .. '/new', function(req)
+  starter.ensure()
   local entry = listed_one(text.clean(req.query.entry))
   if entry then
     return form_page('Record a fill', url(LIST .. '/new?entry=' .. entry.id),
@@ -323,7 +325,7 @@ pv.post(LIST .. '/new', function(req)
     req.form.refills_left, 'the refills left', 0, fills.REFILLS_MAX)
   if not next(errors) then
     local saved, refusal = fills.save_new(row, refills_left, write_new(adding, STATUS_OF_NEW_ENTRY))
-    if saved then return pv.redirect(url('/?filled=' .. saved)) end
+    if saved then return pv.redirect(url('/refills?filled=' .. saved)) end
     errors.filled_on = refusal
   end
   local action = url(LIST .. '/new' .. (entry and ('?entry=' .. entry.id) or ''))

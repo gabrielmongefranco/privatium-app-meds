@@ -33,6 +33,7 @@ local portal_reader     = require 'portal_reader'
 local quick_add         = require 'quick_add'
 local store             = require 'store'
 local suggestions       = require 'suggestions'
+local starter           = require 'starter'
 local text              = require 'text'
 local validate          = require 'validate'
 local written_name      = require 'written_name'
@@ -344,6 +345,7 @@ end
 --- Routes ---
 
 pv.get(PASTE, function(req)
+  starter.ensure()
   return paste_page({ person_id = text.clean(req.query.person), notice = req.query.notice })
 end)
 

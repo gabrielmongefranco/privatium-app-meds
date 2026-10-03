@@ -44,7 +44,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 </form>
 
 <? if #medications == 0 and filter == '' then ?>
-  <p class="pv-empty">The catalog is empty. To load the starter list of common medications, open the Privatium menu, choose App settings, and choose Load sample data. You can also add medications here one at a time.</p>
+  <p class="pv-empty">The catalog is empty. Choose Add a medication to add one.</p>
 <? elseif #medications == 0 then ?>
   <p class="pv-empty">No medications found.</p>
 <? else ?>

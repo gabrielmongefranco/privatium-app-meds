@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/views/index.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-26
-Last Modified: 2026-09-27
+Last Modified: 2026-10-03
 Summary: The home page of a household with no people yet. Greets it and invites it to add
          the first person.
 Notes: See README file for documentation and full license information.
@@ -27,7 +27,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 <div class="meds">
 <p class="meds-mark"><?= icon('capsule') ?></p>
 <h1>Welcome to your prescription tracker.</h1>
-<p><?= greeting ?>. Add the first person, and this page will show the refills that need attention.</p>
+<p><?= greeting ?>. Add the first person to begin.</p>
 <a class="pv-btn pv-btn-primary" href="<?= url('/setup/people/new') ?>">
   <?= icon('plus-lg') ?> Add a person
 </a>

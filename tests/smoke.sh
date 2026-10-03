@@ -4,7 +4,7 @@
 # Author(s): Gabriel Mongefranco
 # Created: 2026-09-27
 # Last Modified: 2026-10-03
-# Summary: Starts a Privatium node on a temporary data directory, loads the sample data,
+# Summary: Starts a Privatium node on a temporary data directory, opens the catalog so the app loads its starter catalog,
 #          and checks the app's screens over HTTP: normal use, empty and invalid input,
 #          boundaries, and requests that must be refused. Uses invented data only.
 # Notes: See README file for documentation and full license information.
@@ -145,22 +145,23 @@ expect_text "home page marks the current section" 'aria-current="page"'
 # The icon helper inlines the vendored shapes, so the checks look for the start of the
 # path of capsule and of bag-plus-fill rather than for a name.
 if grep -o 'Medications</a>' "$BODY" >/dev/null && grep -o '<li><a href="[^"]*/medications"[^<]*<svg[^>]*><path d="M1.828 8.9' "$BODY" >/dev/null; then pass; else fail "the Medications link carries the capsule icon"; fi
-if grep -o '<li><a href="[^"]*/"[^<]*<svg[^>]*><path fill-rule="evenodd" d="M10.5 3.5a2.5' "$BODY" >/dev/null; then pass; else fail "the Refills link carries the bag icon"; fi
+if grep -o '<li><a href="[^"]*/refills"[^<]*<svg[^>]*><path fill-rule="evenodd" d="M10.5 3.5a2.5' "$BODY" >/dev/null; then pass; else fail "the Refills link carries the bag icon"; fi
 if [ "$(grep -n 'Medications</a>' "$BODY" | head -1 | cut -d: -f1)" -lt "$(grep -n 'Refills</a>' "$BODY" | head -1 | cut -d: -f1)" ]; then pass; else fail "Medications comes before Refills in the bar"; fi
 
-### Sample Data ###
-seed_token="$(curl -s -m 10 "$BASE/settings/apps" \
-  | grep -o 'action="/settings/apps/meds/seed"[^>]*>.\{0,300\}' \
-  | grep -o 'name="_csrf" value="[^"]*"' | head -1 | sed 's/.*value="//; s/"$//')"
-expect_status "sample data loads" 303 "$(curl -s -m 20 -o /dev/null -w '%{http_code}' -X POST \
-  --data-urlencode "_csrf=$seed_token" "$BASE/settings/apps/meds/seed")"
-# The expected counts are read from the sample data, so a rebuilt catalog needs no change here.
-SEED="$REPOSITORY/apps/meds/sample/seed.jsonl"
-seed_medications="$(grep -c '"tbl": *"medication"' "$SEED")"
-seed_names="$(grep -c '"tbl": *"medication_alias"' "$SEED")"
-expect_status "catalog rows after the sample data" "$seed_medications" "$(count_of medication)"
-expect_status "other names after the sample data" "$seed_names" "$(count_of medication_alias)"
-expect_status "no person in the sample data" 0 "$(count_of person)"
+### Starter Catalog ###
+# The app loads its starter catalog the first time a page needs the catalog and finds
+# it empty. The expected counts are read from the module, so a rebuilt catalog needs no
+# change here.
+SEED="$REPOSITORY/apps/meds/lib/starter_catalog.lua"
+seed_medications="$(grep -c '^{t="medication",' "$SEED")"
+seed_names="$(grep -c '^{t="medication_alias",' "$SEED")"
+expect_status "the catalog starts empty" 0 "$(count_of medication)"
+expect_status "the catalog page loads the starter catalog" 200 "$(get /setup/catalog)"
+expect_status "catalog rows after the first visit" "$seed_medications" "$(count_of medication)"
+expect_status "other names after the first visit" "$seed_names" "$(count_of medication_alias)"
+expect_status "a second visit loads nothing more" 200 "$(get /setup/catalog)"
+expect_status "catalog rows after the second visit" "$seed_medications" "$(count_of medication)"
+expect_status "no person in the starter catalog" 0 "$(count_of person)"
 curl -s -m 20 "$APP/api/q/v_medication?limit=10000" >"$BODY"
 expect_text "a product that comes by the carton has an entry for each carton" '"short_name":"Otrexup (Methotrexate) 10 mg/0.4 mL Auto-Injector 1 Pack"'
 expect_text "the larger carton is an entry of its own" '"short_name":"Otrexup (Methotrexate) 10 mg/0.4 mL Auto-Injector 4 Pack"'
@@ -178,7 +179,8 @@ hour="$(date +%H | sed 's/^0//')"
 if [ "$hour" -lt 12 ]; then greeting="Good morning"
 elif [ "$hour" -lt 18 ]; then greeting="Good afternoon"
 else greeting="Good evening"; fi
-expect_status "home page after the sample data" 200 "$(get /)"
+expect_status "home page after the starter catalog" 200 "$(get /)"
+expect_text "the home page still welcomes while nobody is added" "Welcome to your prescription tracker."
 expect_text "greeting follows the local hour" "$greeting."
 expect_status "no page asks for a household name" 404 "$(get /edit)"
 
@@ -386,16 +388,16 @@ expect_status "a typed short name is kept" 303 "$(post "/setup/catalog/$examplol
 expect_status "medication page after the typed name" 200 "$(get "/setup/catalog/$examplol")"
 expect_text "the typed short name is the heading" "<h1>exm</h1>"
 expect_status "a medication with no records is removed" 303 "$(post "/setup/catalog/$examplol/remove" "/setup/catalog/$examplol/remove")"
-expect_status "the catalog is back to the sample data" "$seed_medications" "$(count_of medication)"
+expect_status "the catalog is back to the starter catalog" "$seed_medications" "$(count_of medication)"
 
-expect_status "medication page of the sample data" 200 "$(get /setup/catalog/01J8MEDS0000000000MED00003)"
+expect_status "medication page of the starter catalog" 200 "$(get /setup/catalog/01J8MEDS0000000000MED00003)"
 expect_text "a medication shows its other names" "Z-Pak"
 expect_status "removal page for a medication with a fill" 200 "$(get /setup/catalog/01J8MEDS0000000000MED00001/remove)"
 expect_text "a medication with a fill cannot be removed" "cannot be removed yet"
 expect_status "a medication goes with its other names" 303 "$(post /setup/catalog/01J8MEDS0000000000MED00003/remove \
   /setup/catalog/01J8MEDS0000000000MED00003/remove)"
 expect_status "one medication fewer" "$((seed_medications - 1))" "$(count_of medication)"
-names_of_removed="$(grep -c '"medication_id": *"01J8MEDS0000000000MED00003"' "$SEED")"
+names_of_removed="$(grep -c 'medication_id="01J8MEDS0000000000MED00003"' "$SEED")"
 expect_status "its other names are gone with it" "$((seed_names - names_of_removed))" "$(count_of medication_alias)"
 
 ### Medication Search, Other Names And Merge ###
@@ -503,6 +505,9 @@ expect_text "medications page lists an entry" "Atorvastatin 20 mg"
 expect_text "medications page has the button to track a medication" "Track a new medication"
 expect_text "medications page has a search box" 'name="q" type="search"'
 expect_text "medications page loads the filter script" '/static/filter.js'
+expect_status "the home page is the Medications page once a person exists" 200 "$(get /)"
+expect_text "the home page shows the Medications heading" "<h1>Medications</h1>"
+expect_status "medications page again" 200 "$(get /medications)"
 expect_text "medications page loads the person script" '/static/person_tab.js'
 expect_text "the Everyone link names an empty person" 'medications?person="'
 expect_status "the filter script is served" 200 "$(get /static/filter.js)"
@@ -819,7 +824,7 @@ expect_status "a product with a fill cannot be taken off" 200 "$(post /setup/peo
 expect_text "a product with a fill says why" "1 fill names Lookupine (Lookupol) 5 mg 6 Pack. Change those fills before you remove it."
 
 ### Refills ###
-expect_status "refills page" 200 "$(get "/?person=$alex")"
+expect_status "refills page" 200 "$(get "/refills?person=$alex")"
 expect_text "refills page has its heading" "<h1>Refills</h1>"
 expect_no_text "refills page has no morning greeting" "Good morning"
 expect_no_text "refills page has no afternoon greeting" "Good afternoon"
@@ -836,9 +841,9 @@ expect_text "no refills left and a fill that is near asks for a new prescription
 expect_text "the summary counts the new prescriptions" "New prescriptions to ask for: 2"
 expect_text "a medication taken as needed is asked for too" "Supply lasts until"
 expect_text "the rows carry the icon of the form" '<title>Tablet</title>'
-expect_status "a fill shows its confirmation" 200 "$(get '/?filled=01J8MEDS0000000000TEST0002')"
+expect_status "a fill shows its confirmation" 200 "$(get '/refills?filled=01J8MEDS0000000000TEST0002')"
 expect_text "the confirmation names the medication" "Saved the fill for Atorvastatin 20 mg."
-expect_status "a fill id that is not in the app shows nothing" 200 "$(get '/?filled=%3Cscript%3E')"
+expect_status "a fill id that is not in the app shows nothing" 200 "$(get '/refills?filled=%3Cscript%3E')"
 expect_no_text "a fill id is never shown" "<script>"
 
 expect_status "a specialty medication is added" 303 "$(post /setup/catalog/new /setup/catalog/new \
@@ -903,7 +908,7 @@ curl -s -m 10 "$APP/api/q/v_active_medication" >"$BODY"
 if row_of Controlex | grep -q '"days_until_next_fill":0'; then pass; else fail "controlled allowance"; fi
 expect_status "controlled allowance is cleared" 303 "$(post /setup/reminders /setup/reminders \
   'due_within_days=4' 'due_soon_within_days=8')"
-expect_status "refills with stacked supply" 200 "$(get "/?person=$alex")"
+expect_status "refills with stacked supply" 200 "$(get "/refills?person=$alex")"
 expect_text "one exhausted supply" "Overdue: 1"
 expect_text "four fills due" "Due: 4"
 expect_text "one fill due soon" "Due soon: 1"
@@ -926,7 +931,7 @@ expect_status "a status that does not exist is ignored" 303 "$(post /setup/peopl
 curl -s -m 10 "$APP/api/row/person_medication/$norvasc" >"$BODY"
 expect_text "the status is saved" '"status":"on_hold"'
 expect_text "a change of status keeps the refills left" '"refills_left":"3"'
-expect_status "refills page after the change" 200 "$(get "/?person=$alex")"
+expect_status "refills page after the change" 200 "$(get "/refills?person=$alex")"
 expect_text "a medication on hold is in the group Paused" '<h2 id="paused">Paused</h2>'
 
 # A medication no longer taken can be restarted from the list.
@@ -982,7 +987,7 @@ curl -s -m 10 "$APP/api/q/v_active_medication" >"$BODY"
 if grep -o '"medication_name":"[^"]*Ventolin[^}]*' "$BODY" | grep -q '"status":"not_started"'; then pass; else fail "the medication starts as not started"; fi
 expect_status "authorizations page after adding" 200 "$(get /authorizations)"
 expect_text "an authorization that expires in 10 days is due" "Due: expires in 10 days"
-expect_status "refills page with an authorization ending" 200 "$(get /)"
+expect_status "refills page with an authorization ending" 200 "$(get /refills)"
 expect_text "the refills page warns of the authorization" "Expires in 10 days"
 expect_text "only one authorization is due" "Authorizations due: 1"
 expect_no_text "no authorization is due soon yet" "Authorizations due soon"
@@ -993,7 +998,7 @@ expect_status "an authorization that expired" 303 "$(post /setup/people/new /aut
 expect_status "an authorization that expires in 40 days" 303 "$(post /setup/people/new /authorizations/new \
   'entry_id=new' "person_id=$alex" "medication_id=$specimab" "valid_to=$(day '+40 days')")"
 expect_status "an authorization for a product the person tracks finds its entry" "$((entries_before + 1))" "$(count_of person_medication)"
-expect_status "refills page with authorizations of every level" 200 "$(get "/?person=$alex")"
+expect_status "refills page with authorizations of every level" 200 "$(get "/refills?person=$alex")"
 expect_text "20 days away is due soon" "Authorizations due soon: 1"
 expect_text "an expired authorization is counted" "Authorizations expired: 1"
 expect_text "an expired authorization says since when" "Expired 3 days ago"

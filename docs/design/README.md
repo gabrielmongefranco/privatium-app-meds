@@ -28,7 +28,7 @@ and for developers who change the app. [The usage page](../usage.md) shows how t
 screens. The [data model](../data-model.md) describes the tables and views.
 
 Every screen on this page is built, except where a note marked **Planned** says
-otherwise. The [import page](import.md) covers the owner's legacy database.
+otherwise.
 
 ### Goals
 
@@ -85,7 +85,7 @@ All names and numbers in the examples are invented.
 
 #### Refills
 
-This is the home page. It shows what needs attention now, most urgent first.
+It shows what needs attention now, most urgent first.
 
 The page holds these parts, in reading order:
 
@@ -120,7 +120,7 @@ adds a person.
 #### Record a fill
 
 The form opens from a row's **Record fill** button, or from the button at the top of the
-home page. From a row, the person and the medication are already chosen. The form copies
+Refills page. From a row, the person and the medication are already chosen. The form copies
 five values from the last fill of that medication, so most fills need a date and an
 amount only. From the button at the top, the form starts with
 [the medication box](#the-medication-box).
@@ -148,7 +148,7 @@ thousands separators before it checks the number.
 
 Saving writes the fill, the new refills left and any record the form added together, in
 one batch. The app then
-returns to the home page, which confirms the save in a status message: "Saved the fill
+returns to the Refills page, which confirms the save in a status message: "Saved the fill
 for Examplol (Exampline) 10 mg. The next fill date is October 24, 2026, and the supply lasts until October 31, 2026."
 
 If a check fails, the form comes back with everything you typed still in place. Each
@@ -448,7 +448,7 @@ This page links to four places, each a box of the launcher list:
 - **Insurance plans**: names, refill overrides and reference-safe removal.
 - **Family**: the household members.
 - **Medication catalog**: every product the household has used, with its other names.
-  The sample data adds a starter catalog of common medications.
+  The starter catalog of common medications loads by itself when the catalog is empty.
 - **Reminder settings**: six reminder day counts and three early refill settings.
 
 The app asks for no household name.
@@ -521,7 +521,7 @@ The catalog gets its entries in three ways.
 
 | Way | What it adds |
 |---|---|
-| The starter catalog | About 2,507 entries, loaded once into an empty app |
+| The starter catalog | About 2,507 entries, loaded by the app into an empty catalog |
 | The lookup in a form | One entry at a time, when you add a medication the catalog lacks |
 | Your own typing | Anything else |
 
@@ -705,17 +705,15 @@ shows the phone number, because the next step is a new prescription.
 A fill with no days supply counts as 1 day in every view, so a report always has a date.
 The medication still appears under Missing information until someone adds the number.
 
-#### Differences from the legacy view
-
-The app deliberately differs from `ActiveMedicationsView`:
+#### The rules in short
 
 - Physical supply stacks across every fill. Gaps earn no credit.
 - Refill eligibility uses the last payer's count, a rolling frame, and an early allowance.
 - Overdue begins after physical supply ends. Due follows eligibility.
-- Today is the node's local date. The legacy view uses Coordinated Universal Time (UTC).
+- Today is the node's local date.
 - Default reminder counts are 3 and 7 days, or 5 and 10 for specialty medications.
 - Only medications taken regularly raise refill alerts. Missing days supply counts as one day.
-- Merged entries share their fill history and can have different dates from the source view.
+- Merged entries share their fill history.
 
 ### Accessibility plan
 
@@ -779,11 +777,11 @@ dates, medications, the conditions they treat, prescription numbers and claim nu
 - **Addresses.** A page address holds record ids only. It never holds a name, a date or a
   medication.
 - **Logs.** Diagnostic messages hold record ids and counts, never field values.
-- **Sample data.** `sample/seed.jsonl` holds a starter catalog only, and no person.
+- **Starter catalog.** `lib/starter_catalog.lua` holds a starter catalog only, and no person.
 - **Lookup.** The browser sends the name typed into the lookup box to a public drug
   reference, without cookies and without the address of the page. What comes back is
   shown as text, never as markup, and is checked by the server like any typed value.
-- **Import.** The [import page](import.md) keeps real records out of this repository.
+- **Real records.** No record of a real household is in this repository. Synthetic data only, in the tests and the pages.
 
 This design makes no claim of compliance with any health privacy law.
 
@@ -799,9 +797,6 @@ rows.
 | `privatium lint apps/meds` | 0 findings |
 | Unit tests of the Lua modules | All passed |
 | Smoke test of every screen over HTTP | All passed |
-| Both dates against the legacy view, on the owner's data, with an empty days supply counted as zero | Every row matched |
-| The same, with an empty days supply counted as 1 day | Every row matched |
-| Conversion of every legacy row under the schema's constraints | Every row converted. The total amount paid was unchanged. |
 | `date('now', 'localtime')` inside the node | Returned the local time |
 | Loading invented rows through the data API on the node's own address | Accepted |
 | Loading the same rows a second time | Nothing appended |
@@ -827,11 +822,9 @@ The owner made these decisions on 2026-09-27.
 | Short name | The brand name, the generic name in brackets, then the strength. |
 | Birth date | Kept, optional. |
 | Choices and strength | Choices are picked or typed in the form. Strength is text, as the label prints it. |
-| Import | A Python script for one use by the owner. |
-| Fills for a medication on nobody's list | The import adds a list entry with the status No longer taking. |
 | Day counts | Due at 0 to 3 days and due soon at 4 to 7. For a specialty medication, 0 to 5 and 6 to 10. |
 | Readable view | `v_active_medication`, with the new column names. |
-| Sample data | Holds a starter catalog of medications that are common in the United States. |
+| Starter catalog | Medications that are common in the United States. The app loads it by itself when the catalog is empty. There is no separate sample data file. |
 | Fills from a portal | Pasted as text, read by the app, reviewed, then added. |
 | Amounts from a portal | What the plan paid and the deductible are shown in the review and not stored. |
 | Portal names | A reader is named after its layout. No company name appears in this repository. |
@@ -863,12 +856,10 @@ Each step ended with a clean `privatium lint`, passing tests and updated documen
 1. Tables, views and the starter catalog, with the data model page. Done.
 2. Setup screens for people, pharmacies, prescribers and the catalog. Done.
 3. The medication search, the other names and the merge. Done.
-4. The one-time import. Done. The script is kept outside this repository. See the
-   [import page](import.md).
 5. Medications and the medication page. Done.
 6. Record a fill, and History. Done.
 7. Paste fills. Done, for one layout of portal page.
-8. Refills, as the home page. Done.
+8. Refills. Done.
 9. Authorizations. Done.
 10. The printable medication list and the spending table. Done.
 11. Adding records from inside a form, the medication box, suggestions in text boxes,
@@ -910,14 +901,12 @@ Each step ended with a clean `privatium lint`, passing tests and updated documen
 ### Conclusion
 
 You now know what the app shows, how it decides that a refill is due, and what is
-still planned. Read the [data model](../data-model.md) next, then the
-[import page](import.md).
+still planned. Read the [data model](../data-model.md) next.
 
 ### Additional resources
 
 - [Using the app](../usage.md)
 - [Data model](../data-model.md)
-- [Import of the legacy database](import.md)
 - [How to run the tests](../how-to/run-the-tests.md)
 - [Compliance](../compliance.md)
 - [The schema, as SQL](../../apps/meds/schema.sql)

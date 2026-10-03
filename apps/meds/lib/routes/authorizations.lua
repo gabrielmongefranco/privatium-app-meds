@@ -30,6 +30,7 @@ local people_filter   = require 'people_filter'
 local quick_add       = require 'quick_add'
 local store           = require 'store'
 local suggestions     = require 'suggestions'
+local starter         = require 'starter'
 local text            = require 'text'
 local validate        = require 'validate'
 
@@ -174,6 +175,7 @@ end)
 
 -- The form can start from a tracked medication, which names the person too.
 pv.get(LIST .. '/new', function(req)
+  starter.ensure()
   return form_page('Add a prior authorization', url(LIST .. '/new'), {
     entry_id   = text.clean(req.query.entry),
     person_id  = text.clean(req.query.person),

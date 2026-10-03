@@ -33,6 +33,7 @@ local store    = require 'store'
 local validate = require 'validate'
 
 --- Configuration ---
+local REFILLS = '/refills'   -- The Refills page; the Medications page is the home page
 local DAY_COUNT_MAX = 365   -- A reminder more than a year ahead is a typing mistake
 
 -- Values are bounded to catch typing mistakes before they affect refill dates. `label` completes the sentence
@@ -96,7 +97,7 @@ local function fill_notice(fill_id)
     .. tostring(fmt.date(saved.lasts_until)) .. '.'
 end
 
-pv.get('/', function(req)
+pv.get(REFILLS, function(req)
   local filter = people_filter.read(req)
   if #filter.people == 0 then
     return pv.render('index', { section = 'home', greeting = clock.greeting(clock.hour()) })

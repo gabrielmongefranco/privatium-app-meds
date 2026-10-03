@@ -106,7 +106,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 
   <p class="pv-actions">
     <button type="submit" class="pv-btn pv-btn-primary"><?= icon('check-lg') ?> Save the fill</button>
-    <a class="pv-btn" href="<?= url('/') ?>">Cancel</a>
+    <a class="pv-btn" href="<?= url('/refills') ?>">Cancel</a>
     <? if not is_new and typed.id then ?>
       <a class="pv-btn" href="<?= url('/fills/' .. typed.id .. '/remove') ?>"><?= icon('trash') ?> Remove this fill</a>
     <? end ?>

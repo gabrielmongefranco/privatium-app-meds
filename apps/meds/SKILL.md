@@ -15,8 +15,7 @@ See <https://www.gnu.org/licenses/fdl-1.3.html>. See README for full license inf
 ## The `meds` app
 
 Tier 1, Lua. A personal prescription tracker for families with chronic conditions. This
-version has every screen of [the app design](../../docs/design/README.md). The script
-for the one-time import of the owner's legacy database lives outside this repository.
+version has every screen of [the app design](../../docs/design/README.md).
 
 ### Schema
 
@@ -76,7 +75,8 @@ view, and must change in the same commit as `schema.sql`.
 
 | Route | Module | Handler |
 |---|---|---|
-| `GET /` | `home` | The Refills page, or a welcome while the household has no people |
+| `GET /refills` | `home` | The Refills page, or a welcome while the household has no people |
+| `GET /` | `medications` | The Medications page, which is the home page, or a welcome while the household has no people |
 | `GET /setup` | `home` | Links to the parts of Setup |
 | `GET`, `POST /setup/reminders` | `home` | Reminder and early refill settings |
 | `GET`, `POST /setup/plans/new`, `/:id/edit`, `/:id/remove`; `GET /setup/plans` | `plans` | Payers and their rules, with removal refused while referenced |
@@ -167,17 +167,19 @@ view, and must change in the same commit as `schema.sql`.
 - What the lookup script puts into a form is untrusted. `medication_pick` and
   `catalog_entry` check it like typed text. The script writes answers of a reference
   with `textContent`, never as markup.
-- `sample/seed.jsonl` is written by `tools/build_seed.py` from the lists in
-  `tools/seed/`. Change the lists and run the script. Do not edit the seed by hand.
+- `lib/starter_catalog.lua` is written by `tools/build_seed.py` from the lists in
+  `tools/seed/`. Change the lists and run the script. Do not edit the module by hand.
+  `lib/starter.lua` loads it when a page finds the catalog empty; there is no
+  `sample/seed.jsonl`, so the catalog lives in one place.
 - A diagnostic message holds no field value. `page.masked` strips quoted values.
 - Templates use `<?= ?>` only. There is no `<?raw ?>` here and there should not be.
 - `static/meds.css` uses the shell's color tokens. Inherit form controls and focus rings
   rather than duplicating the shell stylesheet.
 - Every source file carries the project header from `AGENTS.md`, not Privatium's.
 - Health information will live in this app. Keep real names, dates of birth and
-  medication records out of `sample/seed.jsonl`, tests and documentation.
-- `sample/seed.jsonl` holds the starter catalog only. It never
-  holds a person or a record about one, so an owner can load it into a real household.
+  medication records out of `lib/starter_catalog.lua`, tests and documentation.
+- `lib/starter_catalog.lua` holds the starter catalog only. It never
+  holds a person or a record about one, so it is safe in a real household.
 
 ### Extending it
 

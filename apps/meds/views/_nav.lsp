@@ -28,7 +28,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 <nav aria-label="Prescription Tracker">
   <ul class="pv-subnav meds-nav">
     <li><a href="<?= url('/medications') ?>"<? if section == 'medications' then ?> aria-current="page"<? end ?>><?= icon('capsule') ?> Medications</a></li>
-    <li><a href="<?= url('/') ?>"<? if section == 'home' then ?> aria-current="page"<? end ?>><?= icon('bag-plus-fill') ?> Refills</a></li>
+    <li><a href="<?= url('/refills') ?>"<? if section == 'home' then ?> aria-current="page"<? end ?>><?= icon('bag-plus-fill') ?> Refills</a></li>
     <li><a href="<?= url('/fills') ?>"<? if section == 'history' then ?> aria-current="page"<? end ?>><?= icon('clock-history') ?> History</a></li>
     <li><a href="<?= url('/authorizations') ?>"<? if section == 'authorizations' then ?> aria-current="page"<? end ?>><?= icon('shield-check') ?> Authorizations</a></li>
     <li><a href="<?= url('/contacts') ?>"<? if section == 'contacts' then ?> aria-current="page"<? end ?>><?= icon('telephone') ?> Contacts</a></li>
