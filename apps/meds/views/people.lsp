@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/views/people.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-09-27
+Last Modified: 2026-10-03
 Summary: The list of the people of the household.
 Notes: See README file for documentation and full license information.
 
@@ -24,15 +24,15 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 
 <?= render('_nav', { section = section }) ?>
 <p><a href="<?= url('/setup') ?>">Back to Setup</a></p>
-<h1>People</h1>
+<h1>Family</h1>
 <?= render('_notice', { notice = notice }) ?>
 
 <p class="pv-actions">
-  <a class="pv-btn pv-btn-primary" href="<?= url('/setup/people/new') ?>"><?= icon('plus-lg') ?> Add a person</a>
+  <a class="pv-btn pv-btn-primary" href="<?= url('/setup/people/new') ?>"><?= icon('plus-lg') ?> Add a family member</a>
 </p>
 
 <? if #people == 0 then ?>
-  <p class="pv-empty">No one is in the app yet. Add the first person to begin.</p>
+  <p class="pv-empty">No one is in the family yet. Add the first person to begin.</p>
 <? else ?>
   <table class="pv-records" role="table">
     <caption class="pv-visually-hidden">The people of the household, by name</caption>

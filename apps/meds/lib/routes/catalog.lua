@@ -2,7 +2,7 @@
 -- apps/meds/lib/routes/catalog.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-10-01
+-- Last Modified: 2026-10-03
 -- Summary: The screens of the medication catalog: search, show, add, change, remove,
 --          other names, and the merge of two entries that are the same product.
 --          A catalog entry is a product; what a person takes is kept elsewhere.
@@ -49,7 +49,7 @@ local function first_page()
   return pv.query([[
     SELECT m.medication_id, m.short_name, m.full_name, m.is_specialty, m.is_controlled
       FROM v_medication m
-     ORDER BY (EXISTS (SELECT 1 FROM person_medication pm WHERE pm.medication_id = m.medication_id)
+     ORDER BY (EXISTS (SELECT 1 FROM person_medication_product tp WHERE tp.medication_id = m.medication_id)
                OR EXISTS (SELECT 1 FROM fill f WHERE f.medication_id = m.medication_id)) DESC,
               m.short_name COLLATE NOCASE, m.medication_id
      LIMIT ?]], { PAGE_SIZE })
@@ -76,18 +76,14 @@ end
 -- How many records still point to a medication, as phrases for the removal page.
 local function uses(id)
   local counts = pv.query1([[
-    SELECT (SELECT count(*) FROM person_medication   WHERE medication_id = ?1) AS lists,
-           (SELECT count(*) FROM fill                WHERE medication_id = ?1) AS fills,
-           (SELECT count(*) FROM prior_authorization WHERE medication_id = ?1) AS authorizations]],
+    SELECT (SELECT count(*) FROM person_medication_product WHERE medication_id = ?1) AS lists,
+           (SELECT count(*) FROM fill                      WHERE medication_id = ?1) AS fills]],
     { id })
   local list = {}
   if counts.lists > 0 then
-    list[#list + 1] = page.counted(counts.lists, "person's list", "people's lists")
+    list[#list + 1] = page.counted(counts.lists, 'tracked medication', 'tracked medications')
   end
   if counts.fills > 0 then list[#list + 1] = page.counted(counts.fills, 'fill', 'fills') end
-  if counts.authorizations > 0 then
-    list[#list + 1] = page.counted(counts.authorizations, 'prior authorization', 'prior authorizations')
-  end
   return list
 end
 
@@ -297,11 +293,11 @@ local function sentences(plan)
   local function add(count, singular, plural, ending)
     if count > 0 then list[#list + 1] = page.counted(count, singular, plural) .. ending end
   end
-  add(#plan.fills, 'fill', 'fills', ' will move.')
-  add(#plan.entries_moved, "entry on a person's list", "entries on people's lists", ' will move.')
-  add(#plan.entries_dropped, "entry on a person's list", "entries on people's lists",
-      ' will be removed, because that person has both medications on their list. The entry in use is kept.')
-  add(#plan.authorizations, 'prior authorization', 'prior authorizations', ' will move.')
+  add(#plan.fills, 'fill', 'fills', ' will name the medication that stays.')
+  add(#plan.links_moved, 'tracked medication', 'tracked medications', ' will hold the medication that stays in place of the one that goes.')
+  add(#plan.links_dropped, 'tracked medication holds', 'tracked medications hold',
+      ' both medications already, and will keep the one that stays.')
+  add(#plan.shared, 'person', 'people', ' will have the medication that stays on two tracked medications afterwards. Take it off one of them.')
   add(#plan.aliases_moved + #plan.names_added, 'name', 'names', ' will become other names of the medication that stays.')
   return list
 end

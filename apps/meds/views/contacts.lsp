@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/views/contacts.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-09-27
+Last Modified: 2026-10-03
 Summary: The Contacts page: the pharmacies and the prescribers, with their details.
 Notes: See README file for documentation and full license information.
 
@@ -26,20 +26,6 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 <h1>Contacts</h1>
 <?= render('_notice', { notice = notice }) ?>
 
-<h2 id="pharmacies">Pharmacies</h2>
-<p class="pv-actions">
-  <a class="pv-btn pv-btn-primary" href="<?= url('/contacts/pharmacies/new') ?>"><?= icon('plus-lg') ?> Add a pharmacy</a>
-</p>
-<? if #pharmacies == 0 then ?>
-  <p class="pv-empty">No pharmacy is in the app yet.</p>
-<? else ?>
-  <ul class="meds-cards">
-    <? for _, pharmacy in ipairs(pharmacies) do ?>
-      <?= render('_contact', { contact = pharmacy, path = '/contacts/pharmacies' }) ?>
-    <? end ?>
-  </ul>
-<? end ?>
-
 <h2 id="prescribers">Prescribers</h2>
 <p class="pv-actions">
   <a class="pv-btn pv-btn-primary" href="<?= url('/contacts/prescribers/new') ?>"><?= icon('plus-lg') ?> Add a prescriber</a>
@@ -50,6 +36,20 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
   <ul class="meds-cards">
     <? for _, prescriber in ipairs(prescribers) do ?>
       <?= render('_contact', { contact = prescriber, path = '/contacts/prescribers' }) ?>
+    <? end ?>
+  </ul>
+<? end ?>
+
+<h2 id="pharmacies">Pharmacies</h2>
+<p class="pv-actions">
+  <a class="pv-btn pv-btn-primary" href="<?= url('/contacts/pharmacies/new') ?>"><?= icon('plus-lg') ?> Add a pharmacy</a>
+</p>
+<? if #pharmacies == 0 then ?>
+  <p class="pv-empty">No pharmacy is in the app yet.</p>
+<? else ?>
+  <ul class="meds-cards">
+    <? for _, pharmacy in ipairs(pharmacies) do ?>
+      <?= render('_contact', { contact = pharmacy, path = '/contacts/pharmacies' }) ?>
     <? end ?>
   </ul>
 <? end ?>

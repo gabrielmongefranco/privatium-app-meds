@@ -2,7 +2,7 @@
 -- apps/meds/lib/routes/people.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-10-01
+-- Last Modified: 2026-10-03
 -- Summary: The screens that list, add, change and remove the people of the household.
 -- Notes: See README file for documentation and full license information.
 --
@@ -56,9 +56,13 @@ end
 -- How many records still point to a person, as phrases for the removal page.
 local function uses(id)
   local counts = pv.query1([[
-    SELECT (SELECT count(*) FROM person_medication   WHERE person_id = ?1) AS medications,
-           (SELECT count(*) FROM fill                WHERE person_id = ?1) AS fills,
-           (SELECT count(*) FROM prior_authorization WHERE person_id = ?1) AS authorizations]],
+    SELECT (SELECT count(*) FROM person_medication WHERE person_id = ?1) AS medications,
+           (SELECT count(*) FROM fill f
+             JOIN person_medication pm ON pm.id = f.person_medication_id
+            WHERE pm.person_id = ?1) AS fills,
+           (SELECT count(*) FROM prior_authorization pa
+             JOIN person_medication pm ON pm.id = pa.person_medication_id
+            WHERE pm.person_id = ?1) AS authorizations]],
     { id })
   local list = {}
   if counts.medications > 0 then
@@ -124,7 +128,7 @@ pv.get(LIST, function(req)
 end)
 
 pv.get(LIST .. '/new', function()
-  return form_page('Add a person', url(LIST .. '/new'), {}, {})
+  return form_page('Add a family member', url(LIST .. '/new'), {}, {})
 end)
 
 pv.post(LIST .. '/new', function(req)
@@ -134,7 +138,7 @@ pv.post(LIST .. '/new', function(req)
     if saved then return pv.redirect(url(LIST .. '?notice=saved')) end
     errors.display_name = refusal
   end
-  return form_page('Add a person', url(LIST .. '/new'), req.form, errors)
+  return form_page('Add a family member', url(LIST .. '/new'), req.form, errors)
 end)
 
 pv.get(LIST .. '/:id/edit', function(req)

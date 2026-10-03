@@ -2,7 +2,7 @@
 -- apps/meds/lib/merge.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-10-01
+-- Last Modified: 2026-10-03
 -- Summary: Merges one medication of the catalog into another when both are the same product.
 --          The plan says what will move; applying it writes every change in one batch.
 -- Notes: See README file for documentation and full license information.
@@ -27,40 +27,25 @@ local text  = require 'text'
 
 local merge = {}
 
---- Configuration ---
--- When one person has both medications on their list, one entry is kept. The entry
--- with the status nearer the top of this list wins; a tie keeps the entry of the
--- medication that stays.
-local STATUS_RANK = {
-  taking_regularly = 1, taking_as_needed = 2, on_hold = 3, not_started = 4, not_taking = 5,
-}
-
 --- Reads ---
 
--- Grain: one row per fill of one medication, with every column of the table.
+-- Grain: one row per fill that names one product, with every column of the table.
 local function fills_of(id)
   return pv.query([[
-    SELECT id, person_id, medication_id, pharmacy_id, filled_on, rx_number, quantity,
+    SELECT id, person_medication_id, medication_id, pharmacy_id, filled_on, rx_number, quantity,
            days_supply, amount_paid, plan_id, insurance_claim_number, notes
       FROM fill
      WHERE medication_id = ?]], { id })
 end
 
--- Grain: one row per list entry of one medication, with every column of the table.
-local function entries_of(id)
+-- Grain: one row per link between a tracked medication and one product, with the
+-- person of the tracked medication.
+local function links_of(id)
   return pv.query([[
-    SELECT id, person_id, medication_id, medication_type, status, pharmacy_id,
-           prescriber_id, prescribed_for, instructions, when_to_take, refills_left
-      FROM person_medication
-     WHERE medication_id = ?]], { id })
-end
-
--- Grain: one row per prior authorization of one medication, with every column.
-local function authorizations_of(id)
-  return pv.query([[
-    SELECT id, person_id, medication_id, valid_from, valid_to
-      FROM prior_authorization
-     WHERE medication_id = ?]], { id })
+    SELECT tp.id, tp.person_medication_id, tp.medication_id, pm.person_id
+      FROM person_medication_product tp
+      JOIN person_medication pm ON pm.id = tp.person_medication_id   -- many:1
+     WHERE tp.medication_id = ?]], { id })
 end
 
 -- Grain: one row per other name of one medication.
@@ -88,30 +73,35 @@ end
 --- Work out what a merge will do, without writing anything.
 -- @param source table  The medication that goes away: a row of v_medication.
 -- @param target table  The medication that stays: a row of v_medication.
--- @return table  The plan: the rows to move, the list entries to keep and to drop, and
---         the names the target gains.
+-- @return table  The plan: the fills to point at the target, the links of tracked
+--         medications to move or to drop, the people who end up with the target on two
+--         tracked medications, and the names the target gains.
 function merge.plan(source, target)
   local plan = {
     source = source, target = target,
     fills = fills_of(source.medication_id),
-    authorizations = authorizations_of(source.medication_id),
-    entries_moved = {}, entries_dropped = {},
+    links_moved = {}, links_dropped = {}, shared = {},
     aliases_moved = {}, aliases_dropped = {}, names_added = {},
   }
 
-  local kept = {}
-  for _, entry in ipairs(entries_of(target.medication_id)) do kept[entry.person_id] = entry end
-  for _, entry in ipairs(entries_of(source.medication_id)) do
-    local other = kept[entry.person_id]
-    if not other then
-      plan.entries_moved[#plan.entries_moved + 1] = entry
-    elseif STATUS_RANK[entry.status] < STATUS_RANK[other.status] then
-      -- The entry of the medication that goes away is the one in use, so it takes the
-      -- place of the other.
-      plan.entries_moved[#plan.entries_moved + 1] = entry
-      plan.entries_dropped[#plan.entries_dropped + 1] = other
+  -- A tracked medication that holds both products keeps one link. A person whose
+  -- other tracked medication holds the target would hold it twice afterwards; the
+  -- plan says so, and the person takes it off one of them.
+  local has_target, people_with_target = {}, {}
+  for _, link in ipairs(links_of(target.medication_id)) do
+    has_target[link.person_medication_id] = true
+    people_with_target[link.person_id] = (people_with_target[link.person_id] or 0) + 1
+  end
+  local shared = {}
+  for _, link in ipairs(links_of(source.medication_id)) do
+    if has_target[link.person_medication_id] then
+      plan.links_dropped[#plan.links_dropped + 1] = link
     else
-      plan.entries_dropped[#plan.entries_dropped + 1] = entry
+      plan.links_moved[#plan.links_moved + 1] = link
+      if people_with_target[link.person_id] and not shared[link.person_id] then
+        shared[link.person_id] = true
+        plan.shared[#plan.shared + 1] = link.person_id
+      end
     end
   end
 
@@ -145,14 +135,12 @@ function merge.apply(plan)
   local target_id = plan.target.medication_id
   local moved = { medication_id = target_id }
   return store.together('medication', function(tx)
-    for _, entry in ipairs(plan.entries_dropped) do tx.delete('person_medication', entry.id) end
-    for _, entry in ipairs(plan.entries_moved) do
-      tx.append('person_medication', entry.id, without_id(entry, moved))
+    for _, link in ipairs(plan.links_dropped) do tx.delete('person_medication_product', link.id) end
+    for _, link in ipairs(plan.links_moved) do
+      tx.append('person_medication_product', link.id,
+        { person_medication_id = link.person_medication_id, medication_id = target_id })
     end
     for _, fill in ipairs(plan.fills) do tx.append('fill', fill.id, without_id(fill, moved)) end
-    for _, authorization in ipairs(plan.authorizations) do
-      tx.append('prior_authorization', authorization.id, without_id(authorization, moved))
-    end
     for _, alias in ipairs(plan.aliases_dropped) do tx.delete('medication_alias', alias.id) end
     for _, alias in ipairs(plan.aliases_moved) do
       tx.append('medication_alias', alias.id, without_id(alias, moved))

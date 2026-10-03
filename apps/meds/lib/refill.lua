@@ -2,7 +2,7 @@
 -- apps/meds/lib/refill.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-10-01
+-- Last Modified: 2026-10-03
 -- Summary: The words and the group for a refill status. Pure Lua with no framework calls, so
 --          plain Lua can test it.
 -- Notes: See README file for documentation and full license information.
@@ -39,7 +39,7 @@ refill.GROUPS = {
 --- The group of the Refills page that a medication belongs to.
 -- Only a medication taken regularly raises an alert. One taken as needed, or paused,
 -- shows its dates without one.
--- @param status string          The status of the list entry.
+-- @param status string          The status of the tracked medication.
 -- @param refill_status string   The refill status from v_active_medication.
 -- @param days_supply_missing boolean|integer  Whether the last fill lacks a days supply.
 -- @return string|nil  A key of refill.GROUPS, or nil for a medication no longer taken.
@@ -58,7 +58,7 @@ end
 -- prescription before its next fill. The reminder follows the days of the refill
 -- reminders, so it appears when the next fill is due soon, due or overdue. Some
 -- prescribers take such a request from the patient only, never from the pharmacy.
--- @param status string         The status of the list entry.
+-- @param status string         The status of the tracked medication.
 -- @param refills_left integer  The refills left.
 -- @param refill_status string  The refill status from v_active_medication.
 -- @return boolean

@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 docs/how-to/run-the-tests.md
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-10-01
+Last Modified: 2026-10-03
 Summary: How to run the lint, the unit tests and the smoke test, and what each one covers.
 Notes: See README file for documentation and full license information.
 
@@ -76,7 +76,7 @@ the root of the repository.
 | Check | Covers |
 |---|---|
 | Lint | The rules of Privatium for an app: bound SQL parameters, the `csrf()` token in every form, labels on every field, heading order, and more |
-| Unit tests | The Lua modules with no framework calls: cleaning text, checking dates, numbers, amounts, phone numbers, email and website addresses, building a short name, merging choices, matching names, refill words, reading a pasted portal page, taking apart a name as a portal wrote it, and the words of a drug reference |
+| Unit tests | The Lua modules with no framework calls: cleaning text, checking dates, numbers, amounts, phone numbers, email and website addresses, building a short name, merging choices, matching names, refill words, reading a pasted portal page, taking apart a name as a portal wrote it, the words of a drug reference, and the icon of a dose form |
 | Supply tests | SQL dates against daily simulation, date boundaries, frame special values, invalid rules and view grain |
 | Smoke test | The screens over HTTP, on a real node: adding, changing and removing records, empty and invalid input, the longest values, and requests that must be refused |
 
@@ -91,6 +91,10 @@ The smoke test includes these checks of requests that must be refused:
 - A pasted fill that the review refused is not added, even when a hand-built request asks for it.
 - A medication, a person or a pharmacy id that names nothing is refused.
 - A form that is refused adds none of the new records it named.
+
+When a check fails, set `MEDS_SMOKE_KEEP` to a folder and run the test again. The page of
+each failed check is written there, named after the check, so you can read what the app
+answered.
 
 ### How the smoke test keeps your data safe
 

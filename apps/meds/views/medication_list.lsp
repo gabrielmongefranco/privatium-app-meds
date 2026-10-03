@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/views/medication_list.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-09-27
+Last Modified: 2026-10-03
 Summary: The medication list of one person, made for paper: what the person takes now and
          how. A print stylesheet hides the navigation.
 Notes: See README file for documentation and full license information.
@@ -44,7 +44,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
     <tbody role="rowgroup">
     <? for _, row in ipairs(taking) do ?>
       <tr role="row">
-        <td role="cell"><?= row.medication_name ?><? if row.status == 'taking_as_needed' then ?> (as needed)<? end ?></td>
+        <td role="cell"><?= render('_form_icon', { icon_name = row.form_icon, label = row.form_label }) ?> <?= row.medication_name ?><? if row.status == 'taking_as_needed' then ?> (as needed)<? end ?></td>
         <td role="cell"><?= row.instructions ?></td>
         <td role="cell"><?= row.when_to_take ?></td>
         <td role="cell"><?= row.prescribed_for ?></td>
@@ -67,7 +67,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
     <tbody role="rowgroup">
     <? for _, row in ipairs(on_hold) do ?>
       <tr role="row">
-        <td role="cell"><?= row.medication_name ?></td>
+        <td role="cell"><?= render('_form_icon', { icon_name = row.form_icon, label = row.form_label }) ?> <?= row.medication_name ?></td>
         <td role="cell"><?= row.prescribed_for ?></td>
         <td role="cell"><?= row.prescriber_name or 'Self-prescribed' ?></td>
       </tr>

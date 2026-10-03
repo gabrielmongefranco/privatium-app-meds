@@ -2,7 +2,7 @@
 -- apps/meds/lib/routes/paste.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-10-01
+-- Last Modified: 2026-10-03
 -- Summary: The screens that turn the pasted text of a portal page into fills: paste, review,
 --          add. The text is untrusted; it is read again and checked again before anything is saved.
 -- Notes: See README file for documentation and full license information.
@@ -23,6 +23,7 @@
 
 
 local pv                = require 'privatium'
+local entries           = require 'entries'
 local fills             = require 'fills'
 local match             = require 'match'
 local medication_pick   = require 'medication_pick'
@@ -87,21 +88,26 @@ local function first_fill_of(claims, key_of)
 end
 
 -- Looks for the medication of a name among the earlier fills of the person, by the
--- prescription numbers of its fills. A number that is known names one medication. When
--- the drug of the written name is among the names of that medication too, the two
--- agree, and the medication is the choice to begin with. With the number alone, the
--- medication comes first and the person decides.
+-- prescription numbers of its fills. A number that is known names one tracked
+-- medication. Among its products, the one whose names hold the drug of the written
+-- name comes first; when one does, the two agree, and that product is the choice to
+-- begin with. With the number alone, the product comes first and the person decides.
 local function by_prescription(subject, person_id, typed, submitted)
   local found = {}
   for _, claim in ipairs(subject.claims) do
-    for _, id in ipairs(fills.medications_of_rx(person_id, claim.rx_number)) do found[id] = true end
+    for _, entry_id in ipairs(fills.entries_of_rx(person_id, claim.rx_number)) do found[entry_id] = true end
   end
-  local id = next(found)
-  -- Numbers that lead to two medications say nothing.
-  if not id or next(found, id) then return end
+  local entry_id = next(found)
+  -- Numbers that lead to two tracked medications say nothing.
+  if not entry_id or next(found, entry_id) then return end
 
-  local medication, fits = medication_search.fit(id, subject.name)
+  local medication, fits
+  for _, product in ipairs(entries.products(entry_id)) do
+    local row, fit = medication_search.fit(product.medication_id, subject.name)
+    if row and (not medication or (fit and not fits)) then medication, fits = row, fit end
+  end
   if not medication then return end
+  local id = medication.medication_id
   local others = {}
   for _, candidate in ipairs(subject.candidates) do
     if candidate.medication_id ~= id then
@@ -175,15 +181,16 @@ local function medication_of(subject, typed, submitted)
   return nil
 end
 
--- Leaves out the fills that the person has already: the same medication on the same
--- date. A fill that was typed by hand or imported often has no prescription number,
--- so the number alone would let it in a second time. A medication with no fill left
--- asks no question.
+-- Leaves out the fills that the person has already: the same tracked medication on the
+-- same date. A fill that was typed by hand or imported often has no prescription
+-- number, so the number alone would let it in a second time. A medication with no fill
+-- left asks no question.
 local function leave_out_repeated(rows, medications, medication_by, person_id, typed, submitted)
   for _, row in ipairs(rows) do
     local subject = row.can_add and medication_by[text.key(row.claim.drug_name)]
     local id = subject and medication_of(subject, typed, submitted)
-    if id and fills.on_day(person_id, id, row.claim.filled_on) then
+    local entry = id and entries.with_product(person_id, id)
+    if entry and fills.on_day(entry.id, row.claim.filled_on) then
       row.result, row.same_day = 'Already recorded', true
       row.can_add, row.ready, row.wanted = nil, nil, false
       if not submitted then typed['include_' .. row.index] = nil end
@@ -250,10 +257,10 @@ local function review(claims, person_id, typed, submitted)
   for index, claim in ipairs(claims) do
     local row = { index = index, claim = claim, problems = {} }
     local form = {
-      plan_id = person and person.plan_id, person_id = person_id, filled_on = claim.filled_on, days_supply = claim.days_supply,
+      plan_id = person and person.plan_id, filled_on = claim.filled_on, days_supply = claim.days_supply,
       quantity = claim.quantity, amount_paid = claim.amount_paid, rx_number = claim.rx_number,
     }
-    row.fill, row.errors = fills.read(form, { medication_id = true, pharmacy_id = true })
+    row.fill, row.errors = fills.read(form, { person_medication_id = true, medication_id = true, pharmacy_id = true })
     for _, field in ipairs({ 'filled_on', 'days_supply', 'quantity', 'amount_paid', 'rx_number' }) do
       if row.errors[field] then row.problems[#row.problems + 1] = row.errors[field] end
     end
@@ -388,6 +395,8 @@ pv.post(PASTE .. '/add', function(req)
     for _, subject in ipairs(found.medications) do
       if subject.used and subject.known then
         subject.id = subject.known.medication_id
+        subject.entry = entries.with_product(person_id, subject.id)
+        subject.full_name = select(2, medication_pick.names({ id = subject.id }))
       elseif subject.used then
         local new_row = subject.pick.new_row
         local key = new_row and text.key(new_row.short_name)
@@ -405,6 +414,10 @@ pv.post(PASTE .. '/add', function(req)
         if alias and not answers then
           tx.append('medication_alias', { medication_id = subject.id, alias = alias })
         end
+        -- A product the person tracks already keeps its tracked medication. A product
+        -- added just now is on no list, and gets one with the fill.
+        subject.entry = entries.with_product(person_id, subject.id)
+        subject.full_name = select(2, medication_pick.names(new_row and subject.pick or { id = subject.id }))
       end
     end
     for _, subject in ipairs(found.pharmacies) do
@@ -415,7 +428,16 @@ pv.post(PASTE .. '/add', function(req)
 
     local rows = {}
     for _, row in ipairs(wanted) do
-      row.fill.medication_id, row.fill.pharmacy_id = row.medication.id, row.pharmacy.id
+      local subject = row.medication
+      row.fill.medication_id, row.fill.pharmacy_id = subject.id, row.pharmacy.id
+      if subject.entry then
+        row.fill.person_medication_id = subject.entry.id
+      else
+        row.fill.new_entry = {
+          person_id = person_id, medication_id = subject.id, display_name = subject.full_name,
+          status = 'taking_regularly', pharmacy_id = row.pharmacy.id,
+        }
+      end
       rows[#rows + 1] = row.fill
     end
     fills.add_all(tx, rows, nil)

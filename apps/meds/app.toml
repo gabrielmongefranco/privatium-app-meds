@@ -2,7 +2,7 @@
 # apps/meds/app.toml
 # Author(s): Gabriel Mongefranco
 # Created: 2026-09-26
-# Last Modified: 2026-09-27
+# Last Modified: 2026-10-03
 # Summary: Manifest for the Prescription Tracker app. Tier 1 (Lua), API 1.
 # Notes: See README file for documentation and full license information.
 #
@@ -23,7 +23,7 @@
 [app]
 slug        = "meds"
 title       = "Prescription Tracker"
-version     = "0.3.0"
+version     = "0.4.0"
 api         = 1
 tier        = "lua"
 description = "A personal prescription tracker for families with chronic conditions."

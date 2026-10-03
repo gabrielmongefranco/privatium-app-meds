@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 docs/compliance.md
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-10-01
+Last Modified: 2026-10-03
 Summary: The security and accessibility controls the app has, the evidence for each, the
          known gaps, and the checks a person still has to make.
 Notes: See README file for documentation and full license information.
@@ -51,6 +51,8 @@ paid. The [data model](data-model.md) marks each such column.
 | Form values are checked on the server | `lib/validate.lua`, `lib/fills.lua` and the route modules | Unit tests cover empty, invalid and boundary values. |
 | A status is one of five allowed values | `CHECK` in `schema.sql`, and `choices.status_label` | The smoke test sends a status that does not exist. |
 | A record a form points to must exist | `read_id` in the route modules | The smoke test sends ids that name nothing. |
+| A product belongs to one tracked medication of a person, and a fill names a product of its medication | `lib/routes/medications.lua`, `lib/fills.lua` | The smoke test adds a product a second time, and a fill with a product of another medication. Both are refused. |
+| The browser keeps the person tab chosen last by id only | `static/person_tab.js` | Read in the code. No name reaches local storage. |
 | A website becomes a link only with `http` or `https` | `validate.website` | Unit tests and the smoke test send a `javascript:` address. |
 | A page address carries ids and codes only | `lib/page.lua` turns a known code into a sentence | The smoke test sends markup as a code and as an id. |
 | Pasted portal text is untrusted | `lib/portal_reader.lua` only takes the text apart. The add step reads the text again and checks every value again. | The smoke test asks to add rows that the review refused. |
@@ -115,6 +117,11 @@ A screen reader pass remains needed. The live drug lookup and its suggested mark
 need an end-user check before relying on them.
 
 ### Checks a person still has to make
+
+Two scripts of this change need a browser: the search box of the Medications page
+narrows the list as you type and opens the closed section for a match, and the person
+tab chosen last is remembered across pages and after the browser is closed. The smoke
+test checks the server side of both and that the scripts are served.
 
 The committed tests do not drive a browser. Automated checks find only part of the accessibility problems.
 These checks are open:

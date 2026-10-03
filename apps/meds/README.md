@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/README.md
 Author(s): Gabriel Mongefranco
 Created: 2026-09-26
-Last Modified: 2026-09-27
+Last Modified: 2026-10-03
 Summary: What the meds app folder holds and how to run it.
 Notes: See README file for documentation and full license information.
 
@@ -24,8 +24,9 @@ repository holds the documentation, the license and the assistant guides.
 
 ### What it does today
 
-The app shows which refills are due, keeps the medication list of each person, records
-fills by hand or from the pasted text of a portal, and tracks prior authorizations.
+The app shows which refills are due, keeps the medication list of each person with the
+catalog products behind each medication, records fills by hand or from the pasted text
+of a portal, and tracks prior authorizations.
 [The usage page](../../docs/usage.md) shows how to use every screen.
 
 [The data model page](../../docs/data-model.md) describes each table, and
@@ -44,6 +45,8 @@ fills by hand or from the pasted text of a portal, and tracks prior authorizatio
 | `static/meds.css` | Styles, using the shell's color tokens |
 | `sample/seed.jsonl` | A starter catalog of common medications, which an owner can load into an empty app. `tools/build_seed.py` writes it. |
 | `static/medication_lookup.js` | The lookup of a new medication in public drug references. Every form works without it. |
+| `static/filter.js` | Narrows the Medications page as a person types. The server does the same when the form is sent. |
+| `static/person_tab.js` | Remembers the person tab chosen last, in the browser, until Privatium offers person profiles. |
 | `SKILL.md` | Context an AI assistant loads before extending this app |
 
 ### Run it

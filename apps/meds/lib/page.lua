@@ -2,7 +2,7 @@
 -- apps/meds/lib/page.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-09-27
+-- Last Modified: 2026-10-03
 -- Summary: Small helpers that every screen shares: the notice shown after a save, the
 --          list of problems at the top of a form, and the wording of a count. Pure Lua
 --          with no framework calls, so plain Lua can test it.
@@ -33,7 +33,7 @@ local NOTICES = {
   missing = 'That record is not in the app. It may have been removed.',
   named   = 'Saved. The search now finds this medication by that name.',
   unread  = 'The app found no fills in that text. Open the details of each fill in the portal, then copy the list again.',
-  merged  = 'Merged. The fills, the list entries and the names now belong to this medication.',
+  merged  = 'Merged. The fills, the tracked medications and the names now belong to this medication.',
 }
 
 --- The sentence for a notice code.

@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/views/paste_review.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-10-01
+Last Modified: 2026-10-03
 Summary: The review of pasted fills: what was read, what it matched, and what will be added.
          Every value from the text is escaped by the output tag.
 Notes: See README file for documentation and full license information.
@@ -149,9 +149,9 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
     </fieldset>
   <? end ?>
 
-  <p>Adding a fill lowers the refills left of its medication by one. A medication that is
-     not on the list of <?= person.display_name ?> is added to it, with the status Taking
-     regularly.</p>
+  <p>Adding a fill lowers the refills left of its medication by one. A product that is on
+     no list of <?= person.display_name ?> is added to the list, with the status Taking
+     regularly and the full name of the product as its name.</p>
   <p class="pv-actions">
     <button type="submit" class="pv-btn pv-btn-primary"><?= icon('check-lg') ?> Add fills</button>
     <a class="pv-btn" href="<?= url('/fills/paste?person=' .. person.id) ?>">Start over</a>

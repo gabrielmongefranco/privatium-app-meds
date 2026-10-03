@@ -3,7 +3,7 @@
  * apps/meds/static/meds.css
  * Author(s): Gabriel Mongefranco
  * Created: 2026-09-26
- * Last Modified: 2026-09-27
+ * Last Modified: 2026-10-03
  * Summary: Styles for the Prescription Tracker pages, using the shell's accessible color tokens.
  * Notes: See README file for documentation and full license information.
  *
@@ -99,3 +99,18 @@ main form label.meds-option input { flex: none; margin-top: .2rem; }
 .meds-lookup input[type="search"] { display: block; margin: 0 0 .5rem; }
 .meds-lookup-results { list-style: none; padding: 0; margin: .5rem 0; display: grid; gap: .4rem; }
 .meds-lookup-results .pv-btn { width: 100%; justify-content: flex-start; text-align: left; white-space: normal; }
+
+/* The toolbar of a list page: the buttons on the left, the search box pushed to the
+   right. On a narrow screen the search box wraps under the buttons. */
+.meds-toolbar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: .75rem; margin: 0 0 1.5rem; }
+.meds-toolbar .pv-actions { margin: 0; }
+.meds-toolbar form.meds-search { margin: 0 0 0 auto; display: flex; flex-wrap: wrap; align-items: flex-end; gap: .5rem; }
+.meds-toolbar form.meds-search label { display: block; font-weight: 600; }
+.meds-toolbar form.meds-search input[type="search"] { min-width: 14rem; }
+/* The icon of a dose form sits before the name, in the text color. */
+.meds-form-icon { vertical-align: -.125em; margin-right: .25rem; }
+/* The products of a tracked medication, one to a line, each with its Remove button. */
+.meds-products { list-style: none; padding: 0; margin: 0 0 1rem; }
+.meds-products li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; padding: .35rem 0; border-bottom: 1px solid var(--pv-line); }
+/* The Restart button of a medication no longer taken sits under its last fill date. */
+.meds-restart { margin: .35rem 0 0; }

@@ -130,12 +130,14 @@ CREATE TABLE prescriber (
     npi          VARCHAR             -- National Provider Identifier, kept as text
 );
 
---- person_medication: what each person takes ---
--- Grain: one row per person per medication they take or took.
+--- person_medication: what each person tracks ---
+-- Grain: one row per medication a person takes or took, under the name the person prefers.
+-- The catalog products it stands for are the rows of person_medication_product; a
+-- medication that comes in two cartons is one row here with two products.
 CREATE TABLE person_medication (
     id              VARCHAR PRIMARY KEY,
     person_id       VARCHAR NOT NULL,   -- person.id
-    medication_id   VARCHAR NOT NULL,   -- medication.id
+    display_name    VARCHAR NOT NULL,   -- The preferred name, shown everywhere; unique within one person
     medication_type VARCHAR,
     status          VARCHAR NOT NULL,
     pharmacy_id     VARCHAR,            -- pharmacy.id; the pharmacy used now
@@ -148,12 +150,24 @@ CREATE TABLE person_medication (
     CHECK (refills_left >= 0)
 );
 
+--- person_medication_product: the catalog products of a tracked medication ---
+-- Grain: one row per tracked medication per catalog product. Every tracked medication
+-- has at least one; the forms refuse to remove the last. One product belongs to one
+-- tracked medication of a person, so its fills are never counted twice.
+CREATE TABLE person_medication_product (
+    id                   VARCHAR PRIMARY KEY,
+    person_medication_id VARCHAR NOT NULL,   -- person_medication.id
+    medication_id        VARCHAR NOT NULL    -- medication.id
+);
+
 --- fill: each time a medication was picked up or delivered ---
--- Grain: one row per fill of one medication for one person.
+-- Grain: one row per fill of one tracked medication. The person is the one of the
+-- tracked medication. medication_id names the product that was dispensed, one of the
+-- products of the tracked medication, so two carton sizes stay apart in the history.
 CREATE TABLE fill (
     id                     VARCHAR PRIMARY KEY,
-    person_id              VARCHAR NOT NULL,   -- person.id
-    medication_id          VARCHAR NOT NULL,   -- medication.id
+    person_medication_id   VARCHAR NOT NULL,   -- person_medication.id
+    medication_id          VARCHAR,            -- medication.id; NULL when the product is not known
     pharmacy_id            VARCHAR NOT NULL,   -- pharmacy.id
     filled_on              DATE NOT NULL,      -- Calendar date on the label; no time zone
     rx_number              VARCHAR,
@@ -169,19 +183,21 @@ CREATE TABLE fill (
 );
 
 --- prior_authorization: an insurer's approval window ---
--- Grain: one row per approval window for one person and one medication.
+-- Grain: one row per approval window for one tracked medication. An insurer approves
+-- the drug for one member, whatever carton it comes in.
 CREATE TABLE prior_authorization (
-    id            VARCHAR PRIMARY KEY,
-    person_id     VARCHAR NOT NULL,   -- person.id; an insurer approves a medication for one member
-    medication_id VARCHAR NOT NULL,   -- medication.id
-    valid_from    DATE,               -- The first day the approval covers; NULL when the household does not know it
-    valid_to      DATE NOT NULL,      -- The expiration date: the last day the approval covers
+    id                   VARCHAR PRIMARY KEY,
+    person_medication_id VARCHAR NOT NULL,   -- person_medication.id
+    valid_from           DATE,               -- The first day the approval covers; NULL when the household does not know it
+    valid_to             DATE NOT NULL,      -- The expiration date: the last day the approval covers
     CHECK (valid_from IS NULL OR valid_to >= valid_from)
 );
 
-CREATE INDEX ix_fill_person_medication ON fill (person_id, medication_id, filled_on);
+CREATE INDEX ix_fill_entry ON fill (person_medication_id, filled_on);
 CREATE INDEX ix_person_medication_person ON person_medication (person_id);
-CREATE INDEX ix_prior_authorization_medication ON prior_authorization (medication_id);
+CREATE INDEX ix_tracked_product_entry ON person_medication_product (person_medication_id);
+CREATE INDEX ix_tracked_product_medication ON person_medication_product (medication_id);
+CREATE INDEX ix_prior_authorization_entry ON prior_authorization (person_medication_id);
 CREATE INDEX ix_medication_alias_medication ON medication_alias (medication_id);
 CREATE INDEX ix_medication_rxcui ON medication (rxcui);
 
@@ -262,115 +278,149 @@ SELECT m.id, m.brand_name, 'brand_name' FROM medication m WHERE m.brand_name IS 
 UNION
 SELECT a.medication_id, a.alias, 'alias' FROM medication_alias a;
 
---- v_last_fill: the latest fill of each medication for each person ---
--- Grain: one row per person per medication that has at least one fill.
+--- v_tracked_product: the products of each tracked medication, with their names ---
+-- Grain: one row per tracked medication per catalog product. position orders the
+-- products of one tracked medication by short name; the first one lends its icon.
+CREATE VIEW v_tracked_product AS
+SELECT tp.id AS link_id,
+       tp.person_medication_id,
+       pm.person_id,
+       m.medication_id,
+       m.short_name,
+       m.full_name,
+       m.generic_name,
+       m.brand_name,
+       m.strength,
+       m.route,
+       m.form,
+       m.package_type,
+       m.is_specialty,
+       m.is_controlled,
+       row_number() OVER (PARTITION BY tp.person_medication_id
+                          ORDER BY m.short_name COLLATE NOCASE, m.medication_id) AS position
+  FROM person_medication_product tp
+  JOIN person_medication pm ON pm.id = tp.person_medication_id   -- many:1
+  JOIN v_medication m       ON m.medication_id = tp.medication_id -- many:1
+;
+
+--- v_entry_mark: the marks of a tracked medication, taken from its products ---
+-- Grain: one row per tracked medication that has at least one product. A mark is 1
+-- when any product carries it, else 0, so SQL and Lua can both test it.
+CREATE VIEW v_entry_mark AS
+SELECT tp.person_medication_id,
+       count(*) AS products,
+       max(CASE WHEN tp.is_specialty THEN 1 ELSE 0 END)  AS is_specialty,
+       max(CASE WHEN tp.is_controlled THEN 1 ELSE 0 END) AS is_controlled
+  FROM v_tracked_product tp
+ GROUP BY tp.person_medication_id;
+
+--- v_last_fill: the latest fill of each tracked medication ---
+-- Grain: one row per tracked medication that has at least one fill.
 -- The latest date wins. Two fills on one day are ordered by id, and the fill entered
 -- later has the greater id. The view leaves out the DECIMAL columns, so any SQLite tool
 -- can run it and the views built on it; read those columns from fill by fill_id.
 CREATE VIEW v_last_fill AS
 SELECT r.id AS fill_id,
-       r.person_id,
+       r.person_medication_id,
        r.medication_id,
        r.pharmacy_id,
        r.filled_on,
        r.rx_number,
        r.days_supply,
        r.plan_id
-  FROM (SELECT f.id, f.person_id, f.medication_id, f.pharmacy_id, f.filled_on,
+  FROM (SELECT f.id, f.person_medication_id, f.medication_id, f.pharmacy_id, f.filled_on,
                f.rx_number, f.days_supply, f.plan_id,
-               row_number() OVER (PARTITION BY f.person_id, f.medication_id
+               row_number() OVER (PARTITION BY f.person_medication_id
                                   ORDER BY f.filled_on DESC, f.id DESC) AS recency
           FROM fill f) r
  WHERE r.recency = 1;
 
 --- v_fill_order: supply and payer membership of each fill ---
--- Grain: one row per fill; seq orders each person/medication pair by date and id.
+-- Grain: one row per fill; seq orders the fills of a tracked medication by date and id.
 -- Unknown payers count because excluding them could suggest an early refill.
 CREATE VIEW v_fill_order AS
-SELECT f.id AS fill_id, f.person_id, f.medication_id, f.filled_on, f.plan_id,
+SELECT f.id AS fill_id, f.person_medication_id, f.filled_on, f.plan_id,
        coalesce(f.days_supply, 1) AS days,
-       row_number() OVER (PARTITION BY f.person_id, f.medication_id
+       row_number() OVER (PARTITION BY f.person_medication_id
                           ORDER BY f.filled_on, f.id) AS seq,
-       CASE WHEN coalesce(m.is_controlled, 0) THEN 1
+       CASE WHEN coalesce(e.is_controlled, 0) THEN 1
             WHEN f.plan_id IS NULL OR l.plan_id IS NULL OR f.plan_id = l.plan_id THEN 1
             ELSE 0 END AS counts
   FROM fill f
-  LEFT JOIN medication m ON m.id = f.medication_id       -- many:0..1
-  JOIN v_last_fill l ON l.person_id = f.person_id        -- many:1
-                   AND l.medication_id = f.medication_id;
+  LEFT JOIN v_entry_mark e ON e.person_medication_id = f.person_medication_id   -- many:0..1
+  JOIN v_last_fill l ON l.person_medication_id = f.person_medication_id;        -- many:1
 
 --- v_supply_fill: supply remaining after each possible start ---
 -- Grain: one row per fill. NULL days supply counts as one day; zero stays zero.
 -- The latest end date discards gaps while preserving every early fill's supply.
 CREATE VIEW v_supply_fill AS
-SELECT o.fill_id, o.person_id, o.medication_id, o.filled_on, o.seq, o.counts,
+SELECT o.fill_id, o.person_medication_id, o.filled_on, o.seq, o.counts,
        date(o.filled_on, '+' || sum(o.days) OVER (
-           PARTITION BY o.person_id, o.medication_id ORDER BY o.seq
+           PARTITION BY o.person_medication_id ORDER BY o.seq
            ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING) || ' days') AS ends_on,
        CASE WHEN o.counts THEN date(o.filled_on, '+' || sum(
            CASE WHEN o.counts THEN o.days ELSE 0 END) OVER (
-           PARTITION BY o.person_id, o.medication_id ORDER BY o.seq
+           PARTITION BY o.person_medication_id ORDER BY o.seq
            ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING) || ' days') END AS insurer_ends_on
   FROM v_fill_order o;
 
 --- v_supply_frame: earliest refill date under the payer's rolling count ---
--- Grain: one row per person/medication pair with a fill. Joins preserve that pair.
+-- Grain: one row per tracked medication with a fill. Joins preserve that grain.
 -- Each candidate waits for older counted fills to leave; an empty frame permits a fill.
 CREATE VIEW v_supply_frame AS
-SELECT c.person_id, c.medication_id, max(c.allowance) AS allowance,
+SELECT c.person_medication_id, max(c.allowance) AS allowance,
        min(min(max(date(c.ends_by_here, '-' || c.allowance || ' days'),
                    coalesce(date(c.older_filled_on, '+' || (c.frame_days + 1) || ' days'),
                             '0001-01-01')),
                CASE WHEN c.frame_days BETWEEN 1 AND 3649
                     THEN date(c.last_filled_on, '+' || (c.frame_days + 1) || ' days')
                     ELSE '9999-12-31' END)) AS next_fill_on
-  FROM (SELECT sf.person_id, sf.medication_id,
+  FROM (SELECT sf.person_medication_id,
                max(sf.insurer_ends_on) OVER (
-                   PARTITION BY sf.person_id, sf.medication_id ORDER BY sf.seq DESC
+                   PARTITION BY sf.person_medication_id ORDER BY sf.seq DESC
                    ROWS UNBOUNDED PRECEDING) AS ends_by_here,
                lead(sf.filled_on) OVER (
-                   PARTITION BY sf.person_id, sf.medication_id ORDER BY sf.seq DESC) AS older_filled_on,
+                   PARTITION BY sf.person_medication_id ORDER BY sf.seq DESC) AS older_filled_on,
                a.allowance, a.frame_days, a.last_filled_on
           FROM v_supply_fill sf
-          JOIN (SELECT l.person_id, l.medication_id, l.fill_id, l.filled_on AS last_filled_on,
-                       CASE WHEN coalesce(m.is_controlled, 0) THEN r.controlled_early_days
+          JOIN (SELECT l.person_medication_id, l.fill_id, l.filled_on AS last_filled_on,
+                       CASE WHEN coalesce(e.is_controlled, 0) THEN r.controlled_early_days
                             ELSE CAST((coalesce(l.days_supply, 1) *
                                  coalesce(p.early_fill_percent, r.early_fill_percent)) / 100 AS INTEGER)
                             END AS allowance,
-                       CASE WHEN coalesce(m.is_controlled, 0) THEN 3650
+                       CASE WHEN coalesce(e.is_controlled, 0) THEN 3650
                             ELSE coalesce(p.supply_frame_days, r.supply_frame_days) END AS frame_days
                   FROM v_last_fill l
-                  LEFT JOIN medication m ON m.id = l.medication_id  -- many:0..1
+                  LEFT JOIN v_entry_mark e ON e.person_medication_id = l.person_medication_id  -- many:0..1
                   LEFT JOIN plan p ON p.id = l.plan_id              -- many:0..1
                   CROSS JOIN v_reminder_setting r) a               -- exactly one setting row
-            ON a.person_id = sf.person_id AND a.medication_id = sf.medication_id  -- many:1
+            ON a.person_medication_id = sf.person_medication_id  -- many:1
          WHERE sf.counts AND (a.frame_days <> 0 OR sf.fill_id = a.fill_id)) c
  WHERE c.frame_days <> 3650 OR c.older_filled_on IS NULL
- GROUP BY c.person_id, c.medication_id;
+ GROUP BY c.person_medication_id;
 
---- v_supply: refill eligibility and physical supply for each list entry ---
+--- v_supply: refill eligibility and physical supply for each tracked medication ---
 -- Grain: one row per person_medication row. A missing fill leaves both dates NULL.
 -- A zero-percent payer waits for physical supply to run out, including other payers.
 CREATE VIEW v_supply AS
-SELECT pm.id AS person_medication_id, pm.person_id, pm.medication_id,
+SELECT pm.id AS person_medication_id, pm.person_id,
        pm.status, pm.refills_left,
        l.fill_id AS last_fill_id, l.filled_on AS last_filled_on,
        l.pharmacy_id AS last_pharmacy_id, l.plan_id AS last_plan_id,
+       l.medication_id AS last_medication_id,
        l.days_supply AS last_days_supply,
        CASE WHEN l.fill_id IS NOT NULL AND l.days_supply IS NULL THEN 1 ELSE 0 END AS days_supply_missing,
        physical.lasts_until, frame.allowance,
-       CASE WHEN NOT coalesce(m.is_controlled, 0)
+       CASE WHEN NOT coalesce(e.is_controlled, 0)
                   AND coalesce(p.early_fill_percent, r.early_fill_percent) = 0
             THEN physical.lasts_until ELSE frame.next_fill_on END AS next_fill_on
   FROM person_medication pm
-  LEFT JOIN v_last_fill l ON l.person_id = pm.person_id                -- 1:0..1
-                        AND l.medication_id = pm.medication_id
-  LEFT JOIN (SELECT person_id, medication_id, max(ends_on) AS lasts_until
-               FROM v_supply_fill GROUP BY person_id, medication_id) physical
-    ON physical.person_id = pm.person_id AND physical.medication_id = pm.medication_id  -- 1:0..1
-  LEFT JOIN v_supply_frame frame ON frame.person_id = pm.person_id    -- 1:0..1
-                               AND frame.medication_id = pm.medication_id
-  LEFT JOIN medication m ON m.id = pm.medication_id                    -- many:0..1
+  LEFT JOIN v_last_fill l ON l.person_medication_id = pm.id         -- 1:0..1
+  LEFT JOIN (SELECT person_medication_id, max(ends_on) AS lasts_until
+               FROM v_supply_fill GROUP BY person_medication_id) physical
+    ON physical.person_medication_id = pm.id                         -- 1:0..1
+  LEFT JOIN v_supply_frame frame ON frame.person_medication_id = pm.id  -- 1:0..1
+  LEFT JOIN v_entry_mark e ON e.person_medication_id = pm.id         -- 1:0..1
   LEFT JOIN plan p ON p.id = l.plan_id                                 -- many:0..1
   CROSS JOIN v_reminder_setting r;
 
@@ -378,23 +428,24 @@ SELECT pm.id AS person_medication_id, pm.person_id, pm.medication_id,
 -- Grain: one row per person_medication row whose status is not 'not_taking'.
 -- Eligibility uses next_fill_on; overdue uses lasts_until, both against local today.
 -- The query uses the time zone of the computer that runs it. It is 'overdue', 'due', 'due_soon', 'not_due', or 'no_fill'.
--- A specialty medication uses the specialty day counts.
+-- A specialty medication uses the specialty day counts. The marks come from the
+-- products, as 1 or 0.
 CREATE VIEW v_active_medication AS
 SELECT s.person_medication_id,
        p.display_name   AS person_name,
-       m.short_name     AS medication_name,
-       m.full_name      AS medication_full_name,
-       m.is_specialty,
-       m.is_controlled,
+       pm.display_name  AS medication_name,
+       coalesce(e.is_specialty, 0)  AS is_specialty,
+       coalesce(e.is_controlled, 0) AS is_controlled,
+       coalesce(e.products, 0)      AS products,
        pm.medication_type,
        s.status,
        CASE WHEN s.lasts_until IS NULL THEN 'no_fill'
             WHEN s.lasts_until < date('now', 'localtime') THEN 'overdue'
             WHEN s.next_fill_on <= date('now', 'localtime', '+' ||
-                 CASE WHEN m.is_specialty THEN r.specialty_due_within_days
+                 CASE WHEN coalesce(e.is_specialty, 0) THEN r.specialty_due_within_days
                       ELSE r.due_within_days END || ' days') THEN 'due'
             WHEN s.next_fill_on <= date('now', 'localtime', '+' ||
-                 CASE WHEN m.is_specialty THEN r.specialty_due_soon_within_days
+                 CASE WHEN coalesce(e.is_specialty, 0) THEN r.specialty_due_soon_within_days
                       ELSE r.due_soon_within_days END || ' days') THEN 'due_soon'
             ELSE 'not_due' END AS refill_status,
        CAST(julianday(s.next_fill_on) - julianday(date('now', 'localtime')) AS INTEGER) AS days_until_next_fill,
@@ -419,9 +470,9 @@ SELECT s.person_medication_id,
   FROM v_supply s
   JOIN person_medication pm ON pm.id = s.person_medication_id   -- 1:1
   JOIN person p             ON p.id = s.person_id               -- many:1
-  JOIN v_medication m       ON m.medication_id = s.medication_id -- many:1
+  LEFT JOIN v_entry_mark e  ON e.person_medication_id = pm.id   -- 1:0..1
   CROSS JOIN v_reminder_setting r                               -- exactly one row
-  LEFT JOIN plan pl         ON pl.id = s.last_plan_id         -- many:0..1
+  LEFT JOIN plan pl         ON pl.id = s.last_plan_id           -- many:0..1
   LEFT JOIN pharmacy ph     ON ph.id = pm.pharmacy_id           -- many:0..1
   LEFT JOIN prescriber pr   ON pr.id = pm.prescriber_id         -- many:0..1
   LEFT JOIN pharmacy lph    ON lph.id = s.last_pharmacy_id      -- many:0..1
@@ -430,12 +481,13 @@ SELECT s.person_medication_id,
 --- v_spending_by_year: what each person paid in each year ---
 -- Grain: one row per person per calendar year with at least one fill.
 CREATE VIEW v_spending_by_year AS
-SELECT f.person_id,
+SELECT pm.person_id,
        strftime('%Y', f.filled_on) AS year,
        count(*)                    AS fills,
        decimal_sum(f.amount_paid)  AS amount_paid   -- Exact; SUM() would return a float
   FROM fill f
- GROUP BY f.person_id, strftime('%Y', f.filled_on);
+  JOIN person_medication pm ON pm.id = f.person_medication_id   -- many:1
+ GROUP BY pm.person_id, strftime('%Y', f.filled_on);
 
 --- v_row_count: how many rows each table holds ---
 -- Grain: one row per table. Used to check an import against its source.
@@ -446,6 +498,7 @@ UNION ALL SELECT 'medication_alias', count(*) FROM medication_alias
 UNION ALL SELECT 'pharmacy', count(*) FROM pharmacy
 UNION ALL SELECT 'prescriber', count(*) FROM prescriber
 UNION ALL SELECT 'person_medication', count(*) FROM person_medication
+UNION ALL SELECT 'person_medication_product', count(*) FROM person_medication_product
 UNION ALL SELECT 'fill', count(*) FROM fill
 UNION ALL SELECT 'prior_authorization', count(*) FROM prior_authorization
 UNION ALL SELECT 'profile', count(*) FROM profile

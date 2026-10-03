@@ -2,9 +2,9 @@
 -- apps/meds/lib/medication_pick.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-10-01
--- Summary: Reads the medication box of a form: a medication in use, a name typed to
---          search the catalog, or a new medication.
+-- Last Modified: 2026-10-03
+-- Summary: Reads the medication box of a form: a name typed to search the catalog, a choice
+--          among several, a product carried by its id, or a new medication.
 -- Notes: See README file for documentation and full license information.
 --
 -- Copyright © 2026 Gabriel Mongefranco
@@ -23,6 +23,7 @@
 
 local pv                = require 'privatium'
 local catalog_entry     = require 'catalog_entry'
+local medication_name   = require 'medication_name'
 local medication_search = require 'medication_search'
 local reference_words   = require 'reference_words'
 local text              = require 'text'
@@ -34,28 +35,13 @@ medication_pick.NEW   = 'new'     -- The choice that adds a medication from the 
 medication_pick.OTHER = 'other'   -- The choice that finds a medication by a typed name
 local CANDIDATES_MAX  = 8         -- Medications offered when a typed name fits several
 local NO_CHOICES      = { route = {}, dose_form = {}, package_type = {} }
+-- The fields of a new medication, by the ending of their names in the form.
+medication_pick.NEW_FIELDS = {
+  'brand', 'generic', 'strength', 'package_size', 'package_type', 'route', 'dose_form',
+  'rxcui', 'source', 'controlled', 'specialty',
+}
 
 --- Reads ---
-
---- The medications a household uses: on a list, or filled at least once.
--- These fill the drop-down of the medication box, so the common case is one choice.
--- @param also string|nil  The id of one more medication to offer, such as the one a
---        stored record names.
--- @return table  A list of { value = id, label = short name }, ordered by name.
---         Grain: one row per medication.
-function medication_pick.in_use(also)
-  local options = {}
-  for _, row in ipairs(pv.query([[
-      SELECT m.id, m.short_name
-        FROM medication m
-       WHERE m.id = ?1
-          OR EXISTS (SELECT 1 FROM person_medication pm WHERE pm.medication_id = m.id)
-          OR EXISTS (SELECT 1 FROM fill f WHERE f.medication_id = m.id)
-       ORDER BY m.short_name COLLATE NOCASE, m.id]], { also or '' })) do
-    options[#options + 1] = { value = row.id, label = row.short_name }
-  end
-  return options
-end
 
 -- The medication with an id, or a message.
 local function by_id(id)
@@ -95,7 +81,7 @@ end
 local function by_name(raw)
   local typed = medication_search.typed(raw)
   if typed == '' then
-    return { problem = 'Type the name of the medication, or pick one from the list.' }
+    return { problem = 'Type the name of the medication, or add it as a new one.' }
   end
   local found = medication_search.find(typed)
   local exact = {}
@@ -119,11 +105,11 @@ local function by_name(raw)
 end
 
 --- Read the medication box of a form.
--- The box holds a drop-down (`prefix`_id), a name to type (`prefix`_name), choices
--- (`prefix`_choice) and the fields of a new medication (`prefix`_brand, _generic,
--- _strength, _package_size, _package_type, _specialty). A choice wins. Without one,
--- the fields of a new medication
--- win over a typed name, and a typed name wins over the drop-down.
+-- The box holds a name to type (`prefix`_name), choices (`prefix`_choice), the fields
+-- of a new medication (`prefix`_brand, _generic, _strength, _package_size,
+-- _package_type, _controlled, _specialty and the fields of a drug reference), and may
+-- carry a product by its id (`prefix`_id). A choice wins. Without one, the fields of a
+-- new medication win over a typed name, and a typed name wins over the carried id.
 -- @param form table     The values of the form.
 -- @param prefix string  The start of the field names, such as 'medication'.
 -- @param required boolean|nil
@@ -149,15 +135,36 @@ function medication_pick.read(form, prefix, required, explicit)
   end
   if text.clean(form[prefix .. '_name']) then return by_name(form[prefix .. '_name']) end
   local id = text.clean(form[prefix .. '_id'])
-  if id == medication_pick.NEW then
-    return { open_new = true,
-             problem = 'Type the name of the medication to find it, or add it as a new medication.' }
-  end
   if id then return by_id(id) end
   if required then
-    return { problem = 'Choose a medication: pick one from the list, type its name, or add a new one.' }
+    return { problem = 'Choose a medication: type its name, or add a new one.' }
   end
   return {}
+end
+
+--- Whether a box holds anything to read: a typed name, a choice or a new medication.
+-- @return boolean
+function medication_pick.filled(form, prefix)
+  return text.clean(form[prefix .. '_choice']) ~= nil
+    or text.clean(form[prefix .. '_name']) ~= nil
+    or text.clean(form[prefix .. '_brand']) ~= nil
+    or text.clean(form[prefix .. '_generic']) ~= nil
+end
+
+--- The names of a picked medication, for the screens.
+-- @param pick table  What medication_pick.read returned, with no problem.
+-- @return string|nil, string|nil  The short name and the full name. For a new
+--         medication, both are built from its fields the way the catalog builds them.
+function medication_pick.names(pick)
+  if pick.new_row then
+    local row = pick.new_row
+    return row.short_name, medication_name.full(row.generic_name, row.brand_name, row.strength,
+                                                row.route, row.form, row.package_size, row.package_type)
+  end
+  if not pick.id then return nil, nil end
+  local row = pv.query1('SELECT short_name, full_name FROM v_medication WHERE medication_id = ?', { pick.id })
+  if not row then return nil, nil end
+  return row.short_name, row.full_name
 end
 
 --- Add the new medication of a box inside a batch.

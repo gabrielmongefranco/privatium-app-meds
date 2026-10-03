@@ -3,8 +3,9 @@ This file is part of Prescription Tracker
 apps/meds/views/medications.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-09-27
-Summary: What each person takes, grouped by status.
+Last Modified: 2026-10-03
+Summary: What each person tracks, grouped by status, with a search box that narrows the
+         list by any name, the prescriber or the person.
 Notes: See README file for documentation and full license information.
 
 Copyright © 2026 Gabriel Mongefranco
@@ -23,16 +24,33 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 --?>
 
 <?= render('_nav', { section = section }) ?>
+<script src="<?= url('/static/filter.js') ?>" defer></script>
 <h1>Medications</h1>
 <?= render('_notice', { notice = notice }) ?>
 <?= render('_people_filter', { filter = filter, base = '/medications' }) ?>
 
-<p class="pv-actions">
-  <a class="pv-btn pv-btn-primary" href="<?= url('/medications/new' .. (filter.id ~= '' and ('?person=' .. filter.id) or '')) ?>"><?= icon('plus-lg') ?> Add a medication</a>
-  <? if filter.selected then ?>
-    <a class="pv-btn" href="<?= url('/people/' .. filter.id .. '/medication-list') ?>"><?= icon('printer') ?> Print list</a>
-  <? end ?>
-</p>
+<div class="meds-toolbar">
+  <p class="pv-actions">
+    <a class="pv-btn pv-btn-primary" href="<?= url('/medications/new' .. (filter.id ~= '' and ('?person=' .. filter.id) or '')) ?>"><?= icon('plus-lg') ?> Track a new medication</a>
+    <? if filter.selected then ?>
+      <a class="pv-btn" href="<?= url('/people/' .. filter.id .. '/medication-list') ?>"><?= icon('printer') ?> Print list</a>
+    <? end ?>
+  </p>
+  <form method="get" action="<?= url('/medications') ?>" role="search" class="meds-search">
+    <? if filter.id ~= '' then ?><input type="hidden" name="person" value="<?= filter.id ?>"><? end ?>
+    <div>
+      <label for="q">Search the list</label>
+      <input id="q" name="q" type="search" value="<?= filter_text ?>" maxlength="100" autocomplete="off"
+             aria-describedby="q-help" data-filter-input>
+    </div>
+    <button type="submit" class="pv-btn"><?= icon('search') ?> Find</button>
+    <? if filter_text ~= '' then ?>
+      <a class="pv-btn" href="<?= url('/medications' .. (filter.id ~= '' and ('?person=' .. filter.id) or '')) ?>">Show all</a>
+    <? end ?>
+  </form>
+</div>
+<p id="q-help" class="pv-help">Type part of a medication name, one of its other names, the prescriber or the person. The list narrows as you type.</p>
+<p class="pv-meta" role="status" data-filter-status><?= matched ?></p>
 <? if not filter.selected and #filter.people > 0 then ?>
   <p class="pv-help">Choose one person to print their list.</p>
 <? end ?>
@@ -41,16 +59,22 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 <? for _, group in ipairs(groups) do ?>
   <? if #group.rows > 0 then ?>
     <? shown = shown + #group.rows ?>
-    <h2><?= group.title ?></h2>
-    <?= render('_entries_table', { rows = group.rows, caption = 'Medications with the status ' .. group.title }) ?>
+    <section data-filter-group>
+      <h2><?= group.title ?></h2>
+      <?= render('_entries_table', { rows = group.rows, caption = 'Medications with the status ' .. group.title }) ?>
+    </section>
   <? end ?>
 <? end ?>
-<? if shown == 0 then ?>
-  <p class="pv-empty">No medication is in use yet. Add the first one to begin.</p>
+<? if shown == 0 and #stopped.rows == 0 then ?>
+  <? if filter_text ~= '' then ?>
+    <p class="pv-empty">No medication matches "<?= filter_text ?>".</p>
+  <? else ?>
+    <p class="pv-empty">No medication is tracked yet. Track the first one to begin.</p>
+  <? end ?>
 <? end ?>
 
 <? if #stopped.rows > 0 then ?>
-  <details>
+  <details data-filter-group<? if stopped_open then ?> open<? end ?>>
     <summary>No longer taking (<?= #stopped.rows ?>)</summary>
     <?= render('_entries_table', { rows = stopped.rows, caption = 'Medications no longer taken' }) ?>
   </details>

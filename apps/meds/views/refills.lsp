@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/views/refills.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-10-01
+Last Modified: 2026-10-03
 Summary: The Refills page: what needs attention now, most urgent first. Only a medication
          taken regularly raises an alert; the others show their dates without one.
 Notes: See README file for documentation and full license information.
@@ -25,14 +25,13 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 
 <?= render('_nav', { section = section }) ?>
 <h1>Refills</h1>
-<p class="pv-meta"><?= greeting ?>.</p>
 <? if notice then ?>
   <p class="pv-notice pv-notice-info" role="status"><?= icon('check-circle') ?> <?= notice ?></p>
 <? end ?>
 
 <p class="pv-actions">
   <a class="pv-btn pv-btn-primary" href="<?= url('/fills/new' .. (filter.id ~= '' and ('?person=' .. filter.id) or '')) ?>"><?= icon('plus-lg') ?> Record a fill</a>
-  <a class="pv-btn" href="<?= url('/fills/paste') ?>"><?= icon('clipboard-plus') ?> Paste fills from a portal</a>
+  <a class="pv-btn" href="<?= url('/fills/paste') ?>"><?= icon('clipboard-plus') ?> Copy refill history from patient portal</a>
 </p>
 <?= render('_people_filter', { filter = filter, base = '/' }) ?>
 
@@ -80,7 +79,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
       <tbody role="rowgroup">
       <? for _, row in ipairs(asking) do ?>
         <tr role="row">
-          <td role="cell"><span class="pv-cell-label" aria-hidden="true">Medication</span><a href="<?= url('/medications/' .. row.id) ?>"><?= row.medication_name ?></a>
+          <td role="cell"><span class="pv-cell-label" aria-hidden="true">Medication</span><?= render('_form_icon', { icon_name = row.form_icon, label = row.form_label }) ?> <a href="<?= url('/medications/' .. row.id) ?>"><?= row.medication_name ?></a>
             <span class="pv-meta meds-line"><?= row.status_label ?></span></td>
           <td role="cell"><span class="pv-cell-label" aria-hidden="true">For</span><?= row.person_name ?></td>
           <td role="cell"><span class="pv-cell-label" aria-hidden="true">Next fill</span><span class="pv-badge pv-badge-warn"><?= icon('telephone') ?> No refills left</span>

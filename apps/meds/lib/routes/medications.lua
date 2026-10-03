@@ -2,9 +2,9 @@
 -- apps/meds/lib/routes/medications.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-09-27
--- Summary: The screens for what each person takes: the lists, the page of one medication of
---          one person, the forms, and the list made for paper.
+-- Last Modified: 2026-10-03
+-- Summary: The screens for what each person tracks: the lists with their search, the page of
+--          one tracked medication with its products, the forms, and the list made for paper.
 -- Notes: See README file for documentation and full license information.
 --
 -- Copyright © 2026 Gabriel Mongefranco
@@ -25,9 +25,10 @@ local pv                = require 'privatium'
 local choices           = require 'choices'
 local clock             = require 'clock'
 local entries           = require 'entries'
-local medication_pick   = require 'medication_pick'
+local medication_search = require 'medication_search'
 local page              = require 'page'
 local people_filter     = require 'people_filter'
+local product_pick      = require 'product_pick'
 local quick_add         = require 'quick_add'
 local store             = require 'store'
 local suggestions       = require 'suggestions'
@@ -37,12 +38,15 @@ local validate          = require 'validate'
 --- Configuration ---
 local LIST         = '/medications'
 local CHOICE_MAX   = 60
+local NAME_MAX     = 200
 local PURPOSE_MAX  = 200
 local INSTRUCT_MAX = 300
 local REFILLS_MAX  = 99
-local FIELDS       = { 'person_id', 'medication_id', 'status', 'medication_type', 'pharmacy_id',
-                       'prescriber_id', 'prescribed_for', 'instructions', 'when_to_take',
-                       'refills_left' }
+local FIELDS       = { 'person_id', 'products', 'product_id', 'display_name', 'status',
+                       'medication_type', 'pharmacy_id', 'prescriber_id', 'prescribed_for',
+                       'instructions', 'when_to_take', 'refills_left' }
+local ADD_HEADING    = 'Add to your medications tracking list'
+local CHANGE_HEADING = 'Change a tracked medication'
 
 --- Reads ---
 
@@ -68,38 +72,55 @@ local function offered()
   }
 end
 
--- Grain: one row per fill of one medication for one person, newest first.
-local function fills_of(person_id, medication_id)
+-- Grain: one row per fill of one tracked medication, newest first, with the product
+-- that was dispensed.
+local function fills_of(person_medication_id)
   local rows = pv.query([[
     SELECT f.id, f.filled_on, f.quantity, f.days_supply, f.amount_paid, f.rx_number,
-           ph.name AS pharmacy_name
+           ph.name AS pharmacy_name,
+           m.short_name AS product_name
       FROM fill f
-      LEFT JOIN pharmacy ph ON ph.id = f.pharmacy_id   -- many:0..1
-     WHERE f.person_id = ? AND f.medication_id = ?
-     ORDER BY f.filled_on DESC, f.id DESC]], { person_id, medication_id })
+      LEFT JOIN pharmacy ph  ON ph.id = f.pharmacy_id    -- many:0..1
+      LEFT JOIN medication m ON m.id = f.medication_id   -- many:0..1
+     WHERE f.person_medication_id = ?
+     ORDER BY f.filled_on DESC, f.id DESC]], { person_medication_id })
   for _, row in ipairs(rows) do row.quantity = text.plain_number(row.quantity) end
   return rows
 end
 
 -- Grain: one row, the number of fills and the exact total paid.
-local function paid_for(person_id, medication_id)
+local function paid_for(person_medication_id)
   return pv.query1([[
     SELECT count(*) AS fills, decimal_sum(amount_paid) AS amount_paid
       FROM fill
-     WHERE person_id = ? AND medication_id = ?]], { person_id, medication_id })
+     WHERE person_medication_id = ?]], { person_medication_id })
 end
 
--- Grain: one row per prior authorization of one medication for one person, with its
--- state on today's local date.
-local function authorizations_of(person_id, medication_id)
+-- Grain: one row per prior authorization of one tracked medication, with its state on
+-- today's local date.
+local function authorizations_of(person_medication_id)
   return pv.query([[
     SELECT id, valid_from, valid_to,
            CASE WHEN valid_to < date('now', 'localtime') THEN 'Expired'
                 WHEN valid_from > date('now', 'localtime') THEN 'Not started'
                 ELSE 'Active' END AS state
       FROM prior_authorization
-     WHERE person_id = ? AND medication_id = ?
-     ORDER BY valid_to DESC, id]], { person_id, medication_id })
+     WHERE person_medication_id = ?
+     ORDER BY valid_to DESC, id]], { person_medication_id })
+end
+
+-- How many records still point to a tracked medication, as phrases for the removal page.
+local function uses(person_medication_id)
+  local counts = pv.query1([[
+    SELECT (SELECT count(*) FROM fill                WHERE person_medication_id = ?1) AS fills,
+           (SELECT count(*) FROM prior_authorization WHERE person_medication_id = ?1) AS authorizations]],
+    { person_medication_id })
+  local list = {}
+  if counts.fills > 0 then list[#list + 1] = page.counted(counts.fills, 'fill', 'fills') end
+  if counts.authorizations > 0 then
+    list[#list + 1] = page.counted(counts.authorizations, 'prior authorization', 'prior authorizations')
+  end
+  return list
 end
 
 --- Validation ---
@@ -120,24 +141,27 @@ local function read_choice(form, name, label, list)
   return value
 end
 
--- Reads an entry with the records it may add beside it: a person, a medication, a
--- pharmacy and a prescriber.
+-- Reads a tracked medication with the records it may add beside it: a person, the
+-- products that are new to the catalog, a pharmacy and a prescriber.
 -- @return table, table, table  The row, the problems, and what to add in the batch.
+--         `adding.acted` is true when the form asked to add or remove a product; the
+--         form then comes back instead of saving.
 local function read(form, existing, lists)
   local row, errors, adding = {}, {}, {}
+  adding.chosen, adding.pick, errors.products, adding.acted = product_pick.handle(form)
+  errors.product_id = adding.pick and adding.pick.problem
   if existing then
-    -- The person and the medication of an entry never change. To move an entry, remove
-    -- it and add another.
-    row.person_id, row.medication_id = existing.person_id, existing.medication_id
-    adding.person_id, adding.pick = existing.person_id, { id = existing.medication_id }
+    -- The person of a tracked medication never changes. To move it, remove it and add
+    -- it again under the other person.
+    row.person_id, adding.person_id = existing.person_id, existing.person_id
   else
     adding.person_id, adding.person, errors.person_id =
       quick_add.read(form, 'person_id', quick_add.PERSON, true)
-    adding.pick = medication_pick.read(form, 'medication', true)
-    errors.medication_id = adding.pick.problem
-    row.person_id, row.medication_id = adding.person_id, adding.pick.id
+    row.person_id = adding.person_id
   end
 
+  row.display_name, errors.display_name =
+    validate.text(form.display_name, 'the preferred name', NAME_MAX, true)
   row.status = text.clean(form.status)
   if not choices.status_label(row.status) then
     row.status, errors.status = nil, 'Choose a status.'
@@ -157,21 +181,54 @@ local function read(form, existing, lists)
     validate.text(form.instructions, 'the instructions', INSTRUCT_MAX)
   row.refills_left, errors.refills_left =
     validate.whole_number(form.refills_left, 'the refills left', 0, REFILLS_MAX, true)
+  if adding.acted then return row, errors, adding end
 
-  if not existing and row.person_id and row.medication_id
-     and entries.of(row.person_id, row.medication_id) then
-    errors.medication_id = 'Choose another medication. This one is already on the list of this person.'
+  if not errors.products and #adding.chosen == 0 then
+    errors.products = 'Add at least one product from the catalog.'
+  end
+  -- A preferred name is unique within one person. Two people may use the same name.
+  if row.person_id and row.display_name
+     and entries.named(row.person_id, row.display_name, existing and existing.id) then
+    errors.display_name = 'Choose another preferred name. This person already tracks a medication under this one.'
+  end
+  -- One product belongs to one tracked medication of a person, or its fills would
+  -- count twice.
+  if row.person_id and not errors.products then
+    for _, product in ipairs(adding.chosen) do
+      local other = product.id and entries.with_product(row.person_id, product.id)
+      if other and other.id ~= (existing and existing.id) then
+        errors.products = product.full_name .. ' is already on the list of this person, under '
+          .. other.display_name .. '. One product belongs to one tracked medication of a person.'
+        break
+      end
+    end
+  end
+  -- A product that fills name stays, or those fills would name nothing.
+  if existing and not errors.products then
+    local kept = {}
+    for _, product in ipairs(adding.chosen) do
+      if product.id then kept[product.id] = true end
+    end
+    for _, product in ipairs(entries.products(existing.id)) do
+      local fills = not kept[product.medication_id]
+        and product_pick.fills_naming(existing.id, product.medication_id) or 0
+      if fills > 0 then
+        errors.products = page.counted(fills, 'fill names', 'fills name') .. ' ' .. product.full_name
+          .. '. Change those fills before you remove it.'
+        break
+      end
+    end
   end
   return row, errors, adding
 end
 
--- Writes an entry and the new records beside it in one batch.
--- @return string|nil, string|nil  The id of the entry, or nil and a message.
+-- Writes a tracked medication, its products and the new records beside it in one batch.
+-- @return string|nil, string|nil  The id of the tracked medication, or nil and a message.
 local function save(id, row, adding)
   local entry_id
   local saved, refusal = store.together('person_medication', function(tx)
     row.person_id     = quick_add.write(tx, quick_add.PERSON, adding.person_id, adding.person)
-    row.medication_id = medication_pick.write(tx, adding.pick)
+    local product_ids = product_pick.write(tx, adding.chosen)
     row.pharmacy_id   = quick_add.write(tx, quick_add.PHARMACY, adding.pharmacy_id, adding.pharmacy)
     row.prescriber_id =
       quick_add.write(tx, quick_add.PRESCRIBER, adding.prescriber_id, adding.prescriber)
@@ -181,69 +238,112 @@ local function save(id, row, adding)
     else
       entry_id = tx.append('person_medication', row)
     end
+    -- The links follow the products of the form: a link is added for a product that
+    -- is new to the entry and removed for one that was taken off.
+    local linked = {}
+    if id then
+      for _, product in ipairs(entries.products(id)) do linked[product.medication_id] = product.link_id end
+    end
+    local wanted = {}
+    for _, product_id in ipairs(product_ids) do
+      wanted[product_id] = true
+      if not linked[product_id] then
+        tx.append('person_medication_product', { person_medication_id = entry_id, medication_id = product_id })
+      end
+    end
+    for product_id, link_id in pairs(linked) do
+      if not wanted[product_id] then tx.delete('person_medication_product', link_id) end
+    end
   end)
   if not saved then return nil, refusal end
   return entry_id
 end
 
--- The form of an entry. `medication` is set when the form is about a stored entry;
--- without it, the form holds the medication box, and `pick` is what the box answered.
-local function form_page(heading, action, typed, errors, medication, fixed_person, pick)
+-- The form of a tracked medication. `fixed` names the person when the form is about a
+-- stored one; `adding` is what `read` returned, when the form came back.
+local function form_page(heading, action, typed, errors, fixed, adding)
+  local chosen = adding and adding.chosen or product_pick.read(typed) or {}
+  -- The preferred name starts as the full name of the first product.
+  if not text.clean(typed.display_name) and chosen[1] then
+    typed.display_name = chosen[1].full_name
+  end
   return pv.render('entry_form', {
-    section      = 'medications',
-    heading      = heading,
-    action       = action,
-    typed        = typed,
-    errors       = errors,
-    problems     = page.problems(errors, FIELDS),
-    offered      = offered(),
-    medication   = medication,
-    fixed_person = fixed_person,
-    pick         = pick,
-    in_use       = not medication and medication_pick.in_use(text.clean(typed.medication_id)) or {},
-    names        = not medication and suggestions.medication_names() or {},
+    section    = 'medications',
+    heading    = heading,
+    action     = action,
+    typed      = typed,
+    errors     = errors,
+    problems   = page.problems(errors, FIELDS),
+    offered    = offered(),
+    fixed      = fixed,
+    chosen     = chosen,
+    pick       = adding and adding.pick,
+    names      = suggestions.medication_names(),
+    add_action = product_pick.ADD,
   })
+end
+
+-- The values of a form that came back. The product box is emptied after a product was
+-- added, and kept while it still asks a question.
+local function came_back(form, errors, adding)
+  if adding.pick or (adding.acted and errors.products) then
+    local copy = {}
+    for key, value in pairs(form) do copy[key] = value end
+    return copy
+  end
+  return product_pick.cleared(form)
 end
 
 --- Routes ---
 
 pv.get(LIST, function(req)
   local filter = people_filter.read(req)
-  local groups, stopped = {}, {}
+  local typed = medication_search.typed(req.query.q)
+  local rows = entries.filter(entries.list(filter.id), typed)
+  local groups = {}
   for _, status in ipairs(choices.STATUSES) do
     groups[#groups + 1] = { status = status.value, title = status.label, rows = {} }
   end
-  for _, row in ipairs(entries.list(filter.id)) do
+  for _, row in ipairs(rows) do
     for _, group in ipairs(groups) do
       if group.status == row.status then group.rows[#group.rows + 1] = row end
     end
   end
-  stopped = table.remove(groups)   -- 'No longer taking' is the last status
+  local stopped = table.remove(groups)   -- 'No longer taking' is the last status
   return pv.render('medications', {
-    section = 'medications',
-    notice  = page.notice(req.query.notice),
-    filter  = filter,
-    groups  = groups,
-    stopped = stopped,
+    section      = 'medications',
+    notice       = page.notice(req.query.notice),
+    filter       = filter,
+    filter_text  = typed,
+    matched      = typed ~= '' and page.counted(#rows, 'medication matches', 'medications match') or nil,
+    groups       = groups,
+    stopped      = stopped,
+    -- A match among the medications no longer taken is shown, not hidden in a closed
+    -- section.
+    stopped_open = typed ~= '' and #stopped.rows > 0,
   })
 end)
 
 -- Registered before the routes that take an id, so 'new' is never read as one.
 pv.get(LIST .. '/new', function(req)
-  return form_page('Add a medication to a list', url(LIST .. '/new'),
-    { person_id = text.clean(req.query.person), medication_id = text.clean(req.query.medication),
-      status = 'taking_regularly', refills_left = 0 }, {})
+  local typed = { person_id = text.clean(req.query.person), status = 'taking_regularly', refills_left = 0 }
+  -- A link from the catalog names the product to start with.
+  typed.product_1_id = text.clean(req.query.medication)
+  return form_page(ADD_HEADING, url(LIST .. '/new'), typed, {})
 end)
 
 pv.post(LIST .. '/new', function(req)
   local row, errors, adding = read(req.form, nil, offered())
+  if adding.acted then
+    return form_page(ADD_HEADING, url(LIST .. '/new'), came_back(req.form, errors, adding),
+      { products = errors.products, product_id = errors.product_id }, nil, adding)
+  end
   if not next(errors) then
     local saved, refusal = save(nil, row, adding)
     if saved then return pv.redirect(url(LIST .. '/' .. saved .. '?notice=saved')) end
     errors.status = refusal
   end
-  return form_page('Add a medication to a list', url(LIST .. '/new'), req.form, errors, nil, nil,
-    adding.pick)
+  return form_page(ADD_HEADING, url(LIST .. '/new'), came_back(req.form, errors, adding), errors, nil, adding)
 end)
 
 pv.get(LIST .. '/:id', function(req)
@@ -254,45 +354,52 @@ pv.get(LIST .. '/:id', function(req)
     notice         = page.notice(req.query.notice),
     entry          = entry,
     statuses       = choices.STATUSES,
-    medication     = pv.query1([[
-      SELECT medication_id, short_name, full_name
-        FROM v_medication WHERE medication_id = ?]], { entry.medication_id }),
-    other_names    = pv.query([[
-      SELECT alias FROM medication_alias
-       WHERE medication_id = ? ORDER BY alias COLLATE NOCASE]], { entry.medication_id }),
-    fills          = fills_of(entry.person_id, entry.medication_id),
-    paid           = paid_for(entry.person_id, entry.medication_id),
-    authorizations = authorizations_of(entry.person_id, entry.medication_id),
+    products       = entries.products(entry.id),
+    fills          = fills_of(entry.id),
+    paid           = paid_for(entry.id),
+    authorizations = authorizations_of(entry.id),
   })
 end)
 
+-- The form of a stored tracked medication starts with its values and its products.
+local function stored_form(stored)
+  local typed = {}
+  for key, value in pairs(stored) do typed[key] = value end
+  for key, value in pairs(product_pick.carried(entries.products(stored.id))) do typed[key] = value end
+  return typed
+end
+
 pv.get(LIST .. '/:id/edit', function(req)
-  local stored = pv.get_row('person_medication', req.params.id)
+  local stored = entries.stored(req.params.id)
   local entry = stored and entries.one(stored.id)
   if not entry then return pv.redirect(url(LIST .. '?notice=missing')) end
-  return form_page('Change a medication on a list', url(LIST .. '/' .. stored.id .. '/edit'), stored, {},
-    { medication_id = entry.medication_id, short_name = entry.medication_name }, entry.person_name)
+  return form_page(CHANGE_HEADING, url(LIST .. '/' .. stored.id .. '/edit'), stored_form(stored), {},
+    { person_name = entry.person_name })
 end)
 
 pv.post(LIST .. '/:id/edit', function(req)
-  local stored = pv.get_row('person_medication', req.params.id)
+  local stored = entries.stored(req.params.id)
   local entry = stored and entries.one(stored.id)
   if not entry then return pv.redirect(url(LIST .. '?notice=missing')) end
+  local action = url(LIST .. '/' .. stored.id .. '/edit')
   local row, errors, adding = read(req.form, stored, offered())
+  if adding.acted then
+    return form_page(CHANGE_HEADING, action, came_back(req.form, errors, adding),
+      { products = errors.products, product_id = errors.product_id }, { person_name = entry.person_name }, adding)
+  end
   if not next(errors) then
     local saved, refusal = save(stored.id, row, adding)
     if saved then return pv.redirect(url(LIST .. '/' .. saved .. '?notice=saved')) end
     errors.status = refusal
   end
-  return form_page('Change a medication on a list', url(LIST .. '/' .. stored.id .. '/edit'), req.form,
-    errors, { medication_id = entry.medication_id, short_name = entry.medication_name },
-    entry.person_name)
+  return form_page(CHANGE_HEADING, action, came_back(req.form, errors, adding), errors,
+    { person_name = entry.person_name }, adding)
 end)
 
--- A change of status alone, from the page of the entry. Every other column is carried
--- over, because an amendment replaces the whole row.
+-- A change of status alone, from the page of the entry or the Restart button of the
+-- list. Every other column is carried over, because an amendment replaces the whole row.
 pv.post(LIST .. '/:id/status', function(req)
-  local stored = pv.get_row('person_medication', req.params.id)
+  local stored = entries.stored(req.params.id)
   if not stored then return pv.redirect(url(LIST .. '?notice=missing')) end
   local status = text.clean(req.form.status)
   if not choices.status_label(status) then
@@ -301,6 +408,9 @@ pv.post(LIST .. '/:id/status', function(req)
   local id = stored.id
   stored.id, stored.status = nil, status
   local saved = store.save('person_medication', id, stored)
+  if text.clean(req.form.back) == 'list' then
+    return pv.redirect(url(LIST .. '?person=' .. stored.person_id .. (saved and '&notice=saved' or '')))
+  end
   return pv.redirect(url(LIST .. '/' .. id .. (saved and '?notice=saved' or '')))
 end)
 
@@ -309,20 +419,75 @@ pv.get(LIST .. '/:id/remove', function(req)
   if not entry then return pv.redirect(url(LIST .. '?notice=missing')) end
   return pv.render('remove', {
     section = 'medications',
-    heading = 'Remove a medication from a list',
+    heading = 'Remove a tracked medication',
     name    = entry.medication_name .. ', on the list of ' .. entry.person_name,
-    used_by = {},
-    note    = 'The fills and the prior authorizations stay. To keep the medication on the list as one no longer taken, change its status instead.',
+    used_by = uses(entry.id),
+    note    = 'Its products stay in the catalog. To keep the medication on the list as one no longer taken, change its status instead.',
     action  = url(LIST .. '/' .. entry.id .. '/remove'),
     back    = url(LIST .. '/' .. entry.id),
   })
 end)
 
 pv.post(LIST .. '/:id/remove', function(req)
-  local stored = pv.get_row('person_medication', req.params.id)
+  local stored = entries.stored(req.params.id)
   if not stored then return pv.redirect(url(LIST .. '?notice=missing')) end
-  pv.delete('person_medication', stored.id)
+  -- A tracked medication with fills or prior authorizations stays, or those records
+  -- would name nothing.
+  if #uses(stored.id) > 0 then return pv.redirect(url(LIST .. '/' .. stored.id .. '/remove')) end
+  local products = entries.products(stored.id)
+  local removed = store.together('person_medication', function(tx)
+    for _, product in ipairs(products) do tx.delete('person_medication_product', product.link_id) end
+    tx.delete('person_medication', stored.id)
+  end)
+  if not removed then return pv.redirect(url(LIST .. '/' .. stored.id .. '/remove')) end
   return pv.redirect(url(LIST .. '?notice=removed'))
+end)
+
+--- Products of a tracked medication ---
+
+-- The product link of a tracked medication, or nil when either is missing.
+local function link_of(req)
+  local entry = entries.one(req.params.id)
+  if not entry then return nil end
+  for _, product in ipairs(entries.products(entry.id)) do
+    if product.link_id == req.params.link_id then return entry, product end
+  end
+  return nil
+end
+
+-- Why a product cannot be taken off a tracked medication, as phrases.
+local function product_uses(entry, product)
+  local list = {}
+  if #entries.products(entry.id) == 1 then
+    list[#list + 1] = 'the tracked medication itself, which needs at least one product'
+  end
+  local fills = product_pick.fills_naming(entry.id, product.medication_id)
+  if fills > 0 then list[#list + 1] = page.counted(fills, 'fill', 'fills') end
+  return list
+end
+
+pv.get(LIST .. '/:id/products/:link_id/remove', function(req)
+  local entry, product = link_of(req)
+  if not entry then return pv.redirect(url(LIST .. '?notice=missing')) end
+  return pv.render('remove', {
+    section = 'medications',
+    heading = 'Take a product off a tracked medication',
+    name    = product.full_name,
+    used_by = product_uses(entry, product),
+    note    = 'The product stays in the catalog. Only its link to ' .. entry.medication_name .. ' goes.',
+    action  = url(LIST .. '/' .. entry.id .. '/products/' .. product.link_id .. '/remove'),
+    back    = url(LIST .. '/' .. entry.id),
+  })
+end)
+
+pv.post(LIST .. '/:id/products/:link_id/remove', function(req)
+  local entry, product = link_of(req)
+  if not entry then return pv.redirect(url(LIST .. '?notice=missing')) end
+  if #product_uses(entry, product) > 0 then
+    return pv.redirect(url(LIST .. '/' .. entry.id .. '/products/' .. product.link_id .. '/remove'))
+  end
+  pv.delete('person_medication_product', product.link_id)
+  return pv.redirect(url(LIST .. '/' .. entry.id .. '?notice=removed'))
 end)
 
 --- The list made for paper ---

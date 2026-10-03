@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 docs/design/import.md
 Author(s): Gabriel Mongefranco
 Created: 2026-09-26
-Last Modified: 2026-10-01
+Last Modified: 2026-10-03
 Summary: The owner's one-time import of the legacy SQLite database:
          table mapping, the review of medication names, cleaning rules, new ids, safety
          rules and checks.
@@ -76,10 +76,11 @@ that a spreadsheet program opens, with one row per legacy medication.
 | Column | Filled in by the script | What you do |
 |---|---|---|
 | Legacy name | The name in the legacy catalog | Nothing |
-| Short name | The brand name, the generic name in brackets, then the strength | Change it only if you want another name in the app |
-| Specialty | no | Write yes for each specialty medication |
-| Controlled | Suggested by ingredient | Check yes or no before loading |
+| Short name | The brand name, the generic name in brackets, then the strength | Change it only if you want another name in the catalog |
+| Specialty | yes when the legacy column `IsSpecialty` says so, or the earlier review file did | Change it as needed |
+| Controlled | yes when the legacy column `IsControlled` says so, when the earlier review file did, or when the name holds a common controlled ingredient | Change it as needed |
 | Same product as | The legacy name of another row, when both share a name, a strength and a form. For an entry of the starter catalog, the word `catalog:` and its short name. | Keep it, clear it, or write another legacy name |
+| Track with | Empty | Write the legacy name of another medication of the same drug when both belong on one tracked medication, such as a carton of 2 and a carton of 6. Each stays a product of its own. |
 | Looks like | Rows whose names are close but not equal | Read it. Fill in **Same product as** only when you are sure. |
 
 The script fills in **Same product as** only for rows that share a generic or brand name
@@ -89,11 +90,15 @@ alike, because different drugs can have similar names.
 Load applies the file this way:
 
 - A row with **Same product as** becomes another name of that medication. Its fills, its
-  list entries and its prior authorizations move to that medication.
+  tracked medications and its prior authorizations move to that medication.
 - Every legacy name that differs from the short name, the generic name and the brand
   name becomes another name.
-- When a person has a list entry under both rows, load keeps the entry that is in use.
-  When both are in use, load stops and names the two legacy tracking numbers.
+- A row with **Track with** keeps its own catalog product, and a person who tracks both
+  rows gets one tracked medication with both products. The fills keep the product that
+  was dispensed.
+- When a person has a tracking row under both rows, load keeps the one in use and gives
+  it both products. When both are in use, load stops and names the two legacy tracking
+  numbers.
 
 ### Table mapping
 
@@ -103,7 +108,7 @@ Load applies the file this way:
 | `Medications` | `medication` and `medication_alias` | `MedicationName` |
 | `Pharmacies` | `pharmacy` | `PharmacyName` |
 | `Prescribers` | `prescriber` | `PrescriberName` |
-| `MedicationTracking` | `person_medication` | `MedicationTrackingID` |
+| `MedicationTracking` | `person_medication` and `person_medication_product` | `MedicationTrackingID` |
 | Distinct `PrescriptionFills.InsurancePlan` values | `plan` | Trimmed name, ignoring case |
 | `PrescriptionFills` | `fill` | `PrescriptionFillID` |
 | `PriorAuthorizations` | `prior_authorization` | `PriorAuthorizationID` |
@@ -116,8 +121,9 @@ looks up each name and writes the matching id.
 The view `ActiveMedicationsView` and the generated column `MedicationLongName` are not
 imported. The app works both out again.
 
-The import also adds list entries. For every person and medication that have a fill and
-no list entry, it adds one with the status No longer taking and no refills left.
+The import also adds tracked medications. For every person and product that have a fill
+and no tracking row, it adds one with the status No longer taking and no refills left,
+named after the legacy medication.
 
 ### Column mapping
 
@@ -130,8 +136,9 @@ A legacy column that is not listed keeps its meaning under the new name in the
 | `Medications.Strength` and `StrengthUnits` | `medication.strength` | Joined by a space |
 | `Medications.MedicationLongName` | None | The view `v_medication` builds the full name |
 | None | `medication.short_name` | Built from the brand name, the generic name and the strength |
-| None | `medication.is_specialty` | Set from the review file |
-| None | `medication.is_controlled` | Suggested by common ingredient names, then checked in the review file |
+| `Medications.IsSpecialty` | `medication.is_specialty` | Through the review file, where you can change it |
+| `Medications.IsControlled` | `medication.is_controlled` | Through the review file, where you can change it; a common controlled ingredient is suggested too |
+| `MedicationTracking.Medication` | `person_medication.display_name` and `person_medication_product.medication_id` | The legacy name becomes the preferred name; the catalog product becomes a product of the tracked medication |
 | `PrescriptionFills.InsurancePlan` | `fill.plan_id` | A normalized name becomes a plan id |
 | Latest non-cash fill's plan | `person.plan_id` | Starts new fills; the owner can change it |
 | `MedicationTracking.MedicationType` | `person_medication.medication_type` | Spelling corrected |
@@ -140,8 +147,9 @@ A legacy column that is not listed keeps its meaning under the new name in the
 | `MedicationTracking.MedicationDailyTime` | `person_medication.when_to_take` | Renamed |
 | `MedicationTracking.CurrentPharmacy` and `CurrentPrescriber` | `pharmacy_id` and `prescriber_id` | A name becomes an id |
 | `PrescriptionFills.DateFilled` | `fill.filled_on` | Renamed |
-| `PrescriptionFills.Patient`, `Medication` and `Pharmacy` | `person_id`, `medication_id` and `pharmacy_id` | A name becomes an id |
-| None | `prior_authorization.person_id` | Worked out from the fills and the list entries |
+| `PrescriptionFills.Patient` and `Medication` | `fill.person_medication_id` and `fill.medication_id` | The person and the product name the tracked medication; the product stays on the fill |
+| `PrescriptionFills.Pharmacy` | `pharmacy_id` | A name becomes an id |
+| `PriorAuthorizations.PatientName` and `Medication` | `prior_authorization.person_medication_id` | The person and the product name the tracked medication. With no patient name, the one person who has the medication is used. |
 
 ### Cleaning rules
 
@@ -161,10 +169,10 @@ invented.
 | `Alternative Meidince - Long Term` | `Alternative Medicine - Long Term` | Spelling |
 | The form `Absorbible Pad` | `Absorbable Pad` | Spelling |
 
-A legacy prior authorization has no person. The script looks for the people who have a
-fill or a list entry for that medication. With exactly one such person, it writes that
-person. With none or several, the row is a reject, because the new table requires a
-person.
+A legacy prior authorization names its person in `PatientName`. When that column is
+empty, the script looks for the people who have a fill or a tracking row for that
+medication. With exactly one such person, it writes that person. With none or several,
+the row is a reject, because the new table requires a tracked medication.
 
 A row that fails a check is a reject. The script writes rejects to their own file in the
 private folder, with the legacy key and the reason. It never drops a row silently.
@@ -209,7 +217,7 @@ Verify compares three things and reports each as a match or a difference.
 
 | Check | Legacy side | App side |
 |---|---|---|
-| Row counts | One count per legacy table, less the merged medications, plus the added list entries | The view `v_row_count` |
+| Row counts | One count per legacy table, less the merged medications, plus the added tracked medications and the product links | The view `v_row_count` |
 | Total amount paid | The sum over `PrescriptionFills`, after cleaning | The view `v_spending_by_year` |
 | The two dates | Fill history simulated with current rules | Eligibility and exhaustion from `v_supply` |
 
@@ -230,8 +238,9 @@ also suggests entries of the starter catalog.
    python3 /path/to/import_legacy.py review --source /path/to/legacy.db --app-url http://127.0.0.1:8420/a/meds
    ```
 
-4. Open `review.csv` in the private folder. Set the short names, check specialty and controlled
-   marks, and settle the rows that are the same product. The private folder is
+4. Open `review.csv` in the private folder. Set the short names, check the specialty
+   and controlled marks, settle the rows that are the same product, and fill in
+   **Track with** for the carton sizes that belong together. The private folder is
    named `meds-import` and sits beside the legacy file, unless you name another with
    `--folder`.
 5. Load the records into the node:
@@ -247,7 +256,7 @@ also suggests entries of the starter catalog.
    ```
 
 7. Open **Setup**, **Insurance plans** and set the percent and frame of each plan.
-   Check each person's current plan, then look at the Refills page.
+   Check each person's current plan, then look at the Refills and Medications pages.
 8. Keep the legacy file and the private folder somewhere safe. Both hold health
    information.
 
@@ -258,9 +267,11 @@ node's data directory before replacing existing app data. Stop the node, move it
 directory aside, and restart with an empty directory. Load the starter catalog from Setup.
 
 Run `review --again` with the existing private review folder and the new app address.
-It keeps settled choices and adds the controlled column. Run `load`, `verify`, then
-`load` again to check that nothing is appended. Check plan settings and person defaults.
-Fills entered after the source database was archived need to be recorded again.
+It keeps settled choices and adds the columns the file lacks, such as **Track with**.
+Fill in **Track with** for the carton sizes that belong together. Run `load`, `verify`,
+then `load` again to check that nothing is appended. Check plan settings and person
+defaults. Fills entered after the source database was archived need to be recorded
+again; pasting the recent portal history is the quickest way.
 
 ### What was checked
 
@@ -288,6 +299,15 @@ An isolated node loaded a copy of the source records. Existing review choices st
 and the controlled column was added. Row counts and total paid matched, and 187 date
 pairs matched an independent daily simulation. A repeated load appended zero records.
 The source database and the owner's review file were unchanged.
+
+### Tracked medication rehearsal, October 3, 2026
+
+An isolated node loaded a copy of the source records into the model with tracked
+medications and products. `review --again` kept every settled choice and added the
+`track_with` column. Every row count matched, the new table included; the total paid
+matched; 185 date pairs matched the daily simulation; no row was rejected; a repeated
+load appended zero records; and every section of the app opened with the records. The
+source database and the owner's review file were unchanged, and the copy was removed.
 
 ### Conclusion
 
