@@ -2,7 +2,7 @@
 -- apps/meds/lib/medication_name.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-09-27
+-- Last Modified: 2026-10-03
 -- Summary: Builds the short name of a medication from its parts. Pure Lua with no
 --          framework calls, so plain Lua can test it.
 -- Notes: See README file for documentation and full license information.
@@ -45,6 +45,34 @@ function medication_name.short(brand, generic, strength, package_size, package_t
   end
   if not name then return nil end
   if strength then name = name .. ' ' .. strength end
+  if package_size then name = name .. ' ' .. package_size end
+  if package_type then name = name .. ' ' .. package_type end
+  return name
+end
+
+--- The full name: the generic name, the brand name in brackets, then every other part
+-- that is filled in, the way the view v_medication builds it:
+--   Exampline, Examplol, 10 mg, Oral, Tablet  ->  Exampline (Examplol) 10 mg Oral Tablet
+-- A tracked medication starts with this name as its preferred name.
+-- @param generic string|nil
+-- @param brand string|nil
+-- @param strength string|nil
+-- @param route string|nil
+-- @param form string|nil
+-- @param package_size string|nil
+-- @param package_type string|nil
+-- @return string|nil  The name, or nil when there is neither a brand nor a generic name.
+function medication_name.full(generic, brand, strength, route, form, package_size, package_type)
+  local name
+  if generic and brand then
+    name = generic .. ' (' .. brand .. ')'
+  else
+    name = generic or brand
+  end
+  if not name then return nil end
+  if strength then name = name .. ' ' .. strength end
+  if route then name = name .. ' ' .. route end
+  if form then name = name .. ' ' .. form end
   if package_size then name = name .. ' ' .. package_size end
   if package_type then name = name .. ' ' .. package_type end
   return name

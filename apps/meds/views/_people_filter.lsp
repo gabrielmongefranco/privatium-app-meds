@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/views/_people_filter.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-09-27
+Last Modified: 2026-10-03
 Summary: The row of links that narrows a list to one person. Hidden when the household has
          one person or none.
 Notes: See README file for documentation and full license information.
@@ -24,9 +24,12 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 --?>
 
 <? if #filter.people > 1 then ?>
-  <nav aria-label="Show one person">
+  <? -- The script remembers the tab chosen last in the browser. The Everyone link names
+     -- an empty person on purpose, so the script knows it was chosen and leaves it. ?>
+  <script src="<?= url('/static/person_tab.js') ?>" defer></script>
+  <nav aria-label="Show one person" data-person-filter>
     <ul class="pv-subnav meds-filter">
-      <li><a href="<?= url(base) ?>"<? if filter.id == '' then ?> aria-current="true"<? end ?>>Everyone</a></li>
+      <li><a href="<?= url(base .. '?person=') ?>"<? if filter.id == '' then ?> aria-current="true"<? end ?>>Everyone</a></li>
       <? for _, person in ipairs(filter.people) do ?>
         <li><a href="<?= url(base .. '?person=' .. person.id) ?>"<? if filter.id == person.id then ?> aria-current="true"<? end ?>><?= person.display_name ?></a></li>
       <? end ?>

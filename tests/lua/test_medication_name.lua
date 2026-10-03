@@ -2,7 +2,7 @@
 -- tests/lua/test_medication_name.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-09-27
+-- Last Modified: 2026-10-03
 -- Summary: Unit tests for apps/meds/lib/medication_name.lua.
 -- Notes: See README file for documentation and full license information.
 --
@@ -38,4 +38,13 @@ return function(equal)
   equal('a size with no type', medication_name.short(nil, 'Exampline', '10 mg', '30'), 'Exampline 10 mg 30')
   equal('a type with no size', medication_name.short(nil, 'Exampline', '10 mg', nil, 'Vial'), 'Exampline 10 mg Vial')
   equal('a package with no name is no name', medication_name.short(nil, nil, nil, '2', 'Pack'), nil)
+
+  equal('full name with every part',
+        medication_name.full('Exampline', 'Examplol', '10 mg', 'Oral', 'Tablet', '2', 'Pack'),
+        'Exampline (Examplol) 10 mg Oral Tablet 2 Pack')
+  equal('full name with the generic name only', medication_name.full('Exampline', nil, '10 mg'), 'Exampline 10 mg')
+  equal('full name with the brand name only', medication_name.full(nil, 'Examplol'), 'Examplol')
+  equal('full name with no name', medication_name.full(nil, nil, '10 mg'), nil)
+  equal('full name skips a missing middle part',
+        medication_name.full('Exampline', 'Examplol', nil, nil, 'Tablet'), 'Exampline (Examplol) Tablet')
 end

@@ -29,12 +29,15 @@ for the one-time import of the owner's legacy database lives outside this reposi
 | `medication_alias` | One row per medication per other name |
 | `pharmacy` | One row per pharmacy |
 | `prescriber` | One row per prescriber |
-| `person_medication` | One row per person per medication they take or took |
-| `fill` | One row per fill |
-| `prior_authorization` | One row per approval window for one person and one medication |
+| `person_medication` | One row per medication a person tracks, under the name the person prefers |
+| `person_medication_product` | One row per tracked medication per catalog product; at least one each |
+| `fill` | One row per fill of one tracked medication, with the product dispensed when known |
+| `prior_authorization` | One row per approval window for one tracked medication |
 
-The views start with `v_`. `v_active_medication` is the readable one: every medication
-in use with its refill status, refill eligibility, physical supply exhaustion, payer and early allowance.
+The views start with `v_`. `v_active_medication` is the readable one: every tracked
+medication in use with its refill status, refill eligibility, physical supply exhaustion,
+payer and early allowance. `v_tracked_product` lists the products of each tracked
+medication, and `v_entry_mark` their specialty and controlled marks as 1 or 0.
 [The data model page](../../docs/data-model.md) is the reference for every table and
 view, and must change in the same commit as `schema.sql`.
 
@@ -44,22 +47,25 @@ view, and must change in the same commit as `schema.sql`.
 |---|---|
 | `app.lua` | The entry point. It loads the route modules, in the order paths are tried. |
 | `lib/routes/` | One module for each part of the app. Loading a module registers its routes. |
-| `lib/text.lua`, `validate.lua`, `choices.lua`, `medication_name.lua`, `page.lua`, `clock.lua` | Pure Lua with no framework calls, so plain Lua 5.4 can test them |
+| `lib/text.lua`, `validate.lua`, `choices.lua`, `medication_name.lua`, `page.lua`, `clock.lua`, `form_icon.lua` | Pure Lua with no framework calls, so plain Lua 5.4 can test them |
 | `lib/match.lua` | Pure Lua: how well a typed name matches a name of a medication |
 | `lib/medication_search.lua` | The search that every screen uses to find a medication |
 | `lib/written_name.lua` | Pure Lua: takes apart a name as a portal wrote it, and compares it with a name and a strength |
-| `lib/medication_pick.lua` | Reads the medication box of a form: a medication in use, a typed name, or a new medication |
+| `lib/medication_pick.lua` | Reads the medication box of a form: a typed name, a choice, a carried id, or a new medication |
+| `lib/product_pick.lua` | The products of a tracked medication while its form is open: carried in hidden fields, added or removed per round trip |
 | `lib/catalog_entry.lua` | The checks of a catalog entry, shared by the catalog form and the medication box |
 | `lib/reference_words.lua` | Pure Lua: turns the route and the dose form of a drug reference into words of the catalog |
 | `lib/authorization_words.lua` | Pure Lua: the levels of a prior authorization that needs attention, and their words |
 | `static/forms.js` | Shows the fields of a new record when **-- Add new --** is chosen. Every form works without it. |
+| `static/filter.js` | Narrows the Medications page as a person types. The server filters the same way on submit. |
+| `static/person_tab.js` | Remembers the person tab chosen last, by id, in local storage. A stopgap until Privatium offers person profiles. |
 | `static/medication_lookup.js` | The lookup of a new medication, in the browser: RxTerms, then the openFDA NDC Directory, then RxNorm |
 | `lib/quick_add.lua` | A person, a pharmacy, a prescriber or a plan that a form adds by name beside its own record |
 | `lib/suggestions.lua` | The values in use that text boxes offer while a person types |
 | `lib/merge.lua` | The plan and the batch of a merge |
-| `lib/entries.lua` | Reads the medication lists with their refill dates, words and groups |
+| `lib/entries.lua` | Reads the tracked medications with their products, refill dates, words, groups and search text |
 | `lib/refill.lua` | Pure Lua: the group and the words of a refill status |
-| `lib/fills.lua` | Checks a fill and writes it, with the list entry that goes with it |
+| `lib/fills.lua` | Checks a fill and writes it, with the tracked medication that goes with it |
 | `lib/portal_reader.lua` | Pure Lua: takes the pasted text of a portal page apart into claims |
 | `lib/authorization_watch.lua` | Finds the prior authorizations that end soon or have ended |
 | `lib/people_filter.lua` | The person filter that list pages share |
@@ -74,7 +80,7 @@ view, and must change in the same commit as `schema.sql`.
 | `GET /setup` | `home` | Links to the parts of Setup |
 | `GET`, `POST /setup/reminders` | `home` | Reminder and early refill settings |
 | `GET`, `POST /setup/plans/new`, `/:id/edit`, `/:id/remove`; `GET /setup/plans` | `plans` | Payers and their rules, with removal refused while referenced |
-| `GET /setup/people` | `people` | The list |
+| `GET /setup/people` | `people` | The family |
 | `GET`, `POST /setup/people/new`, `/:id/edit`, `/:id/remove` | `people` | Add, change, remove |
 | `GET /contacts` | `contacts` | Pharmacies and prescribers |
 | `GET`, `POST /contacts/pharmacies/new`, `/:id/edit`, `/:id/remove` | `contacts` | Add, change, remove |
@@ -82,8 +88,9 @@ view, and must change in the same commit as `schema.sql`.
 | `GET /setup/catalog` | `catalog` | The catalog, narrowed by `?q=` |
 | `GET /setup/catalog/:id` | `catalog` | One medication with its other names |
 | `GET`, `POST /setup/catalog/new`, `/:id/edit`, `/:id/remove` | `catalog` | Add, change, remove |
-| `GET /medications`, `/medications/:id` | `medications` | The lists, and the page of one medication of one person |
-| `GET`, `POST /medications/new`, `/:id/edit`, `/:id/remove`, `POST /:id/status` | `medications` | Add, change, remove, change the status |
+| `GET /medications`, `/medications/:id` | `medications` | The lists, narrowed by `?q=`, and the page of one tracked medication |
+| `GET`, `POST /medications/new`, `/:id/edit`, `/:id/remove`, `POST /:id/status` | `medications` | Add, change, remove, change the status (also the Restart button) |
+| `GET`, `POST /medications/:id/products/:link_id/remove` | `medications` | Take a product off a tracked medication |
 | `GET /people/:id/medication-list` | `medications` | The list made for paper |
 | `GET`, `POST /fills/paste`, `/fills/paste/read`, `/fills/paste/add` | `paste` | Pasted fills: paste, review, add |
 | `GET /fills` | `fills` | History, with filters, totals and paid by year |
@@ -98,8 +105,22 @@ view, and must change in the same commit as `schema.sql`.
   the save an amendment rather than a second row. Do not mint a new ULID on save.
 - A form never sends a person to another page to add a record it needs. A drop-down of
   people, pharmacies or prescribers is the partial `_select_or_new`, read with
-  `quick_add.read`. A medication is the partial `_medication_picker`, read with
-  `medication_pick.read`. The new records and the record of the form land in one batch.
+  `quick_add.read`. A catalog product is the partial `_medication_picker`, read with
+  `medication_pick.read`. The products of a tracked medication are the partial
+  `_product_picker`, read with `product_pick.handle`; they travel in hidden fields and
+  the form comes back after each add or remove. The new records and the record of the
+  form land in one batch.
+- What a person takes is a tracked medication, not a catalog product. Fills and prior
+  authorizations name `person_medication_id`. A product belongs to one tracked
+  medication of a person, and a preferred name is unique within a person; the forms
+  check both, through `entries.with_product` and `entries.named`.
+- A fill, an authorization or a pasted fill for a product on no list of the person adds
+  a tracked medication through `entries.add`, named after the product's full name.
+- The marks of a tracked medication come from its products through `v_entry_mark`, as 1
+  or 0. Lua treats 0 as true, so `entries.lua` turns them into booleans before a
+  template reads them.
+- The person tab chosen last lives in the browser, in `static/person_tab.js`. The server
+  never stores it. The script goes when Privatium offers person profiles.
 - A typed name that a record already has picks that record. No form adds a name twice.
 - A part of a form that a script may hide carries `data-show-when="<field>=<value>"`.
   The server never relies on the script: the choice `new` with nothing typed is
@@ -161,7 +182,8 @@ view, and must change in the same commit as `schema.sql`.
 ### Extending it
 
 Adding a field means one column in `schema.sql`, one input in the form, and one key in
-every `pv.append` call that writes the table. The schema change rematerializes from the
+every `pv.append` call that writes the table. A dose form that the starter list lacks
+gets its icon in `lib/form_icon.lua`. The schema change rematerializes from the
 logs; existing events lack the key and the column is NULL for them. Adding a table means
 a `CREATE TABLE` with a grain comment and a section in the data model page.
 

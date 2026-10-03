@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/views/_refills_table.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-10-01
+Last Modified: 2026-10-03
 Summary: One group of the Refills page as a table, with a button that records a fill for each row.
 Notes: See README file for documentation and full license information.
 
@@ -36,6 +36,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
   <? for _, row in ipairs(rows) do ?>
     <tr role="row">
       <td role="cell"><span class="pv-cell-label" aria-hidden="true">Medication</span>
+        <?= render('_form_icon', { icon_name = row.form_icon, label = row.form_label }) ?>
         <a href="<?= url('/medications/' .. row.id) ?>"><?= row.medication_name ?></a>
         <? if row.is_controlled then ?><span class="pv-meta meds-line">Controlled</span><? end ?>
         <? if row.is_specialty then ?><span class="pv-meta meds-line">Specialty</span><? end ?></td>

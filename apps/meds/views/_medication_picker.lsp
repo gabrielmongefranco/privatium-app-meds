@@ -3,9 +3,9 @@ This file is part of Prescription Tracker
 apps/meds/views/_medication_picker.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-10-01
-Summary: The medication box: a drop-down of the medications in use, a name to type,
-         the choices when a name fits several, and the fields of a new medication.
+Last Modified: 2026-10-03
+Summary: The medication box: a name to type that searches the catalog, the choices when a
+         name fits several, and the fields of a new medication with the lookup.
 Notes: See README file for documentation and full license information.
 
 Copyright © 2026 Gabriel Mongefranco
@@ -28,29 +28,15 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
   local err = err or (pick and pick.problem)
   local offered = candidates or (pick and pick.candidates) or {}
   local chosen = typed_in('_choice')
-  local in_use = options or {}
   local asks = #offered > 0 or explicit
   local open_new = (pick and pick.open_new) or chosen == 'new'
     or (not explicit and ((typed_in('_brand') or '') ~= '' or (typed_in('_generic') or '') ~= ''))
-  -- The parts under the drop-down are in use when a name was typed, a new medication
-  -- was started, or the form came back with choices.
-  local opened = open_new or asks or (typed_in('_name') or '') ~= ''
   local described = 'f-' .. prefix .. '-help' .. (err and (' f-' .. prefix .. '-err') or '')
 ?>
 <fieldset class="meds-choice meds-picker" id="f-<?= prefix ?>_id">
   <legend><?= legend or 'Medication' ?></legend>
   <? if err then ?>
     <p id="f-<?= prefix ?>-err" class="pv-error" role="alert"><?= icon('exclamation-triangle') ?> <?= err ?></p>
-  <? end ?>
-  <? if #in_use > 0 then ?>
-    <label for="f-<?= prefix ?>-list">Choose one that is already in use</label>
-    <select id="f-<?= prefix ?>-list" name="<?= prefix ?>_id">
-      <option value="">None chosen</option>
-      <option value="new"<? if typed_in('_id') == 'new' or opened then ?> selected<? end ?>>-- Find another or add new --</option>
-      <? for _, option in ipairs(in_use) do ?>
-        <option value="<?= option.value ?>"<? if not opened and option.value == typed_in('_id') then ?> selected<? end ?>><?= option.label ?></option>
-      <? end ?>
-    </select>
   <? end ?>
   <? if asks then ?>
     <fieldset class="meds-options">
@@ -75,10 +61,8 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
       </label>
     </fieldset>
   <? end ?>
-  <? -- With a script, these parts show only after the choice to find or add. Without one, they are always there. ?>
-  <div<? if #in_use > 0 then ?> data-show-when="<?= prefix ?>_id=new"<? end ?>>
   <? if explicit then ?><div data-show-when="<?= prefix ?>_choice=other"><? end ?>
-  <label for="f-<?= prefix ?>-name"><? if #in_use > 0 and not asks then ?>Or type a name to search the catalog<? else ?>Type a name to search the catalog<? end ?></label>
+  <label for="f-<?= prefix ?>-name">Type a name to search the catalog</label>
   <input id="f-<?= prefix ?>-name" name="<?= prefix ?>_name" type="text" value="<?= typed_in('_name') ?>"
          list="medication-names" autocomplete="off" maxlength="100" aria-describedby="<?= described ?>"
          <? if err then ?>aria-invalid="true"<? end ?>>
@@ -139,5 +123,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
     <p class="pv-help">Saving adds the medication to the catalog. You can add its route, form and package there later.</p>
   </details>
   <? if explicit then ?></div><? end ?>
-  </div>
+  <? if add_button then ?>
+    <p class="pv-actions"><button type="submit" class="pv-btn" name="action" value="<?= add_button ?>"><?= icon('plus-lg') ?> Add to this entry</button></p>
+  <? end ?>
 </fieldset>

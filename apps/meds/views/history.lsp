@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/views/history.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-10-01
+Last Modified: 2026-10-03
 Summary: The history of fills, with filters, the total paid under the filters, and the total
          paid by each person in each year.
 Notes: See README file for documentation and full license information.
@@ -30,7 +30,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 
 <p class="pv-actions">
   <a class="pv-btn pv-btn-primary" href="<?= url('/fills/new' .. (filter.id ~= '' and ('?person=' .. filter.id) or '')) ?>"><?= icon('plus-lg') ?> Record a fill</a>
-  <a class="pv-btn" href="<?= url('/fills/paste') ?>"><?= icon('clipboard-plus') ?> Paste fills from a portal</a>
+  <a class="pv-btn" href="<?= url('/fills/paste') ?>"><?= icon('clipboard-plus') ?> Copy refill history from patient portal</a>
 </p>
 
 <form method="get" action="<?= url('/fills') ?>" class="meds-filters">
@@ -72,7 +72,8 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
     <? for _, row in ipairs(rows) do ?>
       <tr role="row">
         <td role="cell"><span class="pv-cell-label" aria-hidden="true">Date</span><?= fmt.date(row.filled_on) ?></td>
-        <td role="cell"><span class="pv-cell-label" aria-hidden="true">Medication</span><?= row.medication_name ?>
+        <td role="cell"><span class="pv-cell-label" aria-hidden="true">Medication</span><?= render('_form_icon', { icon_name = row.form_icon, label = row.form_label }) ?> <?= row.medication_name ?>
+          <? if row.product_name and row.product_name ~= row.medication_name then ?><span class="pv-meta meds-line"><?= row.product_name ?></span><? end ?>
           <? if row.rx_number then ?><span class="pv-meta meds-line">Rx <?= row.rx_number ?></span><? end ?></td>
         <td role="cell"><span class="pv-cell-label" aria-hidden="true">For</span><?= row.person_name ?></td>
         <td role="cell"><span class="pv-cell-label" aria-hidden="true">Pharmacy</span><?= row.pharmacy_name ?></td>

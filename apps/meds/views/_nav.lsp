@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/views/_nav.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-09-27
+Last Modified: 2026-10-03
 Summary: The app's stylesheet and the navigation bar. Every page includes it first, so the
          bar sits in the same place on every page and marks the current section.
 Notes: See README file for documentation and full license information.
@@ -27,8 +27,8 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 <script src="<?= url('/static/forms.js') ?>" defer></script>
 <nav aria-label="Prescription Tracker">
   <ul class="pv-subnav meds-nav">
-    <li><a href="<?= url('/') ?>"<? if section == 'home' then ?> aria-current="page"<? end ?>><?= icon('capsule') ?> Refills</a></li>
-    <li><a href="<?= url('/medications') ?>"<? if section == 'medications' then ?> aria-current="page"<? end ?>><?= icon('list-ul') ?> Medications</a></li>
+    <li><a href="<?= url('/medications') ?>"<? if section == 'medications' then ?> aria-current="page"<? end ?>><?= icon('capsule') ?> Medications</a></li>
+    <li><a href="<?= url('/') ?>"<? if section == 'home' then ?> aria-current="page"<? end ?>><?= icon('bag-plus-fill') ?> Refills</a></li>
     <li><a href="<?= url('/fills') ?>"<? if section == 'history' then ?> aria-current="page"<? end ?>><?= icon('clock-history') ?> History</a></li>
     <li><a href="<?= url('/authorizations') ?>"<? if section == 'authorizations' then ?> aria-current="page"<? end ?>><?= icon('shield-check') ?> Authorizations</a></li>
     <li><a href="<?= url('/contacts') ?>"<? if section == 'contacts' then ?> aria-current="page"<? end ?>><?= icon('telephone') ?> Contacts</a></li>

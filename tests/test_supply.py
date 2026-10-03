@@ -3,7 +3,7 @@
 # tests/test_supply.py
 # Author(s): Gabriel Mongefranco
 # Created: 2026-10-01
-# Last Modified: 2026-10-01
+# Last Modified: 2026-10-03
 # Summary: Synthetic SQLite checks of supply, payer rules, and row grain.
 # Notes: See README file for documentation and full license information.
 #
@@ -48,8 +48,10 @@ class SupplyTests(unittest.TestCase):
         self.db.execute("INSERT INTO person(id, display_name) VALUES ('person', 'Example Person')")
         self.db.execute("INSERT INTO medication(id, short_name, generic_name, is_specialty) "
                         "VALUES ('med', 'Example Drug', 'Example Ingredient', 0)")
-        self.db.execute("INSERT INTO person_medication(id, person_id, medication_id, status, refills_left) "
-                        "VALUES ('entry', 'person', 'med', 'taking_regularly', 1)")
+        self.db.execute("INSERT INTO person_medication(id, person_id, display_name, status, refills_left) "
+                        "VALUES ('entry', 'person', 'Example Drug', 'taking_regularly', 1)")
+        self.db.execute("INSERT INTO person_medication_product(id, person_medication_id, medication_id) "
+                        "VALUES ('link', 'entry', 'med')")
 
     def tearDown(self):
         self.db.close()
@@ -64,8 +66,8 @@ class SupplyTests(unittest.TestCase):
                         "VALUES ('settings', ?, ?, ?)", (percent, frame, early))
         self.db.execute("INSERT INTO plan(id, name) VALUES ('A', 'Example Plan A')")
         self.db.execute("INSERT INTO plan(id, name) VALUES ('B', 'Example Plan B')")
-        self.db.executemany("INSERT INTO fill(id, person_id, medication_id, pharmacy_id, filled_on, "
-                            "days_supply, plan_id) VALUES (?, 'person', 'med', 'pharmacy', ?, ?, ?)",
+        self.db.executemany("INSERT INTO fill(id, person_medication_id, medication_id, pharmacy_id, filled_on, "
+                            "days_supply, plan_id) VALUES (?, 'entry', 'med', 'pharmacy', ?, ?, ?)",
                             [(str(i).zfill(6), date.isoformat(), days, payer)
                              for i, (date, days, payer) in enumerate(fills)])
         self.assertEqual(self.db.execute('SELECT count(*) FROM v_fill_order').fetchone()[0], len(fills))
