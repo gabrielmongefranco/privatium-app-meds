@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 README.md
 Author(s): Gabriel Mongefranco
 Created: 2026-09-26
-Last Modified: 2026-09-27
+Last Modified: 2026-10-03
 Summary: Provides an overview of the project, in Markdown format.
 Notes: See README file for documentation and full license information.
 
@@ -26,7 +26,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 ## Description
 Prescription Tracker is a personal prescription tracker for families with chronic conditions, hosted on your own PC with [Privatium](https://github.com/gabrielmongefranco/privatium).
 
-It is a Privatium app: a folder of Lua, SQL and HTML templates that a Privatium node runs on hardware you control. Your records live as plain text in a folder on your disk, with no account, no cloud, and no database server. Backing up is copying a folder.
+It is a Privatium app: a folder of Lua, SQL and HTML templates that a Privatium node runs on hardware you control. Python appears only in the developer tools outside the app folder: the script that builds the starter catalog from public drug references, and some of the tests. You never need it to install or use the app. Your records live as plain text in a folder on your disk, with no account, no cloud, and no database server. Backing up is copying a folder.
 
 This is the app that Privatium was built for. It shows which refills are due, keeps each person's medication list, records fills by hand or from the pasted text of an insurer's portal, and tracks prior authorizations. It starts with a catalog of the most prescribed medications in the United States, and looks up any other medication by name in the public drug references RxTerms, openFDA and RxNorm. The [documentation](./docs) describes every screen and table.
 
