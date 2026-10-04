@@ -132,6 +132,11 @@ SALT_WORDS = {"phosphate", "hydrochloride", "sodium", "potassium", "sulfate", "c
 
 # Words RxTerms adds to a drug name for a release form. They are not part of the name.
 RELEASE_WORDS = {"xr", "dr", "ec"}
+# The release form in the text RxTerms prints for a product: '24 HR XR', '12 HR XR',
+# 'DR' or 'EC'. A tablet that lets its drug go over a day is another product than one
+# that lets it go at once, and another than one that lets it go after the stomach, so
+# the release form is part of every name.
+RELEASE_FORM = re.compile(r"\b((?:\d+ HR )?(?:XR|DR|EC))\b")
 
 # The route of RxTerms, by its first word, and the route the catalog shows.
 ROUTES = {
@@ -519,9 +524,21 @@ def generic_with_salt(details, fallback):
     return as_name(" ".join(words)) if words else fallback
 
 
-def short_name(brand, generic, strength):
+def short_name(brand, generic, strength, release=""):
     name = brand + " (" + generic + ")" if brand else generic
-    return name + " " + strength if strength else name
+    return " ".join(part for part in (name, strength, release) if part)
+
+
+def release_of(package):
+    """The release form named in the rest of the text RxTerms prints, or ''."""
+    found = RELEASE_FORM.search(package or "")
+    return found.group(1) if found else ""
+
+
+def rest_of(package):
+    """The rest of the text RxTerms prints without its release form, which the name
+    holds already: '24 HR XR Tab' gives 'Tab'."""
+    return " ".join(RELEASE_FORM.sub("", package or "").split())
 
 
 def pack_words(entry):
@@ -705,36 +722,43 @@ def by_package(entry, reference):
 
 
 def same_product(entry, row):
-    """Whether an entry from RxTerms is an entry that was written by hand."""
+    """Whether an entry from RxTerms is an entry that was written by hand.
+
+    The release form counts: a hand-written tablet with no release form in its name
+    is the plain tablet, not the delayed-release one of the same strength.
+    """
     written = row["d"]
     return (plain(written.get("generic_name") or "") == plain(entry["generic_name"])
             and plain(written.get("strength") or "").replace(" ", "")
                 == plain(entry["strength"] or "").replace(" ", "")
-            and written.get("form") == entry["form"])
+            and written.get("form") == entry["form"]
+            and release_of(written.get("short_name")) == release_of(entry["package"]))
 
 
 def name_entries(entries, taken):
     """Gives every entry a short name that no other entry has.
 
-    Two products with one name and one strength differ in their form or their package,
-    so the rest of the text that RxTerms prints is added, and then its route, as in
-    'Chewable Tab'. The RxNorm identifier is added to the few that are still the same.
+    A name holds the brand, the generic name, the strength and the release form. Two
+    products with one such name differ in their form or their package, so the rest of
+    the text that RxTerms prints is added, and then its route, as in 'Chewable Tab'. The
+    RxNorm identifier is added to the few that are still the same.
     """
     for detail in (None, "package", "route", "rxcui"):
         groups = {}
         for entry in entries:
             if detail == "package":
-                entry["short_name"] = (entry["base_name"] + " " + entry["package"]).strip() \
+                entry["short_name"] = (entry["base_name"] + " " + rest_of(entry["package"])).strip() \
                     + pack_words(entry)
             elif detail == "route":
                 entry["short_name"] = " ".join(
-                    part for part in (entry["base_name"], entry["reference_route"], entry["package"])
+                    part for part in (entry["base_name"], entry["reference_route"], rest_of(entry["package"]))
                     if part) + pack_words(entry)
             elif detail == "rxcui":
                 entry["short_name"] += ", RxNorm " + entry["rxcui"]
             else:
                 entry["base_name"] = short_name(
-                    entry["brand_name"], entry["generic_name"], entry["strength"])
+                    entry["brand_name"], entry["generic_name"], entry["strength"],
+                    release_of(entry["package"]))
                 # A carton is a carton of something, so its entry names the device.
                 device = " " + entry["package"] if entry.get("package_size") and entry["package"] else ""
                 entry["short_name"] = entry["base_name"] + device + pack_words(entry)

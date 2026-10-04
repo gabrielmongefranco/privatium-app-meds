@@ -172,9 +172,11 @@ forms check that. Two packages of one product share the RxCUI. [The app design](
 explains how the catalog gets entries from the drug references.
 
 The short name follows one pattern unless the owner types another: the brand name, the
-generic name in brackets, the strength, then the package. Examples are
-`Lipitor (Atorvastatin) 20 mg` and `Examplol (Exampline) 10 mcg/mL 2 Pack`. A medication
-with no brand name leaves out the brackets.
+generic name in brackets, the strength, the release form when the product has one, then
+the package. Examples are `Lipitor (Atorvastatin) 20 mg`, `Metformin 500 mg 24 HR XR` and
+`Examplol (Exampline) 10 mcg/mL 2 Pack`. A medication with no brand name leaves out the
+brackets. A release form such as `24 HR XR`, `12 HR XR` or `DR` makes another product,
+because an extended-release tablet is not interchangeable with the plain one.
 
 One product in two packages is two medications. A carton of 2 is another thing to refill
 than a carton of 6, and a pharmacy bills them apart.

@@ -103,10 +103,14 @@ The catalog currently has 231 controlled products and 22 specialty suggestions.
 6. For an injection or a nasal product, it reads the cartons on the labels of openFDA.
    It makes one entry for each size of carton, and shows the strength of one device
    where the label prints it so.
-7. It builds one catalog entry for each product and package. The short name is the brand name, the
-   generic name in brackets, and the strength.
+7. It builds one catalog entry for each product and package. The short name is the brand
+   name, the generic name in brackets, the strength, and the release form when the
+   product has one, such as `Metformin 500 mg 24 HR XR` or `Naprosyn (Naproxen) 500 mg DR`.
+   A tablet that lets its drug go over a day, or after the stomach, is another product
+   than the plain tablet, so the two never share a name.
 8. It leaves out a product that an entry written by hand already covers, and gives that
-   entry the number of the product.
+   entry the number of the product. The entry written by hand must name the release
+   form too, or it covers the plain product only.
 9. It makes every short name different. Two products with one name and one strength get
    their form or their device added, such as "Pen Injector 3 mL".
 10. It makes the syringes and needles from `supplies.txt`. It asks no service for them.

@@ -70,7 +70,7 @@
 {"op": "put", "tbl": "medication", "id": "01J8MEDS0000000000MED00038", "d": {"short_name": "Tylenol Extra Strength (Acetaminophen) 500 mg", "generic_name": "Acetaminophen", "brand_name": "Tylenol Extra Strength", "strength": "500 mg", "route": "Oral", "form": "Tablet", "is_specialty": false}}
 {"op": "put", "tbl": "medication_alias", "id": "01J8MEDS0000000000AKA00033", "d": {"medication_id": "01J8MEDS0000000000MED00038", "alias": "APAP"}}
 {"op": "put", "tbl": "medication_alias", "id": "01J8MEDS0000000000AKA00034", "d": {"medication_id": "01J8MEDS0000000000MED00038", "alias": "Paracetamol"}}
-{"op": "put", "tbl": "medication", "id": "01J8MEDS0000000000MED00039", "d": {"short_name": "Prilosec OTC (Omeprazole) 20 mg", "generic_name": "Omeprazole", "brand_name": "Prilosec OTC", "strength": "20 mg", "route": "Oral", "form": "Tablet", "is_specialty": false}}
+{"op": "put", "tbl": "medication", "id": "01J8MEDS0000000000MED00039", "d": {"short_name": "Prilosec OTC (Omeprazole) 20 mg DR", "generic_name": "Omeprazole", "brand_name": "Prilosec OTC", "strength": "20 mg", "route": "Oral", "form": "Tablet", "is_specialty": false}}
 {"op": "put", "tbl": "medication_alias", "id": "01J8MEDS0000000000AKA00035", "d": {"medication_id": "01J8MEDS0000000000MED00039", "alias": "Omeprazole magnesium"}}
 {"op": "put", "tbl": "medication", "id": "01J8MEDS0000000000MED00040", "d": {"short_name": "Bayer Low Dose (Aspirin) 81 mg", "generic_name": "Aspirin", "brand_name": "Bayer Low Dose", "strength": "81 mg", "route": "Oral", "form": "Tablet", "is_specialty": false}}
 {"op": "put", "tbl": "medication_alias", "id": "01J8MEDS0000000000AKA00036", "d": {"medication_id": "01J8MEDS0000000000MED00040", "alias": "ASA"}}

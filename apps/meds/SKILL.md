@@ -139,8 +139,9 @@ view, and must change in the same commit as `schema.sql`.
   due uses eligibility. Controlled fills count across payers without a frame limit.
   Zero percent waits for physical exhaustion. Frame 0 counts the last fill only, and
   3650 counts all history. Preserve the raw boolean in views because Lua treats 0 as true.
-- A medication's short name is `Brand (Generic) strength package` unless the owner typed
-  another. One product in two packages is two medications with one RxCUI.
+- A medication's short name is `Brand (Generic) strength release package` unless the
+  owner typed another; the release part (`24 HR XR`, `12 HR XR`, `DR`, `EC`) appears only
+  when the product has one. One product in two packages is two medications with one RxCUI.
   A second spelling of a product is a `medication_alias` row, never a second medication.
 - A view that must run in any SQLite tool leaves out the `DECIMAL` columns.
 - Every link goes through `url()`, so the app works unchanged in solo mode.
