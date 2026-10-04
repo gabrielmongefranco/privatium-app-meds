@@ -25,7 +25,7 @@ detail.
 - [How to build the starter catalog](how-to/build-the-starter-catalog.md): the script
   that writes the catalog the app ships, its sources and their licenses.
 - [App design](design/README.md): what each screen does, the refill status rules, and
-  the owner's decisions.
+  the design decisions.
 - [Compliance](compliance.md): the security and accessibility controls in place, the
   evidence for each, and what a person still has to check.
 - [Documentation template](doc-template.md): starting structure for a knowledge base page.

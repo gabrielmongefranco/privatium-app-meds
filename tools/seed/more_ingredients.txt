@@ -24,6 +24,7 @@ Aspirin
 Avanafil
 Azithromycin
 Bismuth subsalicylate
+Bisoprolol
 Budesonide
 Bupropion; Naltrexone
 Carbamide peroxide
@@ -34,10 +35,13 @@ Cefpodoxime
 Cefuroxime
 Cephalexin
 Cetirizine
+Chorionic gonadotropin
 Ciprofloxacin
 Ciprofloxacin; Dexamethasone
 Clarithromycin
 Clomiphene
+Clotrimazole
+Colestipol
 Dicyclomine
 Diphenhydramine
 Epinephrine
@@ -49,11 +53,14 @@ Follitropin beta
 Glucagon
 Guanfacine
 Hydrocortisone
+Hydromorphone
+Hydroquinone
 Insulin aspart = Insulin aspart, human
 Insulin glulisine = Insulin analog, glulisine
 Insulin isophane (NPH) = Insulin, human isophane
 Insulin isophane / Insulin regular = Insulin, human mixed
 Insulin regular = Insulin, human regular
+Ketorolac
 Levalbuterol
 Levofloxacin
 Lidocaine @ Topical
@@ -63,6 +70,7 @@ Liraglutide
 Loratadine
 Methimazole
 Minocycline
+Minoxidil
 Modafinil
 Nandrolone decanoate +salt
 Naproxen
@@ -70,17 +78,27 @@ Ofloxacin
 Olopatadine
 Omalizumab
 Orlistat
+Oseltamivir
+Oxandrolone
 Oxcarbazepine
 Papaverine
 Penicillin V = Penicillin V potassium
+Pentoxifylline
 Phentermine; Topiramate
+Polyethylene glycol 3350
 Polyethylene Glycol 3350
 Polymyxin B; Trimethoprim
+Potassium citrate
+Prochlorperazine
+Raloxifene
 Rizatriptan
 Sildenafil
+Sulfamethoxazole; Trimethoprim
 Sumatriptan
 Tadalafil
 Tamoxifen
 Testosterone = Testosterone +salt
 Tobramycin
 Vardenafil
+Verapamil
+Zaleplon

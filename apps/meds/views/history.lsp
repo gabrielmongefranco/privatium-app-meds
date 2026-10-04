@@ -74,7 +74,8 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
         <td role="cell"><span class="pv-cell-label" aria-hidden="true">Date</span><?= fmt.date(row.filled_on) ?></td>
         <td role="cell"><span class="pv-cell-label" aria-hidden="true">Medication</span><?= render('_form_icon', { icon_name = row.form_icon, label = row.form_label }) ?> <?= row.medication_name ?>
           <? if row.product_name and row.product_name ~= row.medication_name then ?><span class="pv-meta meds-line"><?= row.product_name ?></span><? end ?>
-          <? if row.rx_number then ?><span class="pv-meta meds-line">Rx <?= row.rx_number ?></span><? end ?></td>
+          <? if row.rx_number then ?><span class="pv-meta meds-line">Rx <?= row.rx_number ?></span><? end ?>
+          <? if row.notes then ?><span class="pv-meta meds-line">Note: <?= row.notes ?></span><? end ?></td>
         <td role="cell"><span class="pv-cell-label" aria-hidden="true">For</span><?= row.person_name ?></td>
         <td role="cell"><span class="pv-cell-label" aria-hidden="true">Pharmacy</span><?= row.pharmacy_name ?></td>
         <td role="cell"><span class="pv-cell-label" aria-hidden="true">Plan</span><?= row.plan_name or 'Not given' ?></td>

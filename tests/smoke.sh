@@ -517,7 +517,11 @@ expect_text "the form has its heading" "Track new medication"
 expect_text "the form suggests names while a person types" 'list="medication-names"'
 expect_text "the suggestions hold the short names" 'value="Prinivil (Lisinopril) 10 mg"'
 expect_text "the suggestions hold the other names" 'value="Albuterol inhaler"'
-expect_text "the form can add a new medication" "Add a new medication"
+expect_text "the form can add a medication to the catalog" "Not in the list? Add a medication to the catalog"
+expect_text "the package type is a drop-down" '<select id="f-product_package_type-list" name="product_package_type">'
+expect_text "the form has a search box with a Find button" 'name="action" value="find_product"'
+expect_text "the form has a notes box" '<textarea id="f-notes" name="notes"'
+expect_text "the form loads the product search script" '/static/product_search.js'
 expect_text "the form has the controlled checkbox" 'name="product_controlled" type="checkbox"'
 expect_text "the form has the specialty checkbox" 'name="product_specialty" type="checkbox"'
 expect_text "the form asks for a preferred name" 'name="display_name"'
@@ -526,37 +530,58 @@ expect_text "a drop-down offers to add a new record" '<option value="new">-- Add
 expect_text "the fields of a new record wait for that choice" 'data-show-when="prescriber_id=new"'
 expect_text "the page loads the script that shows them" '/static/forms.js'
 expect_status "the script is served" 200 "$(get /static/forms.js)"
-expect_status "a name that fits two medications asks which one" 200 "$(post /setup/people/new /medications/new \
-  "person_id=$alex" 'product_name=albuterol' 'action=add_product' 'status=taking_regularly' 'refills_left=1')"
-expect_text "a name that fits two medications says so" "Choose the medication you mean"
-expect_text "a name that fits two medications offers the first" "Ventolin HFA (Albuterol) 90 mcg/actuation"
-expect_text "a name that fits two medications offers the second" "Albuterol 2.5 mg/3 mL (0.083%)"
-expect_text "the form keeps the typed name" 'value="albuterol"'
-expect_status "a misspelled name picks nothing" 200 "$(post /setup/people/new /medications/new \
-  "person_id=$alex" 'product_name=Prinivl' 'action=add_product' 'status=taking_regularly' 'refills_left=1')"
-expect_text "a misspelled name offers the close medication" "Prinivil (Lisinopril) 10 mg"
-expect_status "a name nobody knows is refused" 200 "$(post /setup/people/new /medications/new \
-  "person_id=$alex" 'product_name=zzzqqq' 'action=add_product' 'status=taking_regularly' 'refills_left=1')"
+expect_status "the product search script is served" 200 "$(get /static/product_search.js)"
+expect_status "the drug references script is served" 200 "$(get /static/drug_references.js)"
+expect_status "a search that fits two medications lists both" 200 "$(post /setup/people/new /medications/new \
+  "person_id=$alex" 'product_q=albuterol' 'action=find_product' 'status=taking_regularly' 'refills_left=1')"
+expect_text "the results say how many were found" 'results for "albuterol". Check the ones to add.'
+expect_text "the results offer the first" "Ventolin HFA (Albuterol) 90 mcg/actuation"
+expect_text "the results offer the second" "Albuterol 2.5 mg/3 mL (0.083%)"
+expect_text "each result has a check box" 'type="checkbox" name="pick_'
+expect_text "the form keeps the typed search" 'value="albuterol"'
+expect_text "the form has the link to the online databases" 'data-search-online'
+expect_status "the search answers JSON for the script" 200 "$(get "/medications/search?q=albuterol")"
+expect_text "the JSON names the results" '"short_name":"Ventolin HFA (Albuterol) 90 mcg/actuation"'
+expect_text "the JSON tells a close match from a plain one" '"close":false'
+expect_status "an empty search answers an empty list" 200 "$(get "/medications/search?q=")"
+expect_text "an empty search has no results" '"results":[]'
+expect_status "a misspelled search finds the close medication" 200 "$(post /setup/people/new /medications/new \
+  "person_id=$alex" 'product_q=Prinivl' 'action=find_product' 'status=taking_regularly' 'refills_left=1')"
+expect_text "a misspelled search offers the close medication" "Prinivil (Lisinopril) 10 mg"
+expect_text "a close medication is marked as such" "Close match"
+expect_status "a name nobody knows finds nothing" 200 "$(post /setup/people/new /medications/new \
+  "person_id=$alex" 'product_q=zzzqqq' 'action=find_product' 'status=taking_regularly' 'refills_left=1')"
 expect_text "a name nobody knows says what to do" "No medication found with this name."
-expect_status "markup as a name is refused" 200 "$(post /setup/people/new /medications/new \
-  "person_id=$alex" 'product_name=<script>alert(7)</script>' 'action=add_product' 'status=taking_regularly' 'refills_left=1')"
-expect_no_text "markup as a name is never sent as markup" "<script>alert(7)</script>"
-expect_status "the choice to add with nothing typed is refused" 200 "$(post /setup/people/new /medications/new \
+expect_text "a name nobody knows opens the fields of a new medication" '<details data-new-product open>'
+expect_status "markup as a search is refused" 200 "$(post /setup/people/new /medications/new \
+  "person_id=$alex" 'product_q=<script>alert(7)</script>' 'action=find_product' 'status=taking_regularly' 'refills_left=1')"
+expect_no_text "markup as a search is never sent as markup" "<script>alert(7)</script>"
+expect_status "the choice to add with nothing checked is refused" 200 "$(post /setup/people/new /medications/new \
   "person_id=$alex" 'action=add_product' 'status=taking_regularly' 'refills_left=1')"
-expect_text "the choice to add with nothing typed says why" "Choose a medication: type its name, or add a new one."
-expect_status "a product is added to the form" 200 "$(post /setup/people/new /medications/new \
-  "person_id=$alex" 'product_name=Prinivil (Lisinopril) 10 mg' 'action=add_product' 'status=taking_regularly' 'refills_left=1')"
+expect_text "the choice to add with nothing checked says why" "Check a product in the results, or type a name to search for."
+expect_status "a checked result is added to the form" 200 "$(post /setup/people/new /medications/new \
+  "person_id=$alex" "pick_$prinivil=yes" 'action=add_product' 'status=taking_regularly' 'refills_left=1')"
 expect_text "the product is carried by its id" "name=\"product_1_id\" value=\"$prinivil\""
 expect_text "the product is listed with its full name" "Lisinopril (Prinivil) 10 mg Oral Tablet"
 expect_text "the preferred name starts as the full name" 'name="display_name" type="text" value="Lisinopril (Prinivil) 10 mg Oral Tablet"'
 expect_text "the product can be removed again" 'value="remove_product_1"'
-expect_status "a typed name is added when the form is saved" 200 "$(post /setup/people/new /medications/new \
-  "person_id=$alex" 'product_name=Prinivil (Lisinopril) 10 mg' 'action=save' 'status=taking_regularly' 'refills_left=1')"
-expect_text "the typed name became a product" "name=\"product_1_id\" value=\"$prinivil\""
+expect_text "the box to add another product folds away" '<details class="meds-another">'
+expect_text "the folded box explains itself" "(e.g. different pack size of the same medication)"
+expect_status "two checked results are added together" 200 "$(post /setup/people/new /medications/new \
+  "person_id=$alex" "pick_$prinivil=yes" "pick_$glucophage=yes" 'action=add_product' 'status=taking_regularly' 'refills_left=1')"
+expect_text "the first checked product is carried" "name=\"product_1_id\" value=\"$prinivil\""
+expect_text "the second checked product is carried" "name=\"product_2_id\" value=\"$glucophage\""
+expect_status "a checked result that names nothing is refused" 200 "$(post /setup/people/new /medications/new \
+  "person_id=$alex" 'pick_01J8MEDS0000000000N0NE0001=yes' 'action=add_product' 'status=taking_regularly' 'refills_left=1')"
+expect_text "a checked result that names nothing says why" "Choose a medication from the list."
+expect_status "a search typed into the box runs when the form is saved" 200 "$(post /setup/people/new /medications/new \
+  "person_id=$alex" 'product_q=Prinivil (Lisinopril) 10 mg' 'action=save' 'status=taking_regularly' 'refills_left=1')"
+expect_text "the saved form came back with the results" "name=\"pick_$prinivil\""
+expect_no_text "nothing was added by the search" 'name="product_1_id"'
 expect_status "a product is removed from the form" 200 "$(post /setup/people/new /medications/new \
   "person_id=$alex" "product_1_id=$prinivil" 'action=remove_product_1' 'status=taking_regularly' 'refills_left=1')"
 expect_no_text "the removed product is gone from the form" "name=\"product_1_id\""
-expect_text "a form with no product says so" "No product chosen yet."
+expect_no_text "a form with no product hides the Products box" 'id="f-products"'
 expect_status "an entry with no product is refused" 200 "$(post /setup/people/new /medications/new \
   "person_id=$alex" 'display_name=Nothing' 'status=taking_regularly' 'refills_left=1')"
 expect_text "an entry with no product says why" "Add at least one product."
@@ -578,7 +603,7 @@ expect_status "an entry with 100 refills is refused" 200 "$(post /setup/people/n
 expect_status "an entry is added" 303 "$(post /setup/people/new /medications/new \
   "person_id=$alex" "product_1_id=$prinivil" 'display_name=Prinivil' 'status=taking_regularly' 'refills_left=1' \
   'instructions=Take one tablet by mouth every day' 'when_to_take_new=with breakfast' \
-  'prescribed_for=<i>blood pressure</i>' "pharmacy_id=$pharmacy")"
+  'prescribed_for=<i>blood pressure</i>' 'notes=Take with food. Reorder early.' "pharmacy_id=$pharmacy")"
 expect_status "the same product twice for one person is refused" 200 "$(post /setup/people/new /medications/new \
   "person_id=$alex" "product_1_id=$prinivil" 'display_name=Lisinopril' 'status=taking_regularly' 'refills_left=1')"
 expect_text "the same product twice says which entry has it" "is already on the list for this person, under Prinivil"
@@ -589,6 +614,7 @@ entry="$(entry_of Prinivil)"
 expect_status "page of a tracked medication" 200 "$(get "/medications/$entry")"
 expect_text "the page shows the instructions" "Take one tablet by mouth every day"
 expect_text "the page shows a typed choice" "with breakfast"
+expect_text "the page shows the notes" "Take with food. Reorder early."
 expect_text "markup in a field is shown escaped" "&lt;i&gt;blood pressure&lt;/i&gt;"
 expect_text "a medication with no fill says so" "No fill recorded"
 expect_text "the page lists the product" "Lisinopril (Prinivil) 10 mg Oral Tablet"
@@ -653,13 +679,13 @@ expect_text "the same person and product are found" "is already on the list for 
 expect_status "typed names that exist add nothing" "$(echo "$after" | awk '{print $1, $2, $3, $4, $5+1, $6+1}')" \
   "$(count_of medication) $(count_of person) $(count_of prescriber) $(count_of pharmacy) $(count_of person_medication) $(count_of person_medication_product)"
 # The lookup in the browser fills in fields of the form. They are checked like any other.
-expect_text "the form holds the lookup, hidden until a script shows it" 'data-lookup="product" hidden'
+expect_text "the form holds the line to the online databases, hidden until a script shows it" 'class="meds-online" hidden'
 expect_text "the page loads the lookup script" '/static/medication_lookup.js'
 expect_status "the lookup script is served" 200 "$(get /static/medication_lookup.js)"
 expect_status "a medication from a drug reference is added" 303 "$(post /setup/people/new /medications/new \
   "person_id=$alex" 'product_1_brand=Lookupol' 'product_1_generic=Lookupine' \
   'product_1_strength=5 mg' 'product_1_rxcui=99999901' 'product_1_source=rxterms' \
-  'product_1_route=Oral Pill' 'product_1_dose_form=Extended Release Oral Tablet' 'product_1_controlled=yes' \
+  'product_1_route_ref=Oral Pill' 'product_1_dose_form_ref=Extended Release Oral Tablet' 'product_1_controlled=yes' \
   'display_name=Lookupol' 'status=on_hold' 'refills_left=0')"
 get '/setup/catalog?q=lookupol' >/dev/null
 lookupol="$(id_in_link /setup/catalog)"
@@ -695,14 +721,14 @@ expect_status "an identifier with letters is refused" 200 "$(post /setup/people/
 expect_text "an identifier with letters says why" "digits only"
 expect_status "a reference that is not known is left out" 303 "$(post /setup/people/new /medications/new \
   "person_id=$alex" 'product_1_generic=Nosourcine' 'product_1_source=<b>evil</b>' \
-  'product_1_route=<script>' 'product_1_dose_form=<script>' 'display_name=Nosourcine' 'status=on_hold' 'refills_left=0')"
+  'product_1_route_ref=<script>' 'product_1_dose_form_ref=<script>' 'display_name=Nosourcine' 'status=on_hold' 'refills_left=0')"
 get '/setup/catalog?q=nosourcine' >/dev/null
 expect_status "page of the medication with no reference" 200 "$(get "/setup/catalog/$(id_in_link /setup/catalog)")"
 expect_no_text "a reference that is not known is never shown" "evil"
 expect_no_text "a route that is not known is never stored" "&lt;script&gt;"
 expect_status "only the one medication was added" "$((medications_before + 1))" "$(count_of medication)"
 expect_status "a new medication with no name is refused" 200 "$(post /setup/people/new /medications/new \
-  "person_id=$alex" 'product_choice=new' 'product_strength=15 mg' 'action=add_product' 'status=taking_regularly' 'refills_left=1')"
+  "person_id=$alex" 'product_strength=15 mg' 'action=add_product' 'status=taking_regularly' 'refills_left=1')"
 expect_text "a new medication with no name says why" "Enter a brand name or a generic name."
 expect_status "a new person with a name that is too long is refused" 200 "$(post /setup/people/new /medications/new \
   "person_id_new=$(printf 'a%.0s' $(seq 1 121))" "product_1_id=$glucophage" 'display_name=Glucophage' 'status=taking_regularly' 'refills_left=1')"
@@ -762,7 +788,7 @@ expect_text "a fill with no pharmacy says why" "Choose a pharmacy, or type the n
 fills_before="$(count_of fill)"
 expect_status "a fill is recorded" 303 "$(post /setup/people/new /fills/new \
   "entry_id=$entry" "pharmacy_id=$pharmacy" "filled_on=$(day '-21 days')" \
-  'days_supply=30' 'quantity=30' 'amount_paid=$1,012.50' 'refills_left=0' 'rx_number=700001')"
+  'days_supply=30' 'quantity=30' 'amount_paid=$1,012.50' 'refills_left=0' 'rx_number=700001' 'notes=Paid in cash')"
 expect_status "one fill more" "$((fills_before + 1))" "$(count_of fill)"
 curl -s -m 10 "$APP/api/row/person_medication/$entry" >"$BODY"
 expect_text "the fill sets the refills left" '"refills_left":"0"'
@@ -1021,6 +1047,7 @@ expect_text "the list marks a medication taken as needed" "(as needed)"
 expect_status "the list of a person who does not exist" 303 "$(get /people/01J8MEDS0000000000N0NE0001/medication-list)"
 expect_status "history page" 200 "$(get "/fills?person=$alex")"
 expect_text "history shows an amount with its thousands" "1,012.50"
+expect_text "history shows the note of a fill" "Note: Paid in cash"
 expect_text "history has a column for the quantity" '<th scope="col" role="columnheader">Quantity</th>'
 expect_text "history has a column for the days supply" '<th scope="col" role="columnheader">Days supply</th>'
 expect_text "a whole quantity has no decimals" 'aria-hidden="true">Quantity</span>30</td>'

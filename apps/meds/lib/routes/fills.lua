@@ -22,6 +22,7 @@
 -- with this program. If not, see <https://www.gnu.org/licenses/>.
 
 local pv                = require 'privatium'
+local catalog_entry     = require 'catalog_entry'
 local clock             = require 'clock'
 local entries           = require 'entries'
 local fills             = require 'fills'
@@ -152,6 +153,7 @@ local function form_page(heading, action, typed, errors, entry, is_new, pick)
     listed    = not entry and listed() or {},
     new_entry  = NEW_ENTRY,
     names      = not entry and suggestions.medication_names() or {},
+    catalog_options = not entry and catalog_entry.options() or { route = {}, dose_form = {}, package_type = {} },
     plans      = quick_add.options(quick_add.PLAN),
     people     = people(),
     pharmacies = pharmacies(),
@@ -245,7 +247,7 @@ pv.get(LIST, function(req)
 
   -- Grain: one row per fill under the filters, newest first, one page of them.
   local rows = pv.query([[
-    SELECT f.id, f.filled_on, f.quantity, f.days_supply, f.amount_paid, f.rx_number,
+    SELECT f.id, f.filled_on, f.quantity, f.days_supply, f.amount_paid, f.rx_number, f.notes,
            p.display_name  AS person_name,
            pm.display_name AS medication_name,
            m.short_name    AS product_name,

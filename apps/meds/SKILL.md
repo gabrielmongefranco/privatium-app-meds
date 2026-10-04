@@ -50,15 +50,17 @@ view, and must change in the same commit as `schema.sql`.
 | `lib/match.lua` | Pure Lua: how well a typed name matches a name of a medication |
 | `lib/medication_search.lua` | The search that every screen uses to find a medication |
 | `lib/written_name.lua` | Pure Lua: takes apart a name as a portal wrote it, and compares it with a name and a strength |
-| `lib/medication_pick.lua` | Reads the medication box of a form: a typed name, a choice, a carried id, or a new medication |
-| `lib/product_pick.lua` | The products of a tracked medication while its form is open: carried in hidden fields, added or removed per round trip |
+| `lib/medication_pick.lua` | Reads the medication box of a form: a typed name, a choice, a carried id, a checked result, or a new medication |
+| `lib/product_pick.lua` | The products of a tracked medication while its form is open: carried in hidden fields, searched for, added or removed per round trip |
 | `lib/catalog_entry.lua` | The checks of a catalog entry, shared by the catalog form and the medication box |
 | `lib/reference_words.lua` | Pure Lua: turns the route and the dose form of a drug reference into words of the catalog |
 | `lib/authorization_words.lua` | Pure Lua: the levels of a prior authorization that needs attention, and their words |
 | `static/forms.js` | Shows the fields of a new record when **-- Add new --** is chosen. Every form works without it. |
 | `static/filter.js` | Narrows the Medications page as a person types. The server filters the same way on submit. |
 | `static/person_tab.js` | Remembers the person tab chosen last, by id, in local storage. A stopgap until Privatium offers person profiles. |
-| `static/medication_lookup.js` | The lookup of a new medication, in the browser: RxTerms, then the openFDA NDC Directory, then RxNorm |
+| `static/drug_references.js` | Asks RxTerms, then the openFDA NDC Directory, then RxNorm about a name, in the browser; the two scripts below share it |
+| `static/medication_lookup.js` | The lookup of a new medication in the fill and authorization forms |
+| `static/product_search.js` | The product search of the form that tracks a medication: asks `/medications/search` for JSON, pages the results, falls back to the drug references, and suggests similar products while a new medication is typed |
 | `lib/quick_add.lua` | A person, a pharmacy, a prescriber or a plan that a form adds by name beside its own record |
 | `lib/suggestions.lua` | The values in use that text boxes offer while a person types |
 | `lib/merge.lua` | The plan and the batch of a merge |
@@ -122,6 +124,13 @@ view, and must change in the same commit as `schema.sql`.
 - The person tab chosen last lives in the browser, in `static/person_tab.js`. The server
   never stores it. The script goes when Privatium offers person profiles.
 - A typed name that a record already has picks that record. No form adds a name twice.
+- The product picker of the entry form searches with `product_q` and `action=find_product`,
+  and adds the results that come back checked as `pick_<medication id>=yes`. The browser
+  asks `GET /medications/search?q=` for the same results as JSON. A typed search with
+  nothing checked never saves the form; it comes back with the results.
+- The fields of a new medication carry the route and the form a drug reference gave as
+  hints in `_route_ref` and `_dose_form_ref`. The route, form and package type
+  drop-downs win over the hints when a person sets them.
 - A part of a form that a script may hide carries `data-show-when="<field>=<value>"`.
   The server never relies on the script: the choice `new` with nothing typed is
   refused, and without the script a typed name wins over the drop-down.
@@ -140,7 +149,7 @@ view, and must change in the same commit as `schema.sql`.
   Zero percent waits for physical exhaustion. Frame 0 counts the last fill only, and
   3650 counts all history. Preserve the raw boolean in views because Lua treats 0 as true.
 - A medication's short name is `Brand (Generic) strength release package` unless the
-  owner typed another; the release part (`24 HR XR`, `12 HR XR`, `DR`, `EC`) appears only
+  a person typed another; the release part (`24 HR XR`, `12 HR XR`, `DR`, `EC`) appears only
   when the product has one. A pack of tablets shows `Pack of N` in place of a strength.
   One product in two packages is two medications with one RxCUI.
   A second spelling of a product is a `medication_alias` row, never a second medication.

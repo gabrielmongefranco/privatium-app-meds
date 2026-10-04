@@ -51,6 +51,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
   <dt>Instructions</dt><dd><?= entry.instructions or 'Not given' ?></dd>
   <dt>When</dt><dd><?= entry.when_to_take or 'Not given' ?></dd>
   <dt>Reason</dt><dd><?= entry.prescribed_for or 'Not given' ?></dd>
+  <? if entry.notes then ?><dt>Notes</dt><dd class="meds-notes-text"><?= entry.notes ?></dd><? end ?>
   <? if entry.medication_type then ?><dt>Type</dt><dd><?= entry.medication_type ?></dd><? end ?>
 </dl></div>
 
@@ -125,7 +126,8 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
     <tbody role="rowgroup">
     <? for _, fill in ipairs(fills) do ?>
       <tr role="row">
-        <td role="cell"><span class="pv-cell-label" aria-hidden="true">Date</span><?= fmt.date(fill.filled_on) ?></td>
+        <td role="cell"><span class="pv-cell-label" aria-hidden="true">Date</span><?= fmt.date(fill.filled_on) ?>
+          <? if fill.notes then ?><span class="pv-meta meds-line">Note: <?= fill.notes ?></span><? end ?></td>
         <? if #products > 1 then ?><td role="cell"><span class="pv-cell-label" aria-hidden="true">Product</span><?= fill.product_name or 'Not given' ?></td><? end ?>
         <td role="cell"><span class="pv-cell-label" aria-hidden="true">Pharmacy</span><?= fill.pharmacy_name ?></td>
         <td role="cell"><span class="pv-cell-label" aria-hidden="true">Quantity</span><?= fill.quantity or 'Not given' ?></td>

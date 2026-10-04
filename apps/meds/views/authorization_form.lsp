@@ -54,7 +54,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
               err = errors.person_id, empty_label = 'Choose a person' }) ?>
         <?= render('_medication_names', { names = names }) ?>
         <?= render('_medication_picker', { prefix = 'medication', typed = typed, pick = pick,
-              legend = 'Product', err = errors.medication_id }) ?>
+              legend = 'Product', err = errors.medication_id, catalog_options = catalog_options }) ?>
         <p class="pv-help">If this person does not track this medication yet, it is added to their list as Not started.</p>
       </div>
     </fieldset>

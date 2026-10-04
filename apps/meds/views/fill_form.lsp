@@ -62,7 +62,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
               err = errors.person_id, empty_label = 'Choose a person' }) ?>
         <?= render('_medication_names', { names = names }) ?>
         <?= render('_medication_picker', { prefix = 'medication', typed = typed, pick = pick,
-              legend = 'Product', err = errors.medication_id }) ?>
+              legend = 'Product', err = errors.medication_id, catalog_options = catalog_options }) ?>
         <p class="pv-help">If this person does not track this medication yet, it is added to their list.</p>
       </div>
     </fieldset>
@@ -100,8 +100,8 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
     <summary>More details</summary>
     <?= render('_field', { name = 'insurance_claim_number', label = 'Claim number',
           value = typed.insurance_claim_number, err = errors.insurance_claim_number, maxlength = 60 }) ?>
-    <?= render('_field', { name = 'notes', label = 'Notes', value = typed.notes, err = errors.notes,
-          maxlength = 500 }) ?>
+    <?= render('_textarea', { name = 'notes', label = 'Notes', value = typed.notes, err = errors.notes,
+          maxlength = 500, help = 'Anything worth remembering about this fill.' }) ?>
   </details>
 
   <p class="pv-actions">

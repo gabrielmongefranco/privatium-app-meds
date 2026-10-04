@@ -45,7 +45,9 @@ of a portal, and tracks prior authorizations.
 | `static/meds.css` | Styles, using the shell's color tokens |
 | `lib/starter_catalog.lua` | The starter catalog of common medications, as a Lua table. `tools/build_seed.py` writes it. |
 | `lib/starter.lua` | Loads the starter catalog the first time a page finds the catalog empty |
-| `static/medication_lookup.js` | The lookup of a new medication in public drug references. Every form works without it. |
+| `static/drug_references.js` | Asks the public drug references about a name. The two scripts below use it. |
+| `static/medication_lookup.js` | The lookup of a new medication in the fill and authorization forms. Every form works without it. |
+| `static/product_search.js` | The product search of the form that tracks a medication: catalog first, then the drug references, with paged results. The server searches without it. |
 | `static/filter.js` | Narrows the Medications page as a person types. The server does the same when the form is sent. |
 | `static/person_tab.js` | Remembers the person tab chosen last, in the browser, until Privatium offers person profiles. |
 | `SKILL.md` | Context an AI assistant loads before extending this app |

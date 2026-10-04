@@ -30,6 +30,7 @@ local people_filter   = require 'people_filter'
 local quick_add       = require 'quick_add'
 local store           = require 'store'
 local suggestions     = require 'suggestions'
+local catalog_entry   = require 'catalog_entry'
 local starter         = require 'starter'
 local text            = require 'text'
 local validate        = require 'validate'
@@ -158,6 +159,7 @@ local function form_page(heading, action, typed, errors, entry, pick)
     new_entry = NEW_ENTRY,
     people    = quick_add.options(quick_add.PERSON),
     names     = not entry and suggestions.medication_names() or {},
+    catalog_options = not entry and catalog_entry.options() or { route = {}, dose_form = {}, package_type = {} },
   })
 end
 

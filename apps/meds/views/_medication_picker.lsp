@@ -69,7 +69,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
   <p id="f-<?= prefix ?>-help" class="pv-help">Type a few letters and pick the medication from the suggestions.</p>
   <? if explicit then ?></div><div data-show-when="<?= prefix ?>_choice=new"><? end ?>
   <details<? if open_new or explicit then ?> open<? end ?>>
-    <summary>Not in the list? Add a new medication</summary>
+    <summary>Not in the list? Add a medication to the catalog</summary>
     <? -- The lookup needs a script, so it stays hidden until the script shows it. ?>
     <div class="meds-lookup" data-lookup="<?= prefix ?>" hidden>
       <label for="f-<?= prefix ?>-lookup">Look it up</label>
@@ -82,8 +82,8 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
     </div>
     <input type="hidden" name="<?= prefix ?>_rxcui" value="<?= typed_in('_rxcui') ?>">
     <input type="hidden" name="<?= prefix ?>_source" value="<?= typed_in('_source') ?>">
-    <input type="hidden" name="<?= prefix ?>_route" value="<?= typed_in('_route') ?>">
-    <input type="hidden" name="<?= prefix ?>_dose_form" value="<?= typed_in('_dose_form') ?>">
+    <input type="hidden" name="<?= prefix ?>_route_ref" value="<?= typed_in('_route_ref') ?>">
+    <input type="hidden" name="<?= prefix ?>_dose_form_ref" value="<?= typed_in('_dose_form_ref') ?>">
     <label for="f-<?= prefix ?>-brand">Brand name <span class="meds-optional">(optional)</span></label>
     <input id="f-<?= prefix ?>-brand" name="<?= prefix ?>_brand" data-lookup-field="brand" type="text" value="<?= typed_in('_brand') ?>"
            autocomplete="off" maxlength="200">
@@ -95,18 +95,18 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
     <input id="f-<?= prefix ?>-strength" name="<?= prefix ?>_strength" data-lookup-field="strength" type="text" value="<?= typed_in('_strength') ?>"
            autocomplete="off" maxlength="60" aria-describedby="f-<?= prefix ?>-strength-help">
     <p id="f-<?= prefix ?>-strength-help" class="pv-help">As the label prints it, with the unit, such as 10 mg.</p>
+    <?= render('_choice', { name = prefix .. '_route', legend = 'Route', value = typed_in('_route'),
+          typed_new = typed_in('_route_new'), offered = catalog_options.route }) ?>
+    <?= render('_choice', { name = prefix .. '_dose_form', legend = 'Form', value = typed_in('_dose_form'),
+          typed_new = typed_in('_dose_form_new'), offered = catalog_options.dose_form }) ?>
     <label for="f-<?= prefix ?>-package_size">Package size <span class="meds-optional">(optional)</span></label>
     <input id="f-<?= prefix ?>-package_size" name="<?= prefix ?>_package_size" type="text"
            value="<?= typed_in('_package_size') ?>" autocomplete="off" maxlength="40"
            aria-describedby="f-<?= prefix ?>-package-help">
-    <label for="f-<?= prefix ?>-package_type">Package type <span class="meds-optional">(optional)</span></label>
-    <input id="f-<?= prefix ?>-package_type" name="<?= prefix ?>_package_type" type="text"
-           value="<?= typed_in('_package_type') ?>" autocomplete="off" maxlength="60" list="f-<?= prefix ?>-package-types">
-    <datalist id="f-<?= prefix ?>-package-types">
-      <option value="Pack"></option><option value="Box"></option><option value="Bottle"></option>
-      <option value="Tube"></option><option value="Vial"></option><option value="Pen"></option>
-    </datalist>
-    <p id="f-<?= prefix ?>-package-help" class="pv-help">For medications sold by the box. For a box of two pens, type 2 as the size and Pack as the type.</p>
+    <p id="f-<?= prefix ?>-package-help" class="pv-help">For medications sold by the box. For a box of two pens, type 2 as the size and choose Pack as the type.</p>
+    <?= render('_choice', { name = prefix .. '_package_type', legend = 'Package type',
+          value = typed_in('_package_type'), typed_new = typed_in('_package_type_new'),
+          offered = catalog_options.package_type }) ?>
     <fieldset>
     <legend>Special handling</legend>
     <label class="meds-option" for="f-<?= prefix ?>-controlled">

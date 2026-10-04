@@ -55,7 +55,7 @@ in `specialty.txt`. Coverage differs by payer, so these are suggestions. Change 
 mark in the catalog. The browser lookup uses the same name rules and checks the
 controlled mark with an openFDA request by the chosen product's identifier.
 
-The catalog currently has 238 controlled products and 29 specialty suggestions.
+The catalog currently has 264 controlled products and 29 specialty suggestions.
 
 ### What you need
 
@@ -83,7 +83,7 @@ The catalog currently has 238 controlled products and 29 specialty suggestions.
    does not hold:
 
    ```text
-   build_seed: 70 entries written by hand, 229 syringes and needles, 2458 entries from RxTerms, 530 brand names as other names
+   build_seed: 72 entries written by hand, 229 syringes and needles, 2551 entries from RxTerms, 544 brand names as other names
    ```
 
 4. Run the checks in [How to run the tests](run-the-tests.md). The smoke test opens the

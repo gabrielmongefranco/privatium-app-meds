@@ -7,7 +7,7 @@ Last Modified: 2026-10-03
 Summary: Design of the app's screens: tasks, the medication box, adding records from
          inside a form, pasting fills from a portal, the catalog as a copy of a drug
          reference, refill status rules, accessibility and privacy plans, what was
-         checked, and the owner's decisions.
+         checked, and the design decisions.
 Notes: See README file for documentation and full license information.
 
 Copyright © 2026 Gabriel Mongefranco
@@ -23,7 +23,7 @@ See <https://www.gnu.org/licenses/fdl-1.3.html>. See README for full license inf
 [Back to project README](../../README.md)
 
 This page describes the design of the Prescription Tracker app: the tasks it serves,
-what each screen does, and how the app decides that a refill is due. It is for the owner
+what each screen does, and how the app decides that a refill is due. It is for the household
 and for developers who change the app. [The usage page](../usage.md) shows how to use the
 screens. The [data model](../data-model.md) describes the tables and views.
 
@@ -36,7 +36,7 @@ otherwise.
 - Show what needs a refill first, in plain words.
 - Estimate refill eligibility and supply exhaustion from recorded fills and payer rules.
 - Work with a keyboard, a screen reader and a phone.
-- Keep every record on the owner's node. The node calls no network service. The browser
+- Keep every record on the household's node. The node calls no network service. The browser
   asks a public drug reference only when you look up a medication to add.
 
 ### Tasks and the screens that serve them
@@ -307,21 +307,38 @@ statement may print the generic name, and a person may use an abbreviation. The 
 one catalog entry for the product and any number of other names for it. The catalog is
 the list of products the app knows. It does not say who takes them.
 
-Every form that needs a product holds the same box. No form sends you to another page to
-find a product or to add one. The box has two parts:
+No form sends you to another page to find a product or to add one. Two boxes do the
+work. The form that tracks a medication has the product picker; the fill and
+authorization forms have the older medication box under a drop-down of the tracked
+medications, for a product that nobody tracks yet.
+
+**The product picker**, `views/_product_picker.lsp`, is one section:
+
+| Part | What it does |
+|---|---|
+| **Search the catalog** | A search box with a **Find** button. Enter or the button searches the catalog, and a suggestion that is picked while typing searches at once with that product checked. The results come back as a list with a check box each, 25 at most, best first, with a **Close match** badge on a name that is only near. With a script, the list shows 10 results a page on a tablet or a desktop and 5 on a phone. When the catalog has nothing, the script asks the drug references at once. |
+| **Search online databases** | A link under the search box that asks the drug references even when the catalog found something. Checking one of their results fills in the fields below. The link needs the script. |
+| **Not in the list? Add a medication to the catalog** | A closed disclosure with the brand name, the generic name, the strength, the route, the form, the package and the controlled and specialty marks. The route, the form and the package type are drop-downs with a choice to type a new value. While the brand or the generic name is typed, the script searches the catalog and then the drug references for similar products and lists them the same way, with a turning ring and the words "Searching for similar products..." until the search ends. Checking a catalog product there empties the typed fields, so the product is not added twice. |
+| **Add to this medication** | Adds every checked result, or the new medication, to the list of products. |
+
+The products chosen so far travel in hidden fields. Each has a **Remove** button. The
+Products list and the box swap places as the form fills: with no product yet, only the
+box shows; once a product is on the list, the box folds into a disclosure named **Add
+another product** with the note "(e.g. different pack size of the same medication)"
+under it, and opens when it has something to say. Nothing is written to the catalog
+until the form is saved. The preferred name starts as the full name of the first
+product. A typed search with nothing checked never saves the form, whatever button was
+pressed, so Enter in the search box searches.
+
+The server answers `GET /medications/search?q=` with the same results as JSON for the
+script, and searches itself when the form is sent without one.
+
+**The medication box** of the other forms, `views/_medication_picker.lsp`, has two parts:
 
 | Part | What it does |
 |---|---|
 | **Medication name** | A text box that suggests names while you type. It offers every short name and every other name. |
-| **Add a new medication** | Fields for the brand name, the generic name, the strength, the package, and the controlled and specialty marks, with the lookup in the drug references. The app builds the short name. |
-
-The form that tracks a medication wraps the box in the product picker,
-`views/_product_picker.lsp`. The products chosen so far travel in hidden fields, one per
-round trip: **Add this product** adds the product the box names, and each product has a
-**Remove** button. Nothing is written to the catalog until the form is saved. The
-preferred name starts as the full name of the first product. The fill and authorization
-forms show the box under a drop-down of the tracked medications, for a product that
-nobody tracks yet.
+| **Not in the list? Add a medication to the catalog** | The same fields as the picker, with the lookup in the drug references above them. The app builds the short name. |
 
 The typed name is compared with the short name, the generic name, the brand name and the
 other names. Capital letters, punctuation and extra spaces do not matter.
@@ -331,7 +348,7 @@ other names. Capital letters, punctuation and extra spaces do not matter.
 | A name that exactly one medication answers to, such as "exm" when it is another name of one product | Picks that medication |
 | A name that several medications answer to, such as "exampline" | The form comes back and lists them, so you pick the strength you mean |
 | A name close to one it knows, such as "Examplal" | The form comes back and offers the closest matches |
-| A name it does not know | The form comes back and opens **Add a new medication** |
+| A name it does not know | The form comes back and opens **Not in the list? Add a medication to the catalog** |
 
 When both parts are filled in, the more deliberate act wins: the fields of a new
 medication, then the typed name.
@@ -532,7 +549,7 @@ it copies only the entry you pick.
 
 - The 200 drugs most prescribed in the United States in 2024, from the ClinCalc DrugStats
   list, each at every strength and form that RxTerms lists.
-- The drugs of the owner's list that ClinCalc does not rank, at every strength too.
+- The drugs of a second list of common medications that ClinCalc does not rank, at every strength too.
 - Entries written by hand for products that no drug reference holds, such as continuous
   glucose monitors, alcohol prep pads and compounded mixes.
 - Syringes and needles, one entry for each volume, gauge and length.
@@ -541,11 +558,13 @@ RxTerms is a drug vocabulary of the United States National Library of Medicine, 
 entering prescriptions. [How to build the starter catalog](../how-to/build-the-starter-catalog.md)
 describes the script that writes the file.
 
-**The lookup** sits inside **Add a new medication**, in the medication box. You type a
-name and choose **Look up**. The app looks in its own catalog first, in the names that
-the page already holds. It shows what it finds, with one more choice:
-**None of these. Search the drug references.** It asks a reference only after that
-choice, or when the catalog holds nothing under the name.
+**The lookup** sits inside **Not in the list? Add a medication to the catalog**, in the
+medication box of the fill and authorization forms. You type a name and choose **Look
+up**. The app looks in its own catalog first, in the names that the page already holds.
+It shows what it finds, with one more choice: **None of these. Search the drug
+references.** It asks a reference only after that choice, or when the catalog holds
+nothing under the name. The product picker of the form that tracks a medication asks
+the same references through its search box and its **Search online databases** link.
 
 The app asks the references in this order, and stops at the first one that finds
 something:
@@ -560,7 +579,9 @@ A reference that limits requests, or takes longer than 8 seconds, counts as not
 answering. You pick one result, and the app fills in the brand name, the generic name and
 the strength. You check them and save the form. Nothing reaches the catalog before that.
 
-The lookup runs in the browser, from `static/medication_lookup.js`. A Tier 1 app has no
+The lookup runs in the browser, from `static/medication_lookup.js`, and the product
+search from `static/product_search.js`; both ask the references through
+`static/drug_references.js`. A Tier 1 app has no
 function that calls a network service, so the node itself never calls one. `app.toml`
 lists the three addresses under `permissions.remote`, and Privatium shows that
 permission when the app is installed. Every form works without the script. The lookup
@@ -632,7 +653,7 @@ Three limits are known:
   milligrams the builder turns into units. A strength whose labels cannot be read stays
   as the reference prints it. You can correct the strength before you save.
 - **Brand names in the starter catalog.** A generic product takes the brand of the
-  owner's list when it has one, or its only brand. A product with several brands takes
+  preferred brands list when it has one, or its only brand. A product with several brands takes
   none and answers to each brand as another name.
 - **Package codes.** The openFDA NDC Directory lists products by National Drug Code
   (NDC). One product has many codes, one for each package and maker. The app stores
@@ -788,10 +809,8 @@ This design makes no claim of compliance with any health privacy law.
 
 ### What was checked
 
-These checks ran from 2026-09-26 to 2026-09-27 with Privatium 0.3. The checks on the
-owner's database opened it read-only, kept the converted rows in memory, and printed
-counts only. [How to run the tests](../how-to/run-the-tests.md) covers the first three
-rows.
+These checks ran from 2026-09-26 to 2026-09-27 with Privatium 0.3.
+[How to run the tests](../how-to/run-the-tests.md) covers the first three rows.
 
 | Check | Result |
 |---|---|
@@ -809,7 +828,7 @@ still has to check by hand.
 
 ### Decisions made
 
-The owner made these decisions on 2026-09-27.
+These design decisions date from 2026-09-27.
 
 | Subject | Decision |
 |---|---|
@@ -846,7 +865,7 @@ The owner made these decisions on 2026-09-27.
 | Lookup order | The catalog first. A drug reference only when the catalog lacks the name. |
 | Text boxes | They suggest the values that records already hold. |
 | Household name | Removed. |
-| Starter catalog | The ClinCalc top 200 and the owner's list, one entry per strength, plus entries written by hand for glucose monitors and supplies. |
+| Starter catalog | The ClinCalc top 200 and a second list of common medications, one entry per strength, plus entries written by hand for glucose monitors and supplies. |
 | Lookup of a new medication | Built, and on for everyone. RxTerms first. The openFDA NDC Directory and RxNorm are asked when RxTerms finds nothing or does not answer. |
 | What the lookup is for | Adding a medication. The app loads no catalog of a reference. |
 
@@ -880,12 +899,24 @@ Each step ended with a clean `privatium lint`, passing tests and updated documen
 |---|---|
 | What a person takes | A tracked medication with a preferred name, standing for one or more catalog products. Fills and prior authorizations point at it. |
 | Products per person | A product belongs to one tracked medication of a person. A preferred name is unique within a person. |
-| Preferred name | Starts as the full name of the first product, and the owner changes it in the form. |
+| Preferred name | Starts as the full name of the first product, and it can be changed in the form. |
 | The product of a fill | Kept on the fill, so carton sizes stay apart in the history. |
 | Navigation | Medications first, with the capsule icon; Refills second, with the bag icon. |
 | Remembered person | The browser keeps the person tab chosen last, by id, until profiles arrive. |
 | Form icons | One Bootstrap icon per dose form, labelled with the form; a hand-drawn syringe for injections. |
-| Portal wording | "Copy refill history from patient portal", with the owner's explanation. |
+| Portal wording | "Copy refill history from patient portal", with a plain explanation of what to copy. |
+
+#### Product picker decisions, October 3, 2026
+
+| Subject | Decision |
+|---|---|
+| Finding a product | One search box with a Find button. Enter searches. Results are a paged list with a check box each: 10 a page on a wide screen, 5 on a phone, 25 at most. |
+| Online databases | Asked at once when the catalog has nothing, and on request through a link under the search box. |
+| Adding to the catalog | The disclosure reads "Not in the list? Add a medication to the catalog" and opens on the name fields. Similar products are searched while the name is typed, with a turning ring and the words "Searching for similar products...". |
+| Drop-downs | Route, form and package type are drop-downs with a choice to type a new value. The browser's suggestion list is kept for free text only. |
+| Products list | Hidden until a product is on the list. The box then folds into "Add another product" with the note "(e.g. different pack size of the same medication)". |
+| Notes | A free-text notes field on a tracked medication and on a fill. |
+| Dose forms | Gummy is a form of its own, with the cookie icon. |
 
 #### Refill rule decisions, October 1, 2026
 
@@ -897,7 +928,7 @@ Each step ended with a clean `privatium lint`, passing tests and updated documen
 | Controlled supply | Every fill counts across payers, with no frame limit and zero early days by default. |
 | Cash and over-the-counter | Zero percent waits until physical supply runs out. |
 | Frame special values | Zero counts the last fill only; 3650 counts every fill, even beyond ten years. |
-| Catalog marks | Controlled comes from openFDA schedules; specialty is a name/list suggestion that the owner can correct. |
+| Catalog marks | Controlled comes from openFDA schedules; specialty is a name/list suggestion that can be corrected in the catalog. |
 
 ### Conclusion
 

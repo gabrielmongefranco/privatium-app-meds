@@ -23,7 +23,7 @@
 [app]
 slug        = "meds"
 title       = "Prescription Tracker"
-version     = "0.4.0"
+version     = "0.5.0"
 api         = 1
 tier        = "lua"
 description = "A personal prescription tracker for families with chronic conditions."
@@ -36,9 +36,9 @@ order     = 10
 advertise = true
 
 [permissions]
-# The lookup of a new medication runs in the browser and asks three public drug
-# references, in this order: RxTerms, then the openFDA NDC Directory, then RxNorm.
-# It sends the name that was typed into the lookup box, and nothing else.
+# The product search and the lookup of a new medication run in the browser and ask
+# three public drug references, in this order: RxTerms, then the openFDA NDC Directory,
+# then RxNorm. They send the name that was typed into the box, and nothing else.
 remote = [
   "https://clinicaltables.nlm.nih.gov",
   "https://api.fda.gov",

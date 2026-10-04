@@ -44,7 +44,8 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
   <? end ?>
   <?= render('_medication_names', { names = names }) ?>
   <?= render('_product_picker', { prefix = 'product', typed = typed, chosen = chosen, pick = pick,
-        err = errors.products, add_button = add_action }) ?>
+        err = errors.products, add_button = add_action, find_button = find_action,
+        search_url = search_url, catalog_options = offered.catalog_options }) ?>
   <?= render('_field', { name = 'display_name', label = 'Preferred name', value = typed.display_name,
         err = errors.display_name, required = true, maxlength = 200,
         help = 'The name you call this medication. You can shorten it.' }) ?>
@@ -59,6 +60,8 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
         typed_new = typed.when_to_take_new, offered = offered.when_to_take, err = errors.when_to_take }) ?>
   <?= render('_field', { name = 'prescribed_for', label = 'Reason for taking it', value = typed.prescribed_for,
         err = errors.prescribed_for, maxlength = 200, suggestions = offered.purposes }) ?>
+  <?= render('_textarea', { name = 'notes', label = 'Notes', value = typed.notes, err = errors.notes,
+        maxlength = 500, help = 'Anything else worth remembering about this medication.' }) ?>
   <?= render('_field', { name = 'refills_left', label = 'Refills left', value = typed.refills_left,
         err = errors.refills_left, required = true, inputmode = 'numeric', maxlength = 2,
         help = 'The number on the label. Type 0 when none is left.' }) ?>
@@ -80,3 +83,4 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
     <a class="pv-btn" href="<?= url('/medications') ?>">Cancel</a>
   </p>
 </form>
+<script src="<?= url('/static/product_search.js') ?>" defer></script>

@@ -21,7 +21,7 @@ See <https://www.gnu.org/licenses/fdl-1.3.html>. See README for full license inf
 [Back to project README](../README.md)
 
 This page lists the security and accessibility controls of the app and the evidence for
-each one. It is for owners who decide whether to trust the app with their records, and
+each one. It is for the people who decide whether to trust the app with their records, and
 for developers and auditors. It states what was checked and what was not. It makes no
 claim of compliance with any law or standard.
 
@@ -63,8 +63,8 @@ paid. The [data model](data-model.md) marks each such column.
 | A record in use is not removed | `uses` in the route modules | The smoke test posts removals by hand. |
 | Diagnostic messages hold no field values | `page.masked` in `lib/page.lua` | Unit tests |
 | The node calls no network service | The Lua of the app has no function that does | Lint rule PV504 passes. |
-| The browser calls three drug references, and nothing else | `permissions.remote` in `app.toml` lists them. `static/medication_lookup.js` names no other address. | Lint rule PV207 passes. |
-| The lookup sends public drug names and product identifiers only | `static/medication_lookup.js` sends no cookie and no page address | Read in the code. Not measured in a browser. |
+| The browser calls three drug references, and nothing else | `permissions.remote` in `app.toml` lists them. `static/drug_references.js`, which both browser scripts use, names no other address. | Lint rule PV207 passes. |
+| The lookup and the product search send public drug names and product identifiers only | `static/drug_references.js` sends no cookie and no page address | Read in the code. Not measured in a browser. |
 | What a drug reference answers is untrusted | The script writes it with `textContent`. The server checks every field it receives: `lib/catalog_entry.lua`, `lib/reference_words.lua`. | The smoke test sends markup as a source, a route and a dose form, and letters as an identifier. Unit tests cover the words of a reference. |
 
 ### Refill-rule checks, October 1, 2026
@@ -128,7 +128,7 @@ These checks are open:
 
 1. Finish each main task with the keyboard only: see the refills, record a fill, paste
    fills, add a medication to a list. Include the medication box: pick a suggestion
-   while typing, and open **Add a new medication**.
+   while typing, and open **Not in the list? Add a medication to the catalog**.
 2. Finish the same tasks with a screen reader.
 3. Check that the list of problems takes the focus when a refused form comes back.
 4. Zoom to 200% and look for overlap and cut-off text.

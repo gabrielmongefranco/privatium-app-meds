@@ -2,7 +2,7 @@
 -- apps/meds/lib/suggestions.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-10-01
+-- Last Modified: 2026-10-03
 -- Summary: The values already in use that text boxes offer while a person types.
 -- Notes: See README file for documentation and full license information.
 --
@@ -95,7 +95,7 @@ end
 --         Grain: one row per medication per distinct short name or other name.
 function suggestions.medication_names()
   return pv.query([[
-    SELECT n.name AS value, m.short_name AS label
+    SELECT n.name AS value, m.short_name AS label, m.id AS medication_id
       FROM v_medication_name n
       JOIN medication m ON m.id = n.medication_id    -- many:1
      WHERE n.name_kind IN ('short_name', 'alias')

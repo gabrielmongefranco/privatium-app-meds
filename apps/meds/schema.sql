@@ -2,7 +2,7 @@
 -- apps/meds/schema.sql
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-26
--- Last Modified: 2026-10-01
+-- Last Modified: 2026-10-03
 -- Summary: Tables and views of the Prescription Tracker app. Derived from the event log on
 --          every start; see docs/data-model.md for the grain and meaning of every column.
 -- Notes: See README file for documentation and full license information.
@@ -74,11 +74,11 @@ CREATE TABLE person (
 --- medication: the catalog of products ---
 -- Grain: one row per product: a drug at one strength and form, or one supply item.
 -- The same product under another spelling is a medication_alias row, never a second row here.
--- A row is typed by the owner or copied from a drug reference. A copied row keeps the
+-- A row is typed by a person or copied from a drug reference. A copied row keeps the
 -- reference's identifier, so copying the same product again finds this row.
 CREATE TABLE medication (
     id            VARCHAR PRIMARY KEY,
-    short_name    VARCHAR NOT NULL,  -- The name the app shows everywhere: 'Brand (Generic) strength' unless the owner types another
+    short_name    VARCHAR NOT NULL,  -- The name the app shows everywhere: 'Brand (Generic) strength' unless a person types another
     generic_name  VARCHAR,
     brand_name    VARCHAR,
     strength      VARCHAR,           -- As the label prints it, unit included: '10 mg', '100 units/mL', '100-62.5-25 mcg'
@@ -89,8 +89,8 @@ CREATE TABLE medication (
     is_controlled BOOLEAN,           -- NULL means unmarked; controlled supply counts across payers
     is_specialty  BOOLEAN NOT NULL,  -- A specialty medication takes longer to arrive, so its refill is due earlier
     rxcui         VARCHAR,           -- RxNorm concept identifier of the product, digits kept as text; NULL when not known
-    source        VARCHAR,           -- The drug reference the row was copied from, such as 'rxterms'; NULL when the owner typed it
-    retrieved_on  DATE,              -- Local calendar date the row was copied or refreshed; NULL when the owner typed it
+    source        VARCHAR,           -- The drug reference the row was copied from, such as 'rxterms'; NULL when a person typed it
+    retrieved_on  DATE,              -- Local calendar date the row was copied or refreshed; NULL when a person typed it
     CHECK (generic_name IS NOT NULL OR brand_name IS NOT NULL)
 );
 
@@ -145,6 +145,7 @@ CREATE TABLE person_medication (
     prescribed_for  VARCHAR,            -- Health information
     instructions    VARCHAR,            -- Health information
     when_to_take    VARCHAR,
+    notes           VARCHAR,            -- Health information; free text
     refills_left    BIGINT NOT NULL,
     CHECK (status IN ('taking_regularly', 'taking_as_needed', 'on_hold', 'not_started', 'not_taking')),
     CHECK (refills_left >= 0)
