@@ -2,7 +2,7 @@
 -- apps/meds/lib/routes/authorizations.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-10-03
+-- Last Modified: 2026-10-04
 -- Summary: The screens for prior authorizations: the list, and the form that adds, changes or
 --          removes one for a tracked medication.
 -- Notes: See README file for documentation and full license information.
@@ -30,6 +30,7 @@ local people_filter   = require 'people_filter'
 local quick_add       = require 'quick_add'
 local store           = require 'store'
 local suggestions     = require 'suggestions'
+local catalog_entry   = require 'catalog_entry'
 local starter         = require 'starter'
 local text            = require 'text'
 local validate        = require 'validate'
@@ -104,12 +105,12 @@ local function read(form, fixed_entry)
   else
     adding.person_id, adding.person, errors.person_id =
       quick_add.read(form, 'person_id', quick_add.PERSON, true)
-    adding.pick = medication_pick.read(form, 'medication', true)
+    adding.pick = medication_pick.searched(form, 'medication') or medication_pick.read(form, 'medication', true)
     errors.medication_id = adding.pick.problem
     local found = entries.with_product(adding.person_id, adding.pick.id)
     if found then adding.entry_id = found.id end
     if not adding.entry_id and not errors.entry_id and not errors.person_id and not errors.medication_id
-       and not adding.person_id and not adding.person then
+       and not adding.pick.searching and not adding.person_id and not adding.person then
       errors.entry_id = 'Choose a medication from the list, or choose Another medication.'
     end
   end
@@ -158,6 +159,8 @@ local function form_page(heading, action, typed, errors, entry, pick)
     new_entry = NEW_ENTRY,
     people    = quick_add.options(quick_add.PERSON),
     names     = not entry and suggestions.medication_names() or {},
+    search_url = url('/medications/search'),
+    catalog_options = not entry and catalog_entry.options() or { route = {}, dose_form = {}, package_type = {} },
   })
 end
 
@@ -187,6 +190,10 @@ end)
 
 pv.post(LIST .. '/new', function(req)
   local row, errors, adding = read(req.form)
+  if adding.pick and adding.pick.searching then
+    -- A search of the box: the form comes back with the results and saves nothing.
+    return form_page('Add a prior authorization', url(LIST .. '/new'), req.form, {}, nil, adding.pick)
+  end
   if not next(errors) then
     local saved, refusal = save(nil, row, adding)
     if saved then return pv.redirect(url(LIST .. '?notice=saved')) end

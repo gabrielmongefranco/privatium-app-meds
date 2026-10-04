@@ -33,6 +33,7 @@ local portal_reader     = require 'portal_reader'
 local quick_add         = require 'quick_add'
 local store             = require 'store'
 local suggestions       = require 'suggestions'
+local catalog_entry     = require 'catalog_entry'
 local starter           = require 'starter'
 local text              = require 'text'
 local validate          = require 'validate'
@@ -321,6 +322,7 @@ local function review_page(found, person, pasted, typed, err)
     plan_name = plan and plan.name,
     section = 'history', found = found, person = person, pasted = pasted, typed = typed,
     err = err, new_pharmacy = NEW_PHARMACY, names = suggestions.medication_names(),
+    catalog_options = catalog_entry.options(),
     summary = page.counted(#found.rows, 'fill', 'fills') .. ' found. ' .. ready .. ' ready to add. '
       .. page.counted(asked, 'name is', 'names are') .. ' new to the app.',
   })

@@ -3,9 +3,9 @@ This file is part of Prescription Tracker
 docs/usage.md
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-10-03
+Last Modified: 2026-10-04
 Summary: How to use the app: refills, medication lists, fills, pasted fills, prior
-         authorizations, contacts and setup, and how to add a missing record from
+         authorizations and setup, and how to add a missing record from
          inside a form.
 Notes: See README file for documentation and full license information.
 
@@ -36,8 +36,7 @@ Every page has the same bar at the top, with six links:
 | **Refills** | What needs a refill now |
 | **History** | Every fill, and what you paid |
 | **Authorizations** | Prior authorizations and when they end |
-| **Contacts** | Prescribers and pharmacies |
-| **Setup** | Insurance plans, the family, the medication catalog, the reminder settings |
+| **Setup** | Insurance plans, the family, prescribers, pharmacies, the medication catalog, the reminder settings |
 
 The bar underlines the section you are in. On pages that list records, a row of names
 under the heading narrows the list to one person. The app remembers the person you chose
@@ -75,7 +74,7 @@ it in the same form.
 
 **A person, a pharmacy or a prescriber.** Open the drop-down and choose
 **-- Add new --**. A box for the name appears. Type the name. Saving the form adds the
-pharmacy too. You can fill in its phone number and address later, under **Contacts**.
+pharmacy too. You can fill in its phone number and address later, under **Setup**, **Pharmacies**.
 
 The route, the form and the other choices of a form work the same way.
 
@@ -84,13 +83,17 @@ If your browser runs no scripts, the box is always there, under the drop-down.
 If you type a name that is already in the app, the app uses that record. It never adds
 a name twice.
 
-**A product of the catalog.** The medication box finds a product of the catalog, or adds
-one. It has two parts. Use one of them.
+**A product of the catalog.** Every form that needs a product shows the same box: a
+search of the catalog with a **Find** button, the results to pick from, and a closed
+part named **Not in the list? Add a medication to the catalog** for a product the
+catalog lacks. [Keep the medication lists](#keep-the-medication-lists) walks through it.
+In the fill and authorization forms, which take one product, each result has a radio
+button instead of a check box.
 
 | Part | Use it when |
 |---|---|
-| **Medication name** | It is in the catalog. Type a few letters of any of its names, then pick it from the suggestions. |
-| **Add a new medication** | It is not in the catalog. Look it up, or type the brand name, the generic name, or both, and the strength. For a product that comes by the carton, type the package too, such as 2 and Pack. Tick **controlled** or **specialty** when the label says so. |
+| **Search the catalog** | It is in the catalog. Type a few letters of any of its names and press Enter or choose **Find**, then pick it from the results. |
+| **Not in the list? Add a medication to the catalog** | It is not in the catalog. Type the brand name, the generic name, or both, and the strength. Choose the route, the form and the package type from the drop-downs, or choose **-- Add new --** and type one. For a product that comes by the carton, type the package too, such as 2 and Pack. Tick **controlled** or **specialty** when the label says so. |
 
 The catalog is the list of products the app knows. It says nothing about who takes them.
 A fill or a prior authorization form offers the medications a person tracks in a
@@ -102,14 +105,16 @@ When the name you typed fits several medications, the form comes back and asks w
 you mean. When the name is close to one the app knows, the form offers that medication,
 and you decide.
 
-**Look up a medication.** Inside **Add a new medication**, type a name under
-**Look it up** and choose **Look up**. The app looks in its own
-catalog first. It asks the public drug references of the United States government only
-when the catalog holds nothing under the name, or when you choose
-**None of these. Search the drug references.** Pick a result, and the app fills in the
-brand name, the generic name and the strength. Check them, then save the form.
+**Online drug references.** When the catalog has nothing under a name, the app asks the
+public drug references of the United States government at once and lists what they
+hold. **Search online databases** under the search box does the same even when the
+catalog found something. Pick a result, and the app fills in the brand name, the generic
+name and the strength under **Not in the list? Add a medication to the catalog**. Check
+them, then go on.
 
-The lookup needs a connection to the internet. It sends public drug names and product identifiers, with no household records. Without a connection, fill in the fields yourself.
+The online search needs a connection to the internet and a browser that runs scripts. It
+sends public drug names and product identifiers, with no household records. Without a
+connection, fill in the fields yourself.
 
 **Text that repeats.** Some text boxes suggest previous values: the clinic, instructions,
 what a medication is for, and catalog names and strengths. Pick a suggestion, or type something new.
@@ -165,7 +170,8 @@ pharmacy, so the page reminds you to ask.
    plan, then the last fill's plan, then no plan.
 3. When the medication comes in more than one package, choose the **Product** that
    was dispensed. The form starts with the product of the last fill.
-4. Type the amount you paid. A currency sign is fine.
+4. Type the amount you paid. A currency sign is fine. Under **More details**, add the
+   claim number and any notes about this fill; the notes show in the history.
 5. Check **Refills left after this fill**. The form starts with one fewer than before.
    If you leave it empty, the app lowers the count by one.
 6. Choose **Save the fill**.
@@ -255,16 +261,38 @@ To track a medication:
 
 1. Choose **Track a new medication**.
 2. Choose who takes it.
-3. Under **Products**, type the name of the product and choose
-   **Add this product**, or open **Add a new medication** for a product the catalog
-   lacks. Repeat for a second carton size. Each product shows with a **Remove** button.
-   Pressing Enter in the name box adds the product too.
-4. Check the **Preferred name**. It starts as the full name of the first product. Type
+3. Under **Find the product**, type a few letters of the name into **Search the
+   catalog** and press Enter or choose **Find**. Picking a suggestion while you type
+   finds it at once, with that product checked. The results list up to 25 products,
+   10 a page on a tablet or a desktop and 5 on a phone, each with a check box. A
+   **Close match** badge marks a name that is only near what you typed.
+4. Check the product, or several when the same medication comes in two carton sizes,
+   and choose **Add to this medication**. Each product then shows under **Products**
+   with a **Remove** button, and the search box folds into **Add another product**.
+   Open it to add a second carton size later.
+5. If the catalog has nothing under the name, the app searches the online drug
+   references at once and lists what they hold. **Search online databases** under the
+   search box does the same even when the catalog found something. Check one of those
+   results, and its brand name, generic name and strength fill in under **Not in the
+   list? Add a medication to the catalog**. Check them, then choose **Add to this
+   medication**.
+6. For a product that no reference holds, open **Not in the list? Add a medication to
+   the catalog** and type the brand name, the generic name, or both. While you type,
+   the app searches for similar products and shows "Searching for similar products...".
+   If it lists the product you mean, check it. Otherwise fill in the strength, the
+   route, the form and the package, tick **controlled** or **specialty** when the label
+   says so, and choose **Add to this medication**.
+7. Check the **Preferred name**. It starts as the full name of the first product. Type
    the name you use, such as the brand name alone. Two of your medications cannot share
    a name; another person's can.
-5. Choose the status. Add the instructions, when to take it, what it is for, the refills
-   left, the prescriber and the pharmacy. The form calls the purpose **Reason for taking it**.
-6. Choose **Save**.
+8. Choose the status. Add the instructions, when to take it, what it is for, your
+   notes, the refills left, the prescriber and the pharmacy. The form calls the purpose
+   **Reason for taking it**.
+9. Choose **Save**.
+
+Without scripts, the Find button and Enter still search: the form comes back with the
+results in one list. The online databases need a script and a connection to the
+internet.
 
 To find a medication in the list, type into the search box at the right of the buttons.
 The list narrows as you type, by the preferred name, every name of the products, the
@@ -370,7 +398,7 @@ shows. The catalog page has the full form, with every field.
    "100 units/mL", and "875-125 mg" for a product with two drugs.
 6. For the route, the form and the package type, pick from the list or type a new choice
    in the box under it. A choice that you type appears in the list from then on.
-7. Check **Specialty** and **Controlled**. The starter catalog and lookup suggest these
+7. Check **Specialty** and **Controlled**. The starter catalog and the online search suggest these
    marks from public references. Specialty lists vary, and missing products stay unmarked.
    You can change either mark before saving. Controlled medications count every fill
    across payers, and by default wait until supply runs out.

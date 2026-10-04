@@ -22,6 +22,7 @@
 -- with this program. If not, see <https://www.gnu.org/licenses/>.
 
 local pv                = require 'privatium'
+local catalog_entry     = require 'catalog_entry'
 local choices           = require 'choices'
 local clock             = require 'clock'
 local entries           = require 'entries'
@@ -42,10 +43,12 @@ local CHOICE_MAX   = 60
 local NAME_MAX     = 200
 local PURPOSE_MAX  = 200
 local INSTRUCT_MAX = 300
+local NOTES_MAX    = 500
 local REFILLS_MAX  = 99
 local FIELDS       = { 'person_id', 'products', 'product_id', 'display_name', 'status',
                        'medication_type', 'pharmacy_id', 'prescriber_id', 'prescribed_for',
-                       'instructions', 'when_to_take', 'refills_left' }
+                       'instructions', 'when_to_take', 'notes', 'refills_left' }
+local SEARCH       = LIST .. '/search'   -- Answers the search box of the product picker with JSON
 local ADD_HEADING    = 'Track new medication'
 local CHANGE_HEADING = 'Change a medication'
 
@@ -70,6 +73,7 @@ local function offered()
       'SELECT DISTINCT medication_type AS value FROM person_medication WHERE medication_type IS NOT NULL'))),
     when_to_take = choices.merge(choices.TIMES_TO_TAKE, values_of(pv.query(
       'SELECT DISTINCT when_to_take AS value FROM person_medication WHERE when_to_take IS NOT NULL'))),
+    catalog_options = catalog_entry.options(),
   }
 end
 
@@ -77,7 +81,7 @@ end
 -- that was dispensed.
 local function fills_of(person_medication_id)
   local rows = pv.query([[
-    SELECT f.id, f.filled_on, f.quantity, f.days_supply, f.amount_paid, f.rx_number,
+    SELECT f.id, f.filled_on, f.quantity, f.days_supply, f.amount_paid, f.rx_number, f.notes,
            ph.name AS pharmacy_name,
            m.short_name AS product_name
       FROM fill f
@@ -180,6 +184,7 @@ local function read(form, existing, lists)
     validate.text(form.prescribed_for, 'the reason', PURPOSE_MAX)
   row.instructions, errors.instructions =
     validate.text(form.instructions, 'the instructions', INSTRUCT_MAX)
+  row.notes, errors.notes = validate.text(form.notes, 'the notes', NOTES_MAX)
   row.refills_left, errors.refills_left =
     validate.whole_number(form.refills_left, 'the refills left', 0, REFILLS_MAX, true)
   if adding.acted then return row, errors, adding end
@@ -281,6 +286,8 @@ local function form_page(heading, action, typed, errors, fixed, adding)
     pick       = adding and adding.pick,
     names      = suggestions.medication_names(),
     add_action = product_pick.ADD,
+    find_action = product_pick.FIND,
+    search_url = url(SEARCH),
   })
 end
 
@@ -333,7 +340,14 @@ end
 pv.get('/', list_page)
 pv.get(LIST, list_page)
 
--- Registered before the routes that take an id, so 'new' is never read as one.
+-- The search box of the product picker asks here while a person types, and gets the
+-- same results the form shows without a script. Registered before the routes that
+-- take an id, so 'search' and 'new' are never read as one.
+pv.get(SEARCH, function(req)
+  local typed = medication_search.typed(req.query.q)
+  return pv.json({ term = typed, results = product_pick.search(typed) })
+end)
+
 pv.get(LIST .. '/new', function(req)
   starter.ensure()
   local typed = { person_id = text.clean(req.query.person), status = 'taking_regularly', refills_left = 0 }

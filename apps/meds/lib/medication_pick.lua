@@ -2,7 +2,7 @@
 -- apps/meds/lib/medication_pick.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-10-03
+-- Last Modified: 2026-10-04
 -- Summary: Reads the medication box of a form: a name typed to search the catalog, a choice
 --          among several, a product carried by its id, or a new medication.
 -- Notes: See README file for documentation and full license information.
@@ -34,27 +34,46 @@ local medication_pick = {}
 medication_pick.NEW   = 'new'     -- The choice that adds a medication from the fields under it
 medication_pick.OTHER = 'other'   -- The choice that finds a medication by a typed name
 local CANDIDATES_MAX  = 8         -- Medications offered when a typed name fits several
-local NO_CHOICES      = { route = {}, dose_form = {}, package_type = {} }
+medication_pick.RESULTS_MAX = 25  -- Products one search of the box lists, best first
+medication_pick.STEP  = 'step'    -- The field that names what a button of the form asks for
 -- The fields of a new medication, by the ending of their names in the form.
 medication_pick.NEW_FIELDS = {
-  'brand', 'generic', 'strength', 'package_size', 'package_type', 'route', 'dose_form',
+  'brand', 'generic', 'strength', 'package_size', 'package_type', 'package_type_new',
+  'route', 'route_new', 'route_ref', 'dose_form', 'dose_form_new', 'dose_form_ref',
   'rxcui', 'source', 'controlled', 'specialty',
 }
 
 --- Reads ---
 
--- The medication with an id, or a message.
-local function by_id(id)
-  if pv.get_row('medication', id) then return { id = id } end
+--- The medication with an id.
+-- @param id string|nil  The id a form carried or a checkbox named.
+-- @return table  { id = id }, or { problem = a message } when no medication has it.
+function medication_pick.by_id(id)
+  if id and pv.get_row('medication', id) then return { id = id } end
   return { problem = 'Choose a medication from the list.' }
 end
+local by_id = medication_pick.by_id
 
 -- A new medication from the fields of the box. A medication that already has the same
 -- short name or the same RxNorm identifier is picked instead, so a product is never
 -- added twice. The fields that name a drug reference are filled in by the lookup in
--- the browser. They are untrusted like any other field, and pass the same checks.
-local function as_new(form, prefix)
-  local route = reference_words.route(form[prefix .. '_route'])
+-- the browser. They are untrusted like any other field, and pass the same checks. The
+-- route, the form and the package type are choices: a drop-down, or a new value typed
+-- beside it. The route and the form a drug reference gave travel as hints in _route_ref
+-- and _dose_form_ref, and count only when the person chose nothing.
+local function chosen_or_hint(form, prefix, ending, from_hint)
+  local typed = text.clean(form[prefix .. '_' .. ending .. '_new'])
+  local listed = text.clean(form[prefix .. '_' .. ending])
+  if listed == 'new' then listed = nil end
+  if typed or listed then return typed or listed end
+  return from_hint(form[prefix .. '_' .. ending .. '_ref'])
+end
+
+function medication_pick.as_new(form, prefix)
+  local route = chosen_or_hint(form, prefix, 'route', reference_words.route)
+  local dose_form = chosen_or_hint(form, prefix, 'dose_form', function(hint)
+    return reference_words.form(hint, route)
+  end)
   local row, errors, same_as = catalog_entry.read({
     brand_name   = form[prefix .. '_brand'],
     generic_name = form[prefix .. '_generic'],
@@ -63,11 +82,12 @@ local function as_new(form, prefix)
     is_controlled = form[prefix .. '_controlled'],
     package_size = form[prefix .. '_package_size'],
     package_type = form[prefix .. '_package_type'],
+    package_type_new = form[prefix .. '_package_type_new'],
     rxcui        = form[prefix .. '_rxcui'],
     source       = form[prefix .. '_source'],
     route        = route,
-    dose_form    = reference_words.form(form[prefix .. '_dose_form'], route),
-  }, nil, NO_CHOICES)
+    dose_form    = dose_form,
+  }, nil, catalog_entry.options())
   if same_as then return { id = same_as } end
   for _, field in ipairs({ 'brand_name', 'generic_name', 'strength', 'package_size',
                            'package_type', 'short_name', 'rxcui' }) do
@@ -75,6 +95,7 @@ local function as_new(form, prefix)
   end
   return { new_row = row }
 end
+local as_new = medication_pick.as_new
 
 -- The medication that answers to a typed name. Only a name that exactly one medication
 -- answers to picks it. Anything else is a question for the person.
@@ -140,6 +161,70 @@ function medication_pick.read(form, prefix, required, explicit)
     return { problem = 'Choose a medication: type its name, or add a new one.' }
   end
   return {}
+end
+
+--- Whether the fields of a new medication hold a name.
+-- @return boolean
+function medication_pick.filled_new(form, prefix)
+  return text.clean(form[prefix .. '_brand']) ~= nil
+    or text.clean(form[prefix .. '_generic']) ~= nil
+end
+
+--- Whether anything at all was typed into the fields of a new medication, a name or not.
+-- A strength typed alone is a mistake worth a message of its own.
+-- @return boolean
+function medication_pick.touched_new(form, prefix)
+  return medication_pick.filled_new(form, prefix)
+    or text.clean(form[prefix .. '_strength']) ~= nil
+    or text.clean(form[prefix .. '_package_size']) ~= nil
+end
+
+--- Search the catalog for the products a typed name fits.
+-- @param typed string  What was typed, already cleaned by medication_search.typed.
+-- @return table  Up to 25 rows of { medication_id, short_name, full_name, close }, the
+--         ones that hold the name first and the close ones after them. `close` is true
+--         for a name that is near what was typed, which a person must confirm.
+function medication_pick.search(typed)
+  local results = {}
+  if typed == '' then return results end
+  local found = medication_search.find(typed)
+  for _, group in ipairs({ found.matches, found.close }) do
+    for _, row in ipairs(group) do
+      if #results >= medication_pick.RESULTS_MAX then break end
+      results[#results + 1] = {
+        medication_id = row.medication_id,
+        short_name    = row.short_name,
+        full_name     = row.full_name,
+        close         = group == found.close,
+      }
+    end
+  end
+  return results
+end
+
+--- What the search box of a form asked, when it asked anything.
+-- A name typed into the box with nothing chosen and no new medication counts as a
+-- search, whichever button was pressed, so Enter in the box never saves the form.
+-- @return table|nil  { term, results, problem, open_new, searching = true } when the form
+--         must come back with the results, or nil when the box asked nothing.
+function medication_pick.searched(form, prefix)
+  local term = medication_search.typed(form[prefix .. '_q'])
+  local asked = text.clean(form[medication_pick.STEP]) == 'find_' .. prefix
+  if not asked and (term == '' or text.clean(form[prefix .. '_choice'])
+                    or medication_pick.filled_new(form, prefix)) then
+    return nil
+  end
+  local pick = { term = term, searching = true }
+  if term == '' then
+    pick.problem = 'Type a name to search for.'
+    return pick
+  end
+  pick.results = medication_pick.search(term)
+  if #pick.results == 0 then
+    pick.problem = 'No medication found with this name. Check the spelling, or add it to the catalog below.'
+    pick.open_new = true
+  end
+  return pick
 end
 
 --- Whether a box holds anything to read: a typed name, a choice or a new medication.

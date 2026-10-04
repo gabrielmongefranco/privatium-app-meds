@@ -74,7 +74,8 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
         <? end ?>
         <?= render('_medication_picker', { prefix = subject.prefix, typed = typed,
               legend = 'Which medication is ' .. subject.name .. '?', candidates = subject.candidates,
-              pick = subject.used and subject.pick or nil, explicit = true }) ?>
+              pick = subject.used and subject.pick or nil, explicit = true,
+              catalog_options = catalog_options }) ?>
       </div>
     <? end ?>
   <? end ?>

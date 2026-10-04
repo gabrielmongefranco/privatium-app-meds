@@ -116,7 +116,7 @@ end
 function entries.list(person_id)
   local rows = pv.query([[
     SELECT pm.id, pm.person_id, pm.display_name AS medication_name, pm.medication_type,
-           pm.status, pm.prescribed_for, pm.instructions, pm.when_to_take, pm.refills_left,
+           pm.status, pm.prescribed_for, pm.instructions, pm.when_to_take, pm.notes, pm.refills_left,
            pm.pharmacy_id, pm.prescriber_id,
            p.display_name  AS person_name,
            coalesce(e.is_specialty, 0)  AS is_specialty,
@@ -222,7 +222,7 @@ end
 function entries.stored(id)
   return pv.query1([[
     SELECT id, person_id, display_name, medication_type, status, pharmacy_id,
-           prescriber_id, prescribed_for, instructions, when_to_take, refills_left
+           prescriber_id, prescribed_for, instructions, when_to_take, notes, refills_left
       FROM person_medication
      WHERE id = ?]], { id })
 end

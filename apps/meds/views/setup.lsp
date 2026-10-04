@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/views/setup.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-10-03
+Last Modified: 2026-10-04
 Summary: The Setup page: one link to each thing a household sets up once and changes rarely.
 Notes: See README file for documentation and full license information.
 
@@ -34,6 +34,14 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
   <li><a href="<?= url('/setup/people') ?>">
     <?= icon('people') ?>
     <span>Family</span>
+  </a></li>
+  <li><a href="<?= url('/setup/prescribers') ?>">
+    <?= icon('person-vcard') ?>
+    <span>Prescribers</span>
+  </a></li>
+  <li><a href="<?= url('/setup/pharmacies') ?>">
+    <?= icon('shop') ?>
+    <span>Pharmacies</span>
   </a></li>
   <li><a href="<?= url('/setup/catalog') ?>">
     <?= icon('capsule') ?>

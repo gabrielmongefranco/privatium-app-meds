@@ -2,7 +2,7 @@
 -- apps/meds/lib/catalog_entry.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-10-01
+-- Last Modified: 2026-10-03
 -- Summary: The checks of a catalog entry, shared by the catalog form and by every form
 --          that adds a medication beside its own record.
 -- Notes: See README file for documentation and full license information.
@@ -37,7 +37,7 @@ local CHOICE_MAX   = 60
 local PACKAGE_MAX  = 40
 local RXCUI_DIGITS = 8             -- RxNorm identifiers are whole numbers of up to 8 digits
 
--- The drug references a catalog row can be copied from. A row the owner typed has no
+-- The drug references a catalog row can be copied from. A row a person typed has no
 -- source. A value that is not listed here is refused, so a form cannot invent one.
 catalog_entry.SOURCES = {
   rxterms     = 'RxTerms',

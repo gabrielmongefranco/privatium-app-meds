@@ -2,7 +2,7 @@
 -- apps/meds/lib/routes/people.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-10-03
+-- Last Modified: 2026-10-04
 -- Summary: The screens that list, add, change and remove the people of the household.
 -- Notes: See README file for documentation and full license information.
 --
@@ -31,6 +31,16 @@ local validate = require 'validate'
 --- Configuration ---
 local LIST     = '/setup/people'
 local NAME_MAX = 120
+-- Where the form that adds a person goes back to. The page that linked to the form
+-- names itself in `back`, so a person added from the Medications tab lands there
+-- again. Anything not on this list goes to the people page.
+local BACK_TO  = {
+  medications    = '/medications',
+  refills        = '/refills',
+  history        = '/fills',
+  authorizations = '/authorizations',
+  people         = LIST,
+}
 local FIELDS   = { 'display_name', 'birth_date', 'plan_id' }
 
 --- Reads ---
@@ -95,9 +105,17 @@ local function read(form, except_id)
   return row, errors
 end
 
+-- The page to go back to, from the field or the address of the form.
+local function back_path(raw, notice)
+  local path = BACK_TO[text.clean(raw) or ''] or LIST
+  return url(path .. (notice and ('?notice=' .. notice) or ''))
+end
+
 local function form_page(heading, action, typed, errors)
+  typed.back = BACK_TO[text.clean(typed.back) or ''] and text.clean(typed.back) or nil
   return pv.render('person_form', {
     section  = 'setup',
+    back     = back_path(typed.back),
     heading  = heading,
     action   = action,
     typed    = typed,
@@ -127,15 +145,15 @@ pv.get(LIST, function(req)
   })
 end)
 
-pv.get(LIST .. '/new', function()
-  return form_page('Add a family member', url(LIST .. '/new'), {}, {})
+pv.get(LIST .. '/new', function(req)
+  return form_page('Add a family member', url(LIST .. '/new'), { back = req.query.back }, {})
 end)
 
 pv.post(LIST .. '/new', function(req)
   local row, errors = read(req.form, nil)
   if not next(errors) then
     local saved, refusal = save_person(nil, row)
-    if saved then return pv.redirect(url(LIST .. '?notice=saved')) end
+    if saved then return pv.redirect(back_path(req.form.back, 'saved')) end
     errors.display_name = refusal
   end
   return form_page('Add a family member', url(LIST .. '/new'), req.form, errors)

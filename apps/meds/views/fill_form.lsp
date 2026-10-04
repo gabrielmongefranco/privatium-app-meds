@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/views/fill_form.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-10-03
+Last Modified: 2026-10-04
 Summary: The form that records a fill or changes one. A new fill starts with the values of
          the last fill of the same tracked medication, all of them visible.
 Notes: See README file for documentation and full license information.
@@ -47,7 +47,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
       <label for="f-entry_id-list">Medication</label>
       <select id="f-entry_id-list" name="entry_id"<? if errors.entry_id then ?> aria-invalid="true" aria-describedby="f-entry_id-err"<? end ?>>
         <option value="">Choose a medication</option>
-        <option value="<?= new_entry ?>"<? if typed.entry_id == new_entry or typed.medication_name or typed.medication_brand or typed.medication_generic or typed.medication_id then ?> selected<? end ?>>-- Another medication --</option>
+        <option value="<?= new_entry ?>"<? if typed.entry_id == new_entry or typed.medication_q or typed.medication_choice or typed.medication_brand or typed.medication_generic or typed.medication_id then ?> selected<? end ?>>-- Another medication --</option>
         <? for _, option in ipairs(listed) do ?>
           <option value="<?= option.value ?>"<? if option.value == typed.entry_id then ?> selected<? end ?>><?= option.label ?></option>
         <? end ?>
@@ -61,8 +61,9 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
               value = typed.person_id, typed_new = typed.person_id_new, options = people, required = true,
               err = errors.person_id, empty_label = 'Choose a person' }) ?>
         <?= render('_medication_names', { names = names }) ?>
-        <?= render('_medication_picker', { prefix = 'medication', typed = typed, pick = pick,
-              legend = 'Product', err = errors.medication_id }) ?>
+        <?= render('_product_box', { prefix = 'medication', typed = typed, pick = pick, single = true,
+              legend = 'Product', err = errors.medication_id, catalog_options = catalog_options,
+              search_url = search_url }) ?>
         <p class="pv-help">If this person does not track this medication yet, it is added to their list.</p>
       </div>
     </fieldset>
@@ -73,7 +74,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
   <?= render('_select_or_new', { name = 'pharmacy_id', legend = 'Pharmacy', noun = 'pharmacy',
         value = typed.pharmacy_id, typed_new = typed.pharmacy_id_new, options = pharmacies,
         required = true, err = errors.pharmacy_id, empty_label = 'Choose a pharmacy',
-        help = 'Type the name. Saving adds the pharmacy, and you can add its phone number and address under Contacts.' }) ?>
+        help = 'Type the name. Saving adds the pharmacy, and you can add its phone number and address under Setup, Pharmacies.' }) ?>
   <?= render('_field', { name = 'days_supply', label = 'Days supply', value = typed.days_supply,
         err = errors.days_supply, inputmode = 'numeric', maxlength = 3,
         help = 'How many days this fill should last. The pharmacy label shows it.' }) ?>
@@ -100,8 +101,8 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
     <summary>More details</summary>
     <?= render('_field', { name = 'insurance_claim_number', label = 'Claim number',
           value = typed.insurance_claim_number, err = errors.insurance_claim_number, maxlength = 60 }) ?>
-    <?= render('_field', { name = 'notes', label = 'Notes', value = typed.notes, err = errors.notes,
-          maxlength = 500 }) ?>
+    <?= render('_textarea', { name = 'notes', label = 'Notes', value = typed.notes, err = errors.notes,
+          maxlength = 500, help = 'Anything worth remembering about this fill.' }) ?>
   </details>
 
   <p class="pv-actions">

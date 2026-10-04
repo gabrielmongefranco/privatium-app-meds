@@ -139,3 +139,9 @@
 {"op": "put", "tbl": "medication", "id": "01J8MEDS0000000000MED00070", "d": {"short_name": "Multivitamin, Children's Chewable", "generic_name": "Multivitamin", "route": "Oral", "form": "Tablet", "is_specialty": false}}
 {"op": "put", "tbl": "medication", "id": "01J8MEDS0000000000MED00071", "d": {"short_name": "Multivitamin, Children's Gummy", "generic_name": "Multivitamin", "route": "Oral", "form": "Gummy", "is_specialty": false}}
 {"op": "put", "tbl": "medication", "id": "01J8MEDS0000000000MED00072", "d": {"short_name": "Enclomiphene 50 mg", "generic_name": "Enclomiphene", "strength": "50 mg", "route": "Oral", "form": "Tablet", "is_specialty": false}}
+{"op": "put", "tbl": "medication_alias", "id": "01J8MEDS0000000000AKA00077", "d": {"medication_id": "01J8MEDS0000RX000000896854", "alias": "Chorex"}}
+{"op": "put", "tbl": "medication", "id": "01J8MEDS0000000000MED00073", "d": {"short_name": "Fish oil 1,000 mg", "generic_name": "Fish oil", "strength": "1,000 mg", "route": "Oral", "form": "Capsule", "is_specialty": false}}
+{"op": "put", "tbl": "medication_alias", "id": "01J8MEDS0000000000AKA00078", "d": {"medication_id": "01J8MEDS0000000000MED00073", "alias": "Omega-3 fish oil"}}
+{"op": "put", "tbl": "medication", "id": "01J8MEDS0000000000MED00074", "d": {"short_name": "Sharps Container", "generic_name": "Sharps container", "route": "Other", "form": "Supplies", "is_specialty": false}}
+{"op": "put", "tbl": "medication_alias", "id": "01J8MEDS0000000000AKA00079", "d": {"medication_id": "01J8MEDS0000RX000000312301", "alias": "Trental"}}
+{"op": "put", "tbl": "medication_alias", "id": "01J8MEDS0000000000AKA00080", "d": {"medication_id": "01J8MEDS0000RX000000197795", "alias": "Eldoquin"}}

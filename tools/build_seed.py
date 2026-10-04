@@ -896,7 +896,7 @@ def padded_id(prefix, number):
 
 
 def specialty_mark(generic, listed_ingredients):
-    """Suggest a specialty mark by ingredient name; the owner must check plan coverage.
+    """Suggest a specialty mark by ingredient name; plan coverage must be checked by hand.
 
     The supplied set contains lowercase ingredient names. Returns a boolean without
     network access or side effects. Salts and combination ingredients are accepted.

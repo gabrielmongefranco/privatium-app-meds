@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/views/pharmacy_form.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-09-27
+Last Modified: 2026-10-04
 Summary: The form that adds or changes a pharmacy.
 Notes: See README file for documentation and full license information.
 
@@ -34,6 +34,6 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 
   <p class="pv-actions">
     <button type="submit" class="pv-btn pv-btn-primary"><?= icon('check-lg') ?> Save</button>
-    <a class="pv-btn" href="<?= url('/contacts') ?>">Cancel</a>
+    <a class="pv-btn" href="<?= url('/setup/pharmacies') ?>">Cancel</a>
   </p>
 </form>

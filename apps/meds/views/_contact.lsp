@@ -3,8 +3,8 @@ This file is part of Prescription Tracker
 apps/meds/views/_contact.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-09-27
-Summary: One pharmacy or prescriber on the Contacts page, with every detail that is filled in.
+Last Modified: 2026-10-04
+Summary: One pharmacy or prescriber on its page under Setup, with every detail that is filled in.
          A phone number is a link a phone can dial. A website is a link only with an http or
          https address, which the form has already checked.
 Notes: See README file for documentation and full license information.
@@ -25,7 +25,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 --?>
 
 <li class="pv-card">
-  <h3><?= contact.name ?></h3>
+  <h2><?= contact.name ?></h2>
   <dl>
     <? if contact.clinic then ?><dt>Clinic</dt><dd><?= contact.clinic ?></dd><? end ?>
     <? if contact.phone then ?>

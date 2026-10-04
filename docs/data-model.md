@@ -39,7 +39,7 @@ is ever edited in place.
 
 The log is not encrypted at rest. Anyone who can read the files can read every row.
 [Privatium's security page](https://github.com/gabrielmongefranco/privatium/blob/main/docs/security.md)
-explains what the design protects and what it leaves to the owner of the computer.
+explains what the design protects and what it leaves to the person who runs the node.
 
 ### Rules that shape the model
 
@@ -161,8 +161,8 @@ second row here.
 | `is_controlled` | `BOOLEAN` | No | Every fill counts across payers, without a frame limit. NULL means unmarked. | No |
 | `is_specialty` | `BOOLEAN` | Yes | Whether this is a specialty medication, which takes longer to arrive and is due earlier | No |
 | `rxcui` | `VARCHAR` | No | The RxNorm concept unique identifier (RxCUI) of the product: digits, kept as text | No |
-| `source` | `VARCHAR` | No | The drug reference the row was copied from: `rxterms`, `rxnorm` or `openfda_ndc`. Empty when the owner typed the row. | No |
-| `retrieved_on` | `DATE` | No | The local date the row was copied or refreshed. Empty when the owner typed the row. | No |
+| `source` | `VARCHAR` | No | The drug reference the row was copied from: `rxterms`, `rxnorm` or `openfda_ndc`. Empty when a person typed the row. | No |
+| `retrieved_on` | `DATE` | No | The local date the row was copied or refreshed. Empty when a person typed the row. | No |
 
 A medication needs a generic name or a brand name.
 
@@ -171,7 +171,7 @@ product a number, the RxCUI. Two medications never share an RxCUI and a package,
 forms check that. Two packages of one product share the RxCUI. [The app design](design/README.md#the-catalog-and-the-drug-references)
 explains how the catalog gets entries from the drug references.
 
-The short name follows one pattern unless the owner types another: the brand name, the
+The short name follows one pattern unless a person types another: the brand name, the
 generic name in brackets, the strength, the release form when the product has one, then
 the package. Examples are `Lipitor (Atorvastatin) 20 mg`, `Metformin 500 mg 24 HR XR` and
 `Examplol (Exampline) 10 mcg/mL 2 Pack`. A medication with no brand name leaves out the
@@ -245,6 +245,7 @@ the Medications page lists. Its products are the rows of `person_medication_prod
 | `prescribed_for` | `VARCHAR` | No | The condition the medication treats | Health |
 | `instructions` | `VARCHAR` | No | How to take it | Health |
 | `when_to_take` | `VARCHAR` | No | The time of day, such as `Morning` | Health |
+| `notes` | `VARCHAR` | No | Free text about the medication, such as how it is stored or what to ask the prescriber | Health |
 | `refills_left` | `BIGINT` | Yes | Refills left on the current prescription, zero or more | Health |
 
 The forms refuse a second tracked medication of the same person with the same preferred
@@ -425,8 +426,8 @@ edits.
 
 `apps/meds/lib/starter_catalog.lua` holds a starter catalog and nothing else. The app loads
 it by itself the first time a page needs the catalog and finds it empty.
-The catalog has 2,757 medications and 601 other names for them. It holds the 200 drugs
-most prescribed in the United States, and the drugs of the owner's list, at every strength
+The catalog has 2,852 medications and 619 other names for them. It holds the 200 drugs
+most prescribed in the United States, and the drugs of a second list of common medications, at every strength
 that RxTerms lists. It also holds entries written by hand, such as continuous glucose
 monitors, and syringes and needles in many sizes. [How to build the starter catalog](how-to/build-the-starter-catalog.md) names
 the sources and their licenses. It holds no person, no fill and no other record about anyone.

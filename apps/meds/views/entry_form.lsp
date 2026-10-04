@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/views/entry_form.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-10-03
+Last Modified: 2026-10-04
 Summary: The form that adds a medication to the tracking list of a person, or changes one:
          its catalog products, its preferred name, and how it is taken.
 Notes: See README file for documentation and full license information.
@@ -30,9 +30,10 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 <form method="post" action="<?= action ?>" novalidate>
   <?= csrf() ?>
   <? -- The first submit button of a form answers the Enter key. This one saves, so Enter
-     -- in a field never removes a product. A name typed into the product box is added
-     -- before anything is saved. ?>
-  <button type="submit" class="pv-visually-hidden" name="action" value="save" tabindex="-1">Save</button>
+     -- in a field never removes a product. A name typed into the search box searches
+     -- before anything is saved. The buttons are named step, because a control named
+     -- action shadows form.action in WebKit and the page frame's script reads it. ?>
+  <button type="submit" class="pv-visually-hidden" name="step" value="save" tabindex="-1">Save</button>
   <? if fixed then ?>
     <div class="pv-card"><dl>
       <dt>Person</dt><dd><?= fixed.person_name ?></dd>
@@ -44,7 +45,8 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
   <? end ?>
   <?= render('_medication_names', { names = names }) ?>
   <?= render('_product_picker', { prefix = 'product', typed = typed, chosen = chosen, pick = pick,
-        err = errors.products, add_button = add_action }) ?>
+        err = errors.products, add_button = add_action, find_button = find_action,
+        search_url = search_url, catalog_options = offered.catalog_options }) ?>
   <?= render('_field', { name = 'display_name', label = 'Preferred name', value = typed.display_name,
         err = errors.display_name, required = true, maxlength = 200,
         help = 'The name you call this medication. You can shorten it.' }) ?>
@@ -59,6 +61,8 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
         typed_new = typed.when_to_take_new, offered = offered.when_to_take, err = errors.when_to_take }) ?>
   <?= render('_field', { name = 'prescribed_for', label = 'Reason for taking it', value = typed.prescribed_for,
         err = errors.prescribed_for, maxlength = 200, suggestions = offered.purposes }) ?>
+  <?= render('_textarea', { name = 'notes', label = 'Notes', value = typed.notes, err = errors.notes,
+        maxlength = 500, help = 'Anything else worth remembering about this medication.' }) ?>
   <?= render('_field', { name = 'refills_left', label = 'Refills left', value = typed.refills_left,
         err = errors.refills_left, required = true, inputmode = 'numeric', maxlength = 2,
         help = 'The number on the label. Type 0 when none is left.' }) ?>
@@ -66,17 +70,17 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
         value = typed.prescriber_id, typed_new = typed.prescriber_id_new,
         options = offered.prescribers, err = errors.prescriber_id,
         empty_label = 'None, self-prescribed',
-        help = 'Type the name. Saving adds the prescriber, and you can add the clinic and the phone number under Contacts.' }) ?>
+        help = 'Type the name. Saving adds the prescriber, and you can add the clinic and the phone number under Setup, Prescribers.' }) ?>
   <?= render('_select_or_new', { name = 'pharmacy_id', legend = 'Pharmacy used now', noun = 'pharmacy',
         value = typed.pharmacy_id, typed_new = typed.pharmacy_id_new,
         options = offered.pharmacies, err = errors.pharmacy_id,
-        help = 'Type the name. Saving adds the pharmacy, and you can add its phone number and address under Contacts.' }) ?>
+        help = 'Type the name. Saving adds the pharmacy, and you can add its phone number and address under Setup, Pharmacies.' }) ?>
   <?= render('_choice', { name = 'medication_type', legend = 'Type', value = typed.medication_type,
         typed_new = typed.medication_type_new, offered = offered.medication_type,
         err = errors.medication_type }) ?>
 
   <p class="pv-actions">
-    <button type="submit" class="pv-btn pv-btn-primary" name="action" value="save"><?= icon('check-lg') ?> Save</button>
+    <button type="submit" class="pv-btn pv-btn-primary" name="step" value="save"><?= icon('check-lg') ?> Save</button>
     <a class="pv-btn" href="<?= url('/medications') ?>">Cancel</a>
   </p>
 </form>
