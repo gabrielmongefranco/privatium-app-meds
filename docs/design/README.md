@@ -627,9 +627,10 @@ Three limits are known:
   prints "0.05 mg" for a tablet that the label calls "50 mcg". For a strength below
   1 mg, the app reads the labels that makers filed with openFDA for the same product and
   the same amount. It shows micrograms when most of them print micrograms. The starter
-  catalog also has a short list of drugs that are always labeled in micrograms. A
-  strength whose labels cannot be read stays as the reference prints it. You can correct
-  the strength before you save.
+  catalog also has a short list of drugs that are always labeled in micrograms, and
+  one of drugs that are labeled in international units, such as the vitamins D, whose
+  milligrams the builder turns into units. A strength whose labels cannot be read stays
+  as the reference prints it. You can correct the strength before you save.
 - **Brand names in the starter catalog.** A generic product takes the brand of the
   owner's list when it has one, or its only brand. A product with several brands takes
   none and answers to each brand as another name.

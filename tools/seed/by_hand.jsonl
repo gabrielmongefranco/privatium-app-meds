@@ -70,7 +70,7 @@
 {"op": "put", "tbl": "medication", "id": "01J8MEDS0000000000MED00038", "d": {"short_name": "Tylenol Extra Strength (Acetaminophen) 500 mg", "generic_name": "Acetaminophen", "brand_name": "Tylenol Extra Strength", "strength": "500 mg", "route": "Oral", "form": "Tablet", "is_specialty": false}}
 {"op": "put", "tbl": "medication_alias", "id": "01J8MEDS0000000000AKA00033", "d": {"medication_id": "01J8MEDS0000000000MED00038", "alias": "APAP"}}
 {"op": "put", "tbl": "medication_alias", "id": "01J8MEDS0000000000AKA00034", "d": {"medication_id": "01J8MEDS0000000000MED00038", "alias": "Paracetamol"}}
-{"op": "put", "tbl": "medication", "id": "01J8MEDS0000000000MED00039", "d": {"short_name": "Prilosec OTC (Omeprazole) 20 mg", "generic_name": "Omeprazole", "brand_name": "Prilosec OTC", "strength": "20 mg", "route": "Oral", "form": "Tablet", "is_specialty": false}}
+{"op": "put", "tbl": "medication", "id": "01J8MEDS0000000000MED00039", "d": {"short_name": "Prilosec OTC (Omeprazole) 20 mg DR", "generic_name": "Omeprazole", "brand_name": "Prilosec OTC", "strength": "20 mg", "route": "Oral", "form": "Tablet", "is_specialty": false}}
 {"op": "put", "tbl": "medication_alias", "id": "01J8MEDS0000000000AKA00035", "d": {"medication_id": "01J8MEDS0000000000MED00039", "alias": "Omeprazole magnesium"}}
 {"op": "put", "tbl": "medication", "id": "01J8MEDS0000000000MED00040", "d": {"short_name": "Bayer Low Dose (Aspirin) 81 mg", "generic_name": "Aspirin", "brand_name": "Bayer Low Dose", "strength": "81 mg", "route": "Oral", "form": "Tablet", "is_specialty": false}}
 {"op": "put", "tbl": "medication_alias", "id": "01J8MEDS0000000000AKA00036", "d": {"medication_id": "01J8MEDS0000000000MED00040", "alias": "ASA"}}
@@ -129,3 +129,13 @@
 {"op": "put", "tbl": "medication_alias", "id": "01J8MEDS0000000000AKA00074", "d": {"medication_id": "01J8MEDS0000000000MED00062", "alias": "Bi-mix"}}
 {"op": "put", "tbl": "medication", "id": "01J8MEDS0000000000MED00063", "d": {"short_name": "Trimix (Papaverine / Phentolamine / Alprostadil) 30 mg-1 mg-10 mcg/mL", "generic_name": "Papaverine / Phentolamine / Alprostadil", "brand_name": "Trimix", "strength": "30 mg-1 mg-10 mcg/mL", "route": "Injection", "form": "Injection", "package_type": "Vial", "is_specialty": false}}
 {"op": "put", "tbl": "medication_alias", "id": "01J8MEDS0000000000AKA00075", "d": {"medication_id": "01J8MEDS0000000000MED00063", "alias": "Tri-mix"}}
+{"op": "put", "tbl": "medication", "id": "01J8MEDS0000000000MED00064", "d": {"short_name": "Kamagra Oral Jelly (Sildenafil) 100 mg", "generic_name": "Sildenafil", "brand_name": "Kamagra Oral Jelly", "strength": "100 mg", "route": "Oral", "form": "Gel", "is_specialty": false}}
+{"op": "put", "tbl": "medication_alias", "id": "01J8MEDS0000000000AKA00076", "d": {"medication_id": "01J8MEDS0000000000MED00064", "alias": "Kamagra"}}
+{"op": "put", "tbl": "medication", "id": "01J8MEDS0000000000MED00065", "d": {"short_name": "Clomiphene 25 mg", "generic_name": "Clomiphene", "strength": "25 mg", "route": "Oral", "form": "Tablet", "is_specialty": false}}
+{"op": "put", "tbl": "medication", "id": "01J8MEDS0000000000MED00066", "d": {"short_name": "Multivitamin, Men's", "generic_name": "Multivitamin", "route": "Oral", "form": "Tablet", "is_specialty": false}}
+{"op": "put", "tbl": "medication", "id": "01J8MEDS0000000000MED00067", "d": {"short_name": "Multivitamin, Men's Gummy", "generic_name": "Multivitamin", "route": "Oral", "form": "Gummy", "is_specialty": false}}
+{"op": "put", "tbl": "medication", "id": "01J8MEDS0000000000MED00068", "d": {"short_name": "Multivitamin, Women's", "generic_name": "Multivitamin", "route": "Oral", "form": "Tablet", "is_specialty": false}}
+{"op": "put", "tbl": "medication", "id": "01J8MEDS0000000000MED00069", "d": {"short_name": "Multivitamin, Women's Gummy", "generic_name": "Multivitamin", "route": "Oral", "form": "Gummy", "is_specialty": false}}
+{"op": "put", "tbl": "medication", "id": "01J8MEDS0000000000MED00070", "d": {"short_name": "Multivitamin, Children's Chewable", "generic_name": "Multivitamin", "route": "Oral", "form": "Tablet", "is_specialty": false}}
+{"op": "put", "tbl": "medication", "id": "01J8MEDS0000000000MED00071", "d": {"short_name": "Multivitamin, Children's Gummy", "generic_name": "Multivitamin", "route": "Oral", "form": "Gummy", "is_specialty": false}}
+{"op": "put", "tbl": "medication", "id": "01J8MEDS0000000000MED00072", "d": {"short_name": "Enclomiphene 50 mg", "generic_name": "Enclomiphene", "strength": "50 mg", "route": "Oral", "form": "Tablet", "is_specialty": false}}

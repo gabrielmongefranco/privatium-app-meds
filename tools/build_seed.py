@@ -129,9 +129,31 @@ IN_MICROGRAMS = {"mcg": 1, "mg": 1000, "g": 1000000}
 SALT_WORDS = {"phosphate", "hydrochloride", "sodium", "potassium", "sulfate", "calcium",
               "succinate", "tartrate", "fumarate", "maleate", "mesylate", "acetate",
               "furoate", "propionate", "bromide"}
+# An ingredient that is nothing without its salt: 'Ferrous fumarate' stays whole.
+SALT_IS_THE_NAME = {"ferrous", "ferric"}
 
 # Words RxTerms adds to a drug name for a release form. They are not part of the name.
 RELEASE_WORDS = {"xr", "dr", "ec"}
+# The release form in the text RxTerms prints for a product: '24 HR XR', '12 HR XR',
+# 'DR' or 'EC'. A tablet that lets its drug go over a day is another product than one
+# that lets it go at once, and another than one that lets it go after the stomach, so
+# the release form is part of every name.
+RELEASE_FORM = re.compile(r"\b((?:\d+ HR )?(?:XR|DR|EC))\b")
+# The route that ends a display name of RxTerms: 'Lidocaine (Topical)'.
+DISPLAY_ROUTE = re.compile(r"\s*\(([^()]+)\)\s*$")
+# Words RxNorm adds to a product name for something that is not the drug, such as the
+# excipient that tells one insulin from another. A label does not print them.
+EXCIPIENT_WORDS = {"Niacinamide"}
+# The term types of a pack: a carton of tablets taken in a set order, such as a cycle of
+# birth control or a course of an antiviral. RxTerms prints 'mixed' as its strength.
+PACK_TERMS = {"BPCK", "GPCK"}
+PACK_ROUTE = "Pack"                # The route RxTerms prints for a pack
+# The parts of a pack in its full name: '{20 (nirmatrelvir 150 MG Oral Tablet) / ...}'.
+PACK_PART = re.compile(r"(\d+) \(([^()]*)\)")
+# The words of a pack brand that count its days or doses: 'Yasmin 28 Day',
+# 'Paxlovid 5-Day'. The brand is the words before the first number.
+PACK_BRAND_COUNT = re.compile(r"\s+\d.*$")
+INERT = "inert ingredients"        # The placebo tablets of a pack, which are no drug
 
 # The route of RxTerms, by its first word, and the route the catalog shows.
 ROUTES = {
@@ -146,7 +168,8 @@ ROUTES = {
 FORMS = [
     ("inject", "Injection"), ("syringe", "Injection"), ("cartridge", "Injection"),
     ("inhaler", "Inhaler"), ("aerosol", "Inhaler"), ("nebuliz", "Nebulizer Solution"),
-    ("tablet", "Tablet"), ("capsule", "Capsule"), ("suspension", "Suspension"),
+    ("gummy", "Gummy"), ("tablet", "Tablet"), ("capsule", "Capsule"),
+    ("suspension", "Suspension"),
     ("cream", "Cream"), ("ointment", "Ointment"), ("gel", "Gel"), ("patch", "Patch"),
     ("transdermal", "Patch"), ("spray", "Spray"), ("powder", "Powder"),
     ("suppository", "Suppository"), ("solution", "Liquid"), ("liquid", "Liquid"),
@@ -170,8 +193,9 @@ def requests_of():
     """The drugs to look up.
 
     Returns a list of dicts: generic (the name the catalog shows), match (the name
-    RxTerms uses) and keep_salt. Grain: one entry per drug, in the order of the lists,
-    with no drug twice.
+    RxTerms uses), keep_salt, and routes (the routes of RxTerms to keep, or an empty
+    set for every route). Grain: one entry per drug, in the order of the lists, with no
+    drug twice.
     """
     renamed = {}
     for line in read_list("clincalc_names_in_rxterms.txt"):
@@ -184,20 +208,27 @@ def requests_of():
         if other["match"] == "skip":
             continue
         generic = other["generic"] or " / ".join(as_name(part) for part in name.split("; "))
-        wanted.append({"generic": generic, "match": other["match"], "keep_salt": False})
+        wanted.append({"generic": generic, "match": other["match"], "keep_salt": False, "routes": set()})
     for line in read_list("more_ingredients.txt"):
+        line, _, routes = [part.strip() for part in line.partition(" @ ")]
         keep_salt = line.endswith(" +salt")
         line = line[:-len(" +salt")] if keep_salt else line
         name, _, match = [part.strip() for part in line.partition(" = ")]
         wanted.append({"generic": name.replace("; ", " / "),
-                       "match": match or name.replace("; ", "/"), "keep_salt": keep_salt})
+                       "match": match or name.replace("; ", "/"), "keep_salt": keep_salt,
+                       "routes": {plain(route) for route in routes.split(",") if route.strip()}})
 
     distinct, by_key = [], {}
     for request in wanted:
         key = ingredients_key(request["match"])
         if key in by_key:
-            # A drug of both lists is looked up once, and keeps its salt if either asks.
+            # A drug of both lists is looked up once, keeps its salt if either asks, and
+            # keeps every route if either asks for every route.
             by_key[key]["keep_salt"] = by_key[key]["keep_salt"] or request["keep_salt"]
+            if by_key[key]["routes"] and request["routes"]:
+                by_key[key]["routes"] |= request["routes"]
+            else:
+                by_key[key]["routes"] = set()
         else:
             by_key[key] = request
             distinct.append(request)
@@ -281,6 +312,23 @@ def plain(value):
     return re.sub(r"[^a-z0-9]+", " ", value.lower()).strip()
 
 
+def split_display_name(display_name):
+    """'Lidocaine (Topical)' gives the drug 'Lidocaine' and the route 'Topical'."""
+    found = DISPLAY_ROUTE.search(display_name)
+    if not found:
+        return display_name.strip(), ""
+    return display_name[:found.start()].strip(), found.group(1).strip()
+
+
+def is_pack(details):
+    return (details.get("termType") or "") in PACK_TERMS
+
+
+def pack_brand(name):
+    """'Yasmin 28 Day' and 'Paxlovid 5-Day' give 'Yasmin' and 'Paxlovid'."""
+    return PACK_BRAND_COUNT.sub("", name).strip()
+
+
 def ingredients_key(name):
     """The ingredients of a drug name, in one order, without release words.
 
@@ -345,7 +393,9 @@ class Reference:
         found = []
         for position, display_name in enumerate(answer[1]):
             # A display name is the drug and its route: 'Atorvastatin (Oral Pill)'.
-            drug = display_name.rsplit(" (", 1)[0]
+            drug, route = split_display_name(display_name)
+            if request["routes"] and plain(route) not in request["routes"]:
+                continue
             if ingredients_key(drug) == wanted:
                 found.extend(zip(answer[2]["RXCUIS"][position],
                                  answer[2]["STRENGTHS_AND_FORMS"][position]))
@@ -354,6 +404,8 @@ class Reference:
     def products_named(self, brand):
         """Every strength and form that RxTerms files under a brand name.
 
+        RxTerms adds the release form to the name of a brand, as in 'Depakote XR', and
+        the days of a pack, as in 'Yasmin 28 Day'. Both count as the brand.
         Returns pairs like products_of. Grain: one pair per product of the brand.
         """
         query = urllib.parse.urlencode({
@@ -361,9 +413,16 @@ class Reference:
         answer = self.get(RXTERMS_SEARCH + "?" + query)
         found = []
         for position, display_name in enumerate(answer[1]):
-            if plain(display_name.rsplit(" (", 1)[0]) == plain(brand):
-                found.extend(zip(answer[2]["RXCUIS"][position],
-                                 answer[2]["STRENGTHS_AND_FORMS"][position]))
+            name, route = split_display_name(display_name)
+            mine, found_name = plain(brand), plain(name)
+            if found_name != mine:
+                if not found_name.startswith(mine + " "):
+                    continue
+                rest = found_name[len(mine):].split()
+                if not (all(word in RELEASE_WORDS for word in rest) or route == PACK_ROUTE):
+                    continue
+            found.extend(zip(answer[2]["RXCUIS"][position],
+                             answer[2]["STRENGTHS_AND_FORMS"][position]))
         return found
 
     def labels_of(self, rxcui):
@@ -394,16 +453,20 @@ class Reference:
         answer = self.get(RXNAV + "/RxTerms/rxcui/" + rxcui + "/allinfo.json")
         return answer.get("rxtermsProperties")
 
-    def brands_of(self, rxcui):
-        """The brand names of one product, in the order of the alphabet."""
-        answer = self.get(RXNAV + "/rxcui/" + rxcui + "/related.json?tty=SBD")
+    def brands_of(self, rxcui, pack=False):
+        """The brand names of one product, in the order of the alphabet.
+
+        A pack has branded packs, not branded drugs, and the brand of a pack ends with
+        its days or doses, which are not part of the brand.
+        """
+        answer = self.get(RXNAV + "/rxcui/" + rxcui + "/related.json?tty=" + ("BPCK" if pack else "SBD"))
         brands = set()
         for group in answer.get("relatedGroup", {}).get("conceptGroup", []):
             for concept in group.get("conceptProperties", []):
                 # The name of a branded product ends with its brand: '... [Lipitor]'.
                 brand = re.search(r"\[([^\]]+)\]\s*$", concept.get("name", ""))
                 if brand and concept.get("suppress") == "N":
-                    brands.add(brand.group(1))
+                    brands.add(pack_brand(brand.group(1)) if pack else brand.group(1))
         return sorted(brands, key=str.lower)
 
 
@@ -431,15 +494,20 @@ class Reference:
 
 
 ### Transform Records ###
-def as_label_prints(entry, reference, in_micrograms):
+def as_label_prints(entry, reference, in_micrograms, in_units):
     """The strength of an entry in the unit of the label.
 
     RxTerms prints '0.05 mg' for a tablet that its label calls '50 mcg'. A strength
     below 1 mg becomes micrograms when the drug is on the list of drugs labeled in
-    micrograms, or when most labels of the product print micrograms. Any other
-    strength, and one whose labels cannot be read, stays as RxTerms prints it.
+    micrograms, or when most labels of the product print micrograms. A drug on the list
+    of drugs labeled in units, such as a vitamin, has its milligrams or micrograms
+    turned into units. Any other strength, and one whose labels cannot be read, stays as
+    RxTerms prints it.
     """
     strength = entry["strength"]
+    units_in_a_milligram = in_units.get(plain(entry["generic_name"]))
+    if units_in_a_milligram:
+        return in_label_units(strength, units_in_a_milligram)
     listed = plain(entry["generic_name"]) in in_micrograms
     # The label of a listed drug prints 1 mg as 1000 mcg too.
     small = (LISTED_STRENGTH if listed else SMALL_STRENGTH).match(strength or "")
@@ -450,6 +518,17 @@ def as_label_prints(entry, reference, in_micrograms):
         return strength
     micrograms = (milligrams * MICROGRAMS_IN_A_MILLIGRAM).normalize()
     return format(micrograms, "f") + " mcg" + small.group(2)
+
+
+def in_label_units(strength, units_in_a_milligram):
+    """'0.01 mg' gives '400 units' when a milligram is 40,000 units, and '25 mcg/spray'
+    gives '1000 units/spray'. A strength that opens with another unit stays."""
+    found = re.match(r"^([\d.,]+) (mg|mcg)((?:/.*)?)$", strength or "")
+    if not found:
+        return strength
+    milligrams = number(found.group(1)) / IN_MICROGRAMS["mg"] * IN_MICROGRAMS[found.group(2)]
+    units = (milligrams * units_in_a_milligram).normalize()
+    return format(units, "f") + " units" + found.group(3)
 
 
 def as_strength(value):
@@ -480,6 +559,8 @@ def strength_and_package(printed, details):
     # RxTerms tells two products with one name apart by the number of their approval or
     # by their rating. Neither is printed on a label, so neither goes into a name.
     printed = re.sub(r"\b(?:A?NDA\d+|BX Rating)\s*", "", printed)
+    for word in EXCIPIENT_WORDS:
+        printed = re.sub(r"\b%s\b\s*" % word, "", printed)
     for short, whole in PACKAGE_WORDS.items():
         printed = re.sub(r"\b%s\b" % short, whole, printed)
     found = STRENGTH.match(printed)
@@ -519,9 +600,21 @@ def generic_with_salt(details, fallback):
     return as_name(" ".join(words)) if words else fallback
 
 
-def short_name(brand, generic, strength):
+def short_name(brand, generic, strength, release=""):
     name = brand + " (" + generic + ")" if brand else generic
-    return name + " " + strength if strength else name
+    return " ".join(part for part in (name, strength, release) if part)
+
+
+def release_of(package):
+    """The release form named in the rest of the text RxTerms prints, or ''."""
+    found = RELEASE_FORM.search(package or "")
+    return found.group(1) if found else ""
+
+
+def rest_of(package):
+    """The rest of the text RxTerms prints without its release form, which the name
+    holds already: '24 HR XR Tab' gives 'Tab'."""
+    return " ".join(RELEASE_FORM.sub("", package or "").split())
 
 
 def pack_words(entry):
@@ -538,6 +631,10 @@ def entry_of(request, details, printed, brands, preferred):
         generic = generic_with_salt(details, generic)
     strength, package = strength_and_package(printed, details)
     route = route_of(details)
+    form = form_of(details, route)
+    pack = is_pack(details)
+    if pack:
+        generic, strength, package, route, form = pack_of(details, generic)
 
     # A preferred brand wins, in the spelling of the list. A drug with one brand takes
     # it. A drug with several brands takes none, and answers to each of them as
@@ -552,32 +649,71 @@ def entry_of(request, details, printed, brands, preferred):
         "generic_name": generic,
         "strength": strength or None,
         "route": route,
-        "form": form_of(details, route),
+        "form": form,
         "package": package,
+        "pack": pack,
         "reference_route": details.get("route") or "",
         "aliases": others if len(others) <= ALIASES_MAX else [],
     }
 
 
-def generic_without_salt(details, fallback):
-    """The ingredients as RxNorm names them, without the salt that ends each one.
+def ingredient_names(text):
+    """The ingredients of one RxNorm name, without the salt that ends each one.
 
     'formoterol fumarate 0.005 MG/ACTUAT / mometasone furoate 0.1 MG/ACTUAT ...' gives
-    'Formoterol / Mometasone'.
+    ['Formoterol', 'Mometasone'].
     """
-    full = re.sub(r"^\d[\d.]*\s+\S+\s+", "", details.get("fullGenericName") or "")
     names = []
-    for part in full.split(" / "):
+    for part in text.split(" / "):
         words = []
         for word in part.split():
             if re.match(r"\d", word):
                 break
             words.append(word)
-        while len(words) > 1 and words[-1].lower() in SALT_WORDS:
+        while len(words) > 1 and words[-1].lower() in SALT_WORDS and words[0].lower() not in SALT_IS_THE_NAME:
             words.pop()
         if words:
             names.append(as_name(" ".join(words)))
+    return names
+
+
+def generic_without_salt(details, fallback):
+    """The ingredients as RxNorm names them, joined with ' / ', or the fallback."""
+    full = re.sub(r"^\d[\d.]*\s+\S+\s+", "", details.get("fullGenericName") or "")
+    if is_pack(details):
+        return pack_of(details, fallback)[0]
+    names = ingredient_names(full)
     return " / ".join(names) if names else fallback
+
+
+def pack_of(details, fallback):
+    """What a pack holds, from its full name.
+
+    '{21 (drospirenone 3 MG / ethinyl estradiol 0.03 MG Oral Tablet) / 7 (inert
+    ingredients 1 MG Oral Tablet) } Pack' gives the generic name 'Drospirenone /
+    Ethinyl estradiol', no strength, the package 'Pack of 28', the route 'Oral' and
+    the form 'Tablet'. The placebo tablets count in the package and not in the name.
+    Returns (generic, strength, package, route, form).
+    """
+    names, count, route, form = [], 0, None, "Other"
+    for part in PACK_PART.finditer(details.get("fullGenericName") or ""):
+        count += int(part.group(1))
+        text = part.group(2)
+        if text.lower().startswith(INERT):
+            continue
+        for name in ingredient_names(text):
+            if name not in names:
+                names.append(name)
+        # The dose form ends each part, after the last number: 'ritonavir 100 MG Oral Tablet'.
+        words = text.lower().split()
+        last_number = max((position for position, word in enumerate(words) if word[:1].isdigit()), default=-1)
+        dose_form = " ".join(words[last_number + 1:])
+        route = route or next((ROUTES[word] for word in dose_form.split() if word in ROUTES), None)
+        if form == "Other":
+            form = next((found for word, found in FORMS if word in dose_form), "Other")
+    generic = " / ".join(names) if names else fallback
+    package = "%s of %d" % (PACK_TYPE, count) if count else PACK_TYPE
+    return generic, None, package, route, form
 
 
 def number(text):
@@ -705,38 +841,47 @@ def by_package(entry, reference):
 
 
 def same_product(entry, row):
-    """Whether an entry from RxTerms is an entry that was written by hand."""
+    """Whether an entry from RxTerms is an entry that was written by hand.
+
+    The release form counts: a hand-written tablet with no release form in its name
+    is the plain tablet, not the delayed-release one of the same strength.
+    """
     written = row["d"]
     return (plain(written.get("generic_name") or "") == plain(entry["generic_name"])
             and plain(written.get("strength") or "").replace(" ", "")
                 == plain(entry["strength"] or "").replace(" ", "")
-            and written.get("form") == entry["form"])
+            and written.get("form") == entry["form"]
+            and release_of(written.get("short_name")) == release_of(entry["package"]))
 
 
 def name_entries(entries, taken):
     """Gives every entry a short name that no other entry has.
 
-    Two products with one name and one strength differ in their form or their package,
-    so the rest of the text that RxTerms prints is added, and then its route, as in
-    'Chewable Tab'. The RxNorm identifier is added to the few that are still the same.
+    A name holds the brand, the generic name, the strength and the release form. A pack
+    holds its count instead of a strength, as in 'Pack of 28'. Two products with one
+    such name differ in their form or their package, so the rest of the text that
+    RxTerms prints is added, and then its route, as in 'Chewable Tab'. The RxNorm
+    identifier is added to the few that are still the same.
     """
     for detail in (None, "package", "route", "rxcui"):
         groups = {}
         for entry in entries:
             if detail == "package":
-                entry["short_name"] = (entry["base_name"] + " " + entry["package"]).strip() \
+                entry["short_name"] = (entry["base_name"] + " " + rest_of(entry["package"])).strip() \
                     + pack_words(entry)
             elif detail == "route":
                 entry["short_name"] = " ".join(
-                    part for part in (entry["base_name"], entry["reference_route"], entry["package"])
+                    part for part in (entry["base_name"], entry["reference_route"], rest_of(entry["package"]))
                     if part) + pack_words(entry)
             elif detail == "rxcui":
                 entry["short_name"] += ", RxNorm " + entry["rxcui"]
             else:
                 entry["base_name"] = short_name(
-                    entry["brand_name"], entry["generic_name"], entry["strength"])
-                # A carton is a carton of something, so its entry names the device.
-                device = " " + entry["package"] if entry.get("package_size") and entry["package"] else ""
+                    entry["brand_name"], entry["generic_name"], entry["strength"],
+                    release_of(entry["package"]))
+                # A carton is a carton of something, so its entry names the device. A pack
+                # has no strength of its own, so its entry names what the pack holds.
+                device = " " + entry["package"] if (entry.get("package_size") or entry.get("pack")) and entry["package"] else ""
                 entry["short_name"] = entry["base_name"] + device + pack_words(entry)
             groups.setdefault(plain(entry["short_name"]), []).append(entry)
         entries = [entry for key, group in groups.items()
@@ -779,6 +924,10 @@ def main():
     preferred.update({line.lower(): line for line in read_list("preferred_brands.txt")})
 
     in_micrograms = {plain(line) for line in read_list("labeled_in_micrograms.txt")}
+    in_units = {}
+    for line in read_list("labeled_in_units.txt"):
+        name, _, units = [part.strip() for part in line.partition(" = ")]
+        in_units[plain(name)] = int(units.replace(",", ""))
     requests = requests_of()
     specialty_ingredients = {plain(line) for line in read_list("specialty.txt")}
     with concurrent.futures.ThreadPoolExecutor(max_workers=REQUESTS_AT_ONCE) as pool:
@@ -791,7 +940,8 @@ def main():
     every_product = sorted({rxcui for products in products_by_drug for rxcui, _ in products})
     with concurrent.futures.ThreadPoolExecutor(max_workers=REQUESTS_AT_ONCE) as pool:
         list(pool.map(reference.details_of, every_product))
-        list(pool.map(reference.brands_of, every_product))
+        list(pool.map(lambda rxcui: reference.brands_of(rxcui, is_pack(reference.details_of(rxcui) or {})),
+                      every_product))
 
     entries, not_found, seen = [], [], set()
     for request, products in zip(requests, products_by_drug):
@@ -803,8 +953,8 @@ def main():
             if rxcui in seen or not details or details.get("suppress"):
                 continue
             seen.add(rxcui)
-            entry = entry_of(request, details, printed, reference.brands_of(rxcui), preferred)
-            entry["strength"] = as_label_prints(entry, reference, in_micrograms)
+            entry = entry_of(request, details, printed, reference.brands_of(rxcui, is_pack(details)), preferred)
+            entry["strength"] = as_label_prints(entry, reference, in_micrograms, in_units)
             match = next((row for row in hand_medications
                           if "rxcui" not in row["d"] and same_product(entry, row)), None)
             if match:
@@ -814,25 +964,29 @@ def main():
             else:
                 entries.append(entry)
 
-    # A preferred brand that no entry names yet has products of its own in RxTerms. They
-    # are filed under an ingredient that the lists above do not reach, such as a salt.
-    named = {(entry["brand_name"] or "").lower() for entry in entries}
-    named |= {(row["d"].get("brand_name") or "").lower() for row in hand_medications}
-    named |= {alias.lower() for entry in entries for alias in entry["aliases"]}
+    # A preferred brand can have products of its own in RxTerms that the lists above do
+    # not reach: a brand filed under a salt, a strength that only the brand comes in,
+    # or a pack. A branded product whose generic product is in already is the same
+    # entry, and is left out. A brand that an entry written by hand names is left to
+    # that entry.
+    hand_brands = {(row["d"].get("brand_name") or "").lower() for row in hand_medications}
     added_brands = []
     for brand in sorted(preferred.values(), key=str.lower):
-        if brand.lower() in named:
+        if brand.lower() in hand_brands:
             continue
         for rxcui, printed in reference.products_named(brand):
             details = reference.details_of(rxcui)
             if rxcui in seen or not details or details.get("suppress"):
                 continue
+            if details.get("genericRxcui") in seen:
+                continue
             seen.add(rxcui)
-            request = {"generic": generic_without_salt(details, brand), "keep_salt": False}
+            request = {"generic": generic_without_salt(details, brand), "keep_salt": False, "routes": set()}
             entry = entry_of(request, details, printed, [brand], preferred)
-            entry["strength"] = as_label_prints(entry, reference, in_micrograms)
+            entry["strength"] = as_label_prints(entry, reference, in_micrograms, in_units)
             entries.append(entry)
-            added_brands.append(brand)
+            if brand not in added_brands:
+                added_brands.append(brand)
 
     entries = [variant for entry in entries for variant in by_package(entry, reference)]
     name_entries(entries, {plain(row["d"]["short_name"]) for row in hand_medications})

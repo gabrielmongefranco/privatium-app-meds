@@ -26,7 +26,8 @@ local form_icon = require 'form_icon'
 
 return function(equal)
   local expected = {
-    Tablet = 'capsule-pill', Capsule = 'capsule', Liquid = 'droplet', Suspension = 'droplet-half',
+    Tablet = 'capsule-pill', Capsule = 'capsule', Gummy = 'cookie', Liquid = 'droplet',
+    Suspension = 'droplet-half',
     Drops = 'eyedropper', Cream = 'moisture', Ointment = 'moisture', Gel = 'moisture',
     Patch = 'bandaid', Inhaler = 'lungs', ['Nebulizer Solution'] = 'cloud-haze', Spray = 'wind',
     Injection = 'syringe', Powder = 'snow', Suppository = 'egg', Device = 'cpu',
@@ -37,7 +38,7 @@ return function(equal)
     equal('icon of ' .. form, icon, expected[form])
     equal('label of ' .. form, label, form)
   end
-  equal('every starter form has an expected icon', #choices.FORMS, 18)
+  equal('every starter form has an expected icon', #choices.FORMS, 19)
 
   equal('eye drops', (form_icon.of('Drops', 'Eye')), 'eye')
   equal('ophthalmic drops in other letters', (form_icon.of('drops', 'OPHTHALMIC')), 'eye')

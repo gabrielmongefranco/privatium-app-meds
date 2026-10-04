@@ -2,7 +2,7 @@
 # tools/seed/preferred_brands.txt
 # Author(s): Gabriel Mongefranco
 # Created: 2026-09-27
-# Last Modified: 2026-09-27
+# Last Modified: 2026-10-03
 # Summary: Brand names the starter catalog shows in a short name when a drug has several
 #          brands. The brands of the entries written by hand count too. A brand of this
 #          list that no entry names is added with its own products from RxTerms.
@@ -41,3 +41,40 @@ Concerta
 Flonase
 Dulera
 ProAir
+Paxlovid
+Testim
+Stendra
+Clomid
+Gonal-f
+Follistim
+Menopur
+Victoza
+Saxenda
+Byetta
+Bydureon
+Precose
+Xenical
+Alli
+Trileptal
+Lidoderm
+Intuniv
+Lithobid
+Lo Loestrin Fe
+Yaz
+Yasmin
+Tri-Sprintec
+Qsymia
+Contrave
+Tobrex
+Cytomel
+Tapazole
+Bentyl
+Maxalt
+Nolvadex
+Depakote
+Ritalin
+Strattera
+Trulicity
+Ozempic
+Wegovy
+Zepbound

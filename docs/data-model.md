@@ -172,9 +172,14 @@ forms check that. Two packages of one product share the RxCUI. [The app design](
 explains how the catalog gets entries from the drug references.
 
 The short name follows one pattern unless the owner types another: the brand name, the
-generic name in brackets, the strength, then the package. Examples are
-`Lipitor (Atorvastatin) 20 mg` and `Examplol (Exampline) 10 mcg/mL 2 Pack`. A medication
-with no brand name leaves out the brackets.
+generic name in brackets, the strength, the release form when the product has one, then
+the package. Examples are `Lipitor (Atorvastatin) 20 mg`, `Metformin 500 mg 24 HR XR` and
+`Examplol (Exampline) 10 mcg/mL 2 Pack`. A medication with no brand name leaves out the
+brackets. A release form such as `24 HR XR`, `12 HR XR` or `DR` makes another product,
+because an extended-release tablet is not interchangeable with the plain one. A pack of
+tablets taken in a set order has no strength of its own; its name holds the count instead,
+as in `Yasmin (Drospirenone / Ethinyl estradiol) Pack of 28`. A vitamin labeled in
+international units shows units, as in `Cholecalciferol 1000 units`.
 
 One product in two packages is two medications. A carton of 2 is another thing to refill
 than a carton of 6, and a pharmacy bills them apart.
@@ -420,7 +425,7 @@ edits.
 
 `apps/meds/lib/starter_catalog.lua` holds a starter catalog and nothing else. The app loads
 it by itself the first time a page needs the catalog and finds it empty.
-The catalog has 2,507 medications and 524 other names for them. It holds the 200 drugs
+The catalog has 2,757 medications and 601 other names for them. It holds the 200 drugs
 most prescribed in the United States, and the drugs of the owner's list, at every strength
 that RxTerms lists. It also holds entries written by hand, such as continuous glucose
 monitors, and syringes and needles in many sizes. [How to build the starter catalog](how-to/build-the-starter-catalog.md) names
