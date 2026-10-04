@@ -15,4 +15,5 @@ See <https://www.gnu.org/licenses/fdl-1.3.html>.
 The entries name products only. They hold no record about any person.
 The strengths of compounded mixes differ from pharmacy to pharmacy. Check them against
 your own label. The multivitamins name no strength and no brand, because every maker
-blends its own. A product sold outside the United States has no RxNorm number.
+blends its own. A product sold outside the United States, or a strength that no maker
+sells there, has no RxNorm number.

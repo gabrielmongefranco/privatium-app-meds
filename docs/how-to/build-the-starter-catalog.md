@@ -83,7 +83,7 @@ The catalog currently has 238 controlled products and 29 specialty suggestions.
    does not hold:
 
    ```text
-   build_seed: 69 entries written by hand, 229 syringes and needles, 2458 entries from RxTerms, 530 brand names as other names
+   build_seed: 70 entries written by hand, 229 syringes and needles, 2458 entries from RxTerms, 530 brand names as other names
    ```
 
 4. Run the checks in [How to run the tests](run-the-tests.md). The smoke test opens the

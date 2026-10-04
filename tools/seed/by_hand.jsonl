@@ -131,10 +131,11 @@
 {"op": "put", "tbl": "medication_alias", "id": "01J8MEDS0000000000AKA00075", "d": {"medication_id": "01J8MEDS0000000000MED00063", "alias": "Tri-mix"}}
 {"op": "put", "tbl": "medication", "id": "01J8MEDS0000000000MED00064", "d": {"short_name": "Kamagra Oral Jelly (Sildenafil) 100 mg", "generic_name": "Sildenafil", "brand_name": "Kamagra Oral Jelly", "strength": "100 mg", "route": "Oral", "form": "Gel", "is_specialty": false}}
 {"op": "put", "tbl": "medication_alias", "id": "01J8MEDS0000000000AKA00076", "d": {"medication_id": "01J8MEDS0000000000MED00064", "alias": "Kamagra"}}
-{"op": "put", "tbl": "medication", "id": "01J8MEDS0000000000MED00065", "d": {"short_name": "Clomiphene 25 mg", "generic_name": "Clomiphene", "strength": "25 mg", "route": "Oral", "form": "Capsule", "is_specialty": false}}
+{"op": "put", "tbl": "medication", "id": "01J8MEDS0000000000MED00065", "d": {"short_name": "Clomiphene 25 mg", "generic_name": "Clomiphene", "strength": "25 mg", "route": "Oral", "form": "Tablet", "is_specialty": false}}
 {"op": "put", "tbl": "medication", "id": "01J8MEDS0000000000MED00066", "d": {"short_name": "Multivitamin, Men's", "generic_name": "Multivitamin", "route": "Oral", "form": "Tablet", "is_specialty": false}}
-{"op": "put", "tbl": "medication", "id": "01J8MEDS0000000000MED00067", "d": {"short_name": "Multivitamin, Men's Gummy", "generic_name": "Multivitamin", "route": "Oral", "form": "Tablet", "is_specialty": false}}
+{"op": "put", "tbl": "medication", "id": "01J8MEDS0000000000MED00067", "d": {"short_name": "Multivitamin, Men's Gummy", "generic_name": "Multivitamin", "route": "Oral", "form": "Gummy", "is_specialty": false}}
 {"op": "put", "tbl": "medication", "id": "01J8MEDS0000000000MED00068", "d": {"short_name": "Multivitamin, Women's", "generic_name": "Multivitamin", "route": "Oral", "form": "Tablet", "is_specialty": false}}
-{"op": "put", "tbl": "medication", "id": "01J8MEDS0000000000MED00069", "d": {"short_name": "Multivitamin, Women's Gummy", "generic_name": "Multivitamin", "route": "Oral", "form": "Tablet", "is_specialty": false}}
+{"op": "put", "tbl": "medication", "id": "01J8MEDS0000000000MED00069", "d": {"short_name": "Multivitamin, Women's Gummy", "generic_name": "Multivitamin", "route": "Oral", "form": "Gummy", "is_specialty": false}}
 {"op": "put", "tbl": "medication", "id": "01J8MEDS0000000000MED00070", "d": {"short_name": "Multivitamin, Children's Chewable", "generic_name": "Multivitamin", "route": "Oral", "form": "Tablet", "is_specialty": false}}
-{"op": "put", "tbl": "medication", "id": "01J8MEDS0000000000MED00071", "d": {"short_name": "Multivitamin, Children's Gummy", "generic_name": "Multivitamin", "route": "Oral", "form": "Tablet", "is_specialty": false}}
+{"op": "put", "tbl": "medication", "id": "01J8MEDS0000000000MED00071", "d": {"short_name": "Multivitamin, Children's Gummy", "generic_name": "Multivitamin", "route": "Oral", "form": "Gummy", "is_specialty": false}}
+{"op": "put", "tbl": "medication", "id": "01J8MEDS0000000000MED00072", "d": {"short_name": "Enclomiphene 50 mg", "generic_name": "Enclomiphene", "strength": "50 mg", "route": "Oral", "form": "Tablet", "is_specialty": false}}

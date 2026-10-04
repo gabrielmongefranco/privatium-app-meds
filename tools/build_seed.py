@@ -168,7 +168,8 @@ ROUTES = {
 FORMS = [
     ("inject", "Injection"), ("syringe", "Injection"), ("cartridge", "Injection"),
     ("inhaler", "Inhaler"), ("aerosol", "Inhaler"), ("nebuliz", "Nebulizer Solution"),
-    ("tablet", "Tablet"), ("capsule", "Capsule"), ("suspension", "Suspension"),
+    ("gummy", "Gummy"), ("tablet", "Tablet"), ("capsule", "Capsule"),
+    ("suspension", "Suspension"),
     ("cream", "Cream"), ("ointment", "Ointment"), ("gel", "Gel"), ("patch", "Patch"),
     ("transdermal", "Patch"), ("spray", "Spray"), ("powder", "Powder"),
     ("suppository", "Suppository"), ("solution", "Liquid"), ("liquid", "Liquid"),

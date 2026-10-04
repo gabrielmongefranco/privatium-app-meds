@@ -2,7 +2,7 @@
 -- apps/meds/lib/reference_words.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-09-27
+-- Last Modified: 2026-10-03
 -- Summary: Turns the route and the dose form of a drug reference into the words of the
 --          catalog.
 -- Notes: See README file for documentation and full license information.
@@ -45,7 +45,8 @@ local ROUTES = {
 local FORMS = {
   { 'inject', 'Injection' }, { 'syringe', 'Injection' }, { 'cartridge', 'Injection' },
   { 'inhaler', 'Inhaler' }, { 'aerosol', 'Inhaler' }, { 'nebuliz', 'Nebulizer Solution' },
-  { 'tablet', 'Tablet' }, { 'capsule', 'Capsule' }, { 'suspension', 'Suspension' },
+  { 'gummy', 'Gummy' }, { 'tablet', 'Tablet' }, { 'capsule', 'Capsule' },
+  { 'suspension', 'Suspension' },
   { 'cream', 'Cream' }, { 'ointment', 'Ointment' }, { 'gel', 'Gel' }, { 'patch', 'Patch' },
   { 'transdermal', 'Patch' }, { 'spray', 'Spray' }, { 'powder', 'Powder' },
   { 'suppository', 'Suppository' }, { 'solution', 'Liquid' }, { 'liquid', 'Liquid' },

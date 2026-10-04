@@ -2,7 +2,7 @@
 -- apps/meds/lib/choices.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-09-27
+-- Last Modified: 2026-10-03
 -- Summary: The starter choices for the drop-down lists, and the merge of a starter list
 --          with the values that records already use. Pure Lua with no framework calls,
 --          so plain Lua can test it.
@@ -36,7 +36,7 @@ choices.ROUTES = {
 }
 
 choices.FORMS = {
-  'Tablet', 'Capsule', 'Liquid', 'Suspension', 'Drops', 'Cream', 'Ointment', 'Gel',
+  'Tablet', 'Capsule', 'Gummy', 'Liquid', 'Suspension', 'Drops', 'Cream', 'Ointment', 'Gel',
   'Patch', 'Inhaler', 'Nebulizer Solution', 'Spray', 'Injection', 'Powder',
   'Suppository', 'Device', 'Supplies', 'Other',
 }

@@ -30,6 +30,7 @@ local form_icon = {}
 local BY_FORM = {
   ['tablet']             = 'capsule-pill',
   ['capsule']            = 'capsule',
+  ['gummy']              = 'cookie',
   ['liquid']             = 'droplet',
   ['suspension']         = 'droplet-half',
   ['drops']              = 'eyedropper',

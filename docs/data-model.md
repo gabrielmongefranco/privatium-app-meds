@@ -425,7 +425,7 @@ edits.
 
 `apps/meds/lib/starter_catalog.lua` holds a starter catalog and nothing else. The app loads
 it by itself the first time a page needs the catalog and finds it empty.
-The catalog has 2,756 medications and 601 other names for them. It holds the 200 drugs
+The catalog has 2,757 medications and 601 other names for them. It holds the 200 drugs
 most prescribed in the United States, and the drugs of the owner's list, at every strength
 that RxTerms lists. It also holds entries written by hand, such as continuous glucose
 monitors, and syringes and needles in many sizes. [How to build the starter catalog](how-to/build-the-starter-catalog.md) names
