@@ -2,12 +2,12 @@
 // apps/meds/static/product_search.js
 // Author(s): Gabriel Mongefranco
 // Created: 2026-10-03
-// Last Modified: 2026-10-03
-// Summary: The product picker of the form that tracks a medication: searches the catalog as a
-//          person asks, lists the results a page at a time with a check box each, asks the
-//          public drug references when the catalog has nothing, and suggests products while
-//          a new medication is typed. Every form works without this file; the server then
-//          searches when the form is sent.
+// Last Modified: 2026-10-04
+// Summary: The product box of every form that needs a product: searches the catalog as a
+//          person asks, lists the results a page at a time with a check box or a radio
+//          button each, asks the public drug references when the catalog has nothing, and
+//          suggests products while a new medication is typed. Every form works without this
+//          file; the server then searches when the form is sent.
 // Notes: See README file for documentation and full license information.
 //
 // Copyright © 2026 Gabriel Mongefranco
@@ -96,10 +96,15 @@
     label.className = 'meds-option';
     label.htmlFor = id;
     var box = document.createElement('input');
-    box.type = 'checkbox';
+    var one = picker.hasAttribute('data-pick-one');   // The form takes one product
+    box.type = one && source === 'catalog' ? 'radio' : 'checkbox';
     box.id = id;
     box.value = 'yes';
-    if (source === 'catalog') {
+    if (source === 'catalog' && one) {
+      box.name = prefixOf(picker) + '_choice';
+      box.value = result.medication_id;
+      box.setAttribute('data-result-id', result.medication_id);
+    } else if (source === 'catalog') {
       box.name = 'pick_' + result.medication_id;
       box.setAttribute('data-result-id', result.medication_id);
     } else {
@@ -183,7 +188,9 @@
     count.className = 'pv-help';
     count.setAttribute('data-results-count', '');
     count.textContent = counted(results.length, 'result', 'results') + ' from ' + sourceName +
-      (term ? ' for "' + term + '"' : '') + '. Check the ' + (source === 'catalog' ? 'ones' : 'one') + ' to add.';
+      (term ? ' for "' + term + '"' : '') +
+      (picker.hasAttribute('data-pick-one') ? '. Choose the one to use.'
+        : '. Check the ' + (source === 'catalog' ? 'ones' : 'one') + ' to add.');
     container.appendChild(count);
     var group = document.createElement('fieldset');
     group.className = 'meds-options meds-results';

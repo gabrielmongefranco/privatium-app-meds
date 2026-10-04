@@ -2,7 +2,7 @@
 -- apps/meds/lib/routes/fills.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-10-03
+-- Last Modified: 2026-10-04
 -- Summary: The screens for fills: the history with its totals, and the form that records,
 --          changes or removes a fill of a tracked medication.
 -- Notes: See README file for documentation and full license information.
@@ -153,6 +153,7 @@ local function form_page(heading, action, typed, errors, entry, is_new, pick)
     listed    = not entry and listed() or {},
     new_entry  = NEW_ENTRY,
     names      = not entry and suggestions.medication_names() or {},
+    search_url = url('/medications/search'),
     catalog_options = not entry and catalog_entry.options() or { route = {}, dose_form = {}, package_type = {} },
     plans      = quick_add.options(quick_add.PLAN),
     people     = people(),
@@ -182,7 +183,7 @@ local function read_with_new(form, fixed_entry)
     -- tracked medication is added with the fill, unless the person has it already.
     adding.person_id, adding.person, problems.person_id =
       quick_add.read(form, 'person_id', quick_add.PERSON, true)
-    adding.pick = medication_pick.read(form, 'medication', true)
+    adding.pick = medication_pick.searched(form, 'medication') or medication_pick.read(form, 'medication', true)
     problems.medication_id = adding.pick.problem
     local found = entries.with_product(adding.person_id, adding.pick.id)
     if found then adding.entry_id = found.id end
@@ -322,6 +323,10 @@ pv.post(LIST .. '/new', function(req)
   -- The page address names the tracked medication when the form is about one.
   local entry = listed_one(text.clean(req.query.entry))
   local row, errors, adding = read_with_new(req.form, entry)
+  if adding.pick and adding.pick.searching then
+    -- A search of the box: the form comes back with the results and saves nothing.
+    return form_page('Record a fill', url(LIST .. '/new'), req.form, {}, nil, true, adding.pick)
+  end
   local refills_left
   refills_left, errors.refills_left = validate.whole_number(
     req.form.refills_left, 'the refills left', 0, fills.REFILLS_MAX)

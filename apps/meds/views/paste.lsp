@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/views/paste.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-10-03
+Last Modified: 2026-10-04
 Summary: The page where the text of a portal page is pasted.
 Notes: See README file for documentation and full license information.
 
@@ -40,7 +40,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 
 <? if #people == 0 then ?>
   <p class="pv-notice pv-notice-info"><?= icon('info-circle') ?> <span>Add a person first. A fill belongs to a person.</span></p>
-  <p class="pv-actions"><a class="pv-btn" href="<?= url('/setup/people/new') ?>">Add a person</a></p>
+  <p class="pv-actions"><a class="pv-btn" href="<?= url('/setup/people/new?back=history') ?>">Add a person</a></p>
 <? else ?>
 <form method="post" action="<?= url('/fills/paste/read') ?>" novalidate>
   <?= csrf() ?>

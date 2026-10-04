@@ -2,7 +2,7 @@
 -- apps/meds/lib/medication_pick.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-10-03
+-- Last Modified: 2026-10-04
 -- Summary: Reads the medication box of a form: a name typed to search the catalog, a choice
 --          among several, a product carried by its id, or a new medication.
 -- Notes: See README file for documentation and full license information.
@@ -34,6 +34,8 @@ local medication_pick = {}
 medication_pick.NEW   = 'new'     -- The choice that adds a medication from the fields under it
 medication_pick.OTHER = 'other'   -- The choice that finds a medication by a typed name
 local CANDIDATES_MAX  = 8         -- Medications offered when a typed name fits several
+medication_pick.RESULTS_MAX = 25  -- Products one search of the box lists, best first
+medication_pick.STEP  = 'step'    -- The field that names what a button of the form asks for
 -- The fields of a new medication, by the ending of their names in the form.
 medication_pick.NEW_FIELDS = {
   'brand', 'generic', 'strength', 'package_size', 'package_type', 'package_type_new',
@@ -175,6 +177,54 @@ function medication_pick.touched_new(form, prefix)
   return medication_pick.filled_new(form, prefix)
     or text.clean(form[prefix .. '_strength']) ~= nil
     or text.clean(form[prefix .. '_package_size']) ~= nil
+end
+
+--- Search the catalog for the products a typed name fits.
+-- @param typed string  What was typed, already cleaned by medication_search.typed.
+-- @return table  Up to 25 rows of { medication_id, short_name, full_name, close }, the
+--         ones that hold the name first and the close ones after them. `close` is true
+--         for a name that is near what was typed, which a person must confirm.
+function medication_pick.search(typed)
+  local results = {}
+  if typed == '' then return results end
+  local found = medication_search.find(typed)
+  for _, group in ipairs({ found.matches, found.close }) do
+    for _, row in ipairs(group) do
+      if #results >= medication_pick.RESULTS_MAX then break end
+      results[#results + 1] = {
+        medication_id = row.medication_id,
+        short_name    = row.short_name,
+        full_name     = row.full_name,
+        close         = group == found.close,
+      }
+    end
+  end
+  return results
+end
+
+--- What the search box of a form asked, when it asked anything.
+-- A name typed into the box with nothing chosen and no new medication counts as a
+-- search, whichever button was pressed, so Enter in the box never saves the form.
+-- @return table|nil  { term, results, problem, open_new, searching = true } when the form
+--         must come back with the results, or nil when the box asked nothing.
+function medication_pick.searched(form, prefix)
+  local term = medication_search.typed(form[prefix .. '_q'])
+  local asked = text.clean(form[medication_pick.STEP]) == 'find_' .. prefix
+  if not asked and (term == '' or text.clean(form[prefix .. '_choice'])
+                    or medication_pick.filled_new(form, prefix)) then
+    return nil
+  end
+  local pick = { term = term, searching = true }
+  if term == '' then
+    pick.problem = 'Type a name to search for.'
+    return pick
+  end
+  pick.results = medication_pick.search(term)
+  if #pick.results == 0 then
+    pick.problem = 'No medication found with this name. Check the spelling, or add it to the catalog below.'
+    pick.open_new = true
+  end
+  return pick
 end
 
 --- Whether a box holds anything to read: a typed name, a choice or a new medication.

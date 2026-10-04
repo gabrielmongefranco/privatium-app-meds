@@ -2,8 +2,9 @@
 -- apps/meds/lib/routes/contacts.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-09-27
--- Summary: The screens that list, add, change and remove pharmacies and prescribers.
+-- Last Modified: 2026-10-04
+-- Summary: The Prescribers and Pharmacies pages under Setup, and the forms that add, change or
+--          remove one. The two kinds share one set of routes.
 -- Notes: See README file for documentation and full license information.
 --
 -- Copyright © 2026 Gabriel Mongefranco
@@ -28,9 +29,9 @@ local text     = require 'text'
 local validate = require 'validate'
 
 --- Configuration ---
-local LIST        = '/contacts'
-local PHARMACIES  = '/contacts/pharmacies'
-local PRESCRIBERS = '/contacts/prescribers'
+-- Prescribers and pharmacies each have a page of their own under Setup.
+local PHARMACIES  = '/setup/pharmacies'
+local PRESCRIBERS = '/setup/prescribers'
 local NAME_MAX    = 120
 local ADDRESS_MAX = 200
 local PHONE_MAX   = 40
@@ -141,7 +142,7 @@ end
 local function routes(kind)
   local function form_page(heading, action, typed, errors)
     return pv.render(kind.form_view, {
-      section  = 'contacts',
+      section  = 'setup',
       heading  = heading,
       action   = action,
       typed    = typed,
@@ -151,6 +152,19 @@ local function routes(kind)
     })
   end
 
+  -- The page of this kind: every record, each with its details and its buttons.
+  pv.get(kind.path, function(req)
+    return pv.render('contact_list', {
+      section   = 'setup',
+      notice    = page.notice(req.query.notice),
+      heading   = kind.list_heading,
+      add_label = kind.add_heading,
+      empty     = kind.empty,
+      path      = kind.path,
+      contacts  = with_links(kind.list()),
+    })
+  end)
+
   pv.get(kind.path .. '/new', function()
     return form_page(kind.add_heading, url(kind.path .. '/new'), {}, {})
   end)
@@ -159,7 +173,7 @@ local function routes(kind)
     local row, errors = kind.read(req.form, nil)
     if not next(errors) then
       local saved, refusal = store.save(kind.table_name, nil, row)
-      if saved then return pv.redirect(url(LIST .. '?notice=saved')) end
+      if saved then return pv.redirect(url(kind.path .. '?notice=saved')) end
       errors.name = refusal
     end
     return form_page(kind.add_heading, url(kind.path .. '/new'), req.form, errors)
@@ -167,17 +181,17 @@ local function routes(kind)
 
   pv.get(kind.path .. '/:id/edit', function(req)
     local contact = pv.get_row(kind.table_name, req.params.id)
-    if not contact then return pv.redirect(url(LIST .. '?notice=missing')) end
+    if not contact then return pv.redirect(url(kind.path .. '?notice=missing')) end
     return form_page(kind.change_heading, url(kind.path .. '/' .. contact.id .. '/edit'), contact, {})
   end)
 
   pv.post(kind.path .. '/:id/edit', function(req)
     local contact = pv.get_row(kind.table_name, req.params.id)
-    if not contact then return pv.redirect(url(LIST .. '?notice=missing')) end
+    if not contact then return pv.redirect(url(kind.path .. '?notice=missing')) end
     local row, errors = kind.read(req.form, contact.id)
     if not next(errors) then
       local saved, refusal = store.save(kind.table_name, contact.id, row)
-      if saved then return pv.redirect(url(LIST .. '?notice=saved')) end
+      if saved then return pv.redirect(url(kind.path .. '?notice=saved')) end
       errors.name = refusal
     end
     return form_page(kind.change_heading, url(kind.path .. '/' .. contact.id .. '/edit'),
@@ -186,43 +200,37 @@ local function routes(kind)
 
   pv.get(kind.path .. '/:id/remove', function(req)
     local contact = pv.get_row(kind.table_name, req.params.id)
-    if not contact then return pv.redirect(url(LIST .. '?notice=missing')) end
+    if not contact then return pv.redirect(url(kind.path .. '?notice=missing')) end
     return pv.render('remove', {
-      section = 'contacts',
+      section = 'setup',
       heading = kind.remove_heading,
       name    = contact.name,
       used_by = kind.uses(contact.id),
       action  = url(kind.path .. '/' .. contact.id .. '/remove'),
-      back    = url(LIST),
+      back    = url(kind.path),
     })
   end)
 
   pv.post(kind.path .. '/:id/remove', function(req)
     local contact = pv.get_row(kind.table_name, req.params.id)
-    if not contact then return pv.redirect(url(LIST .. '?notice=missing')) end
+    if not contact then return pv.redirect(url(kind.path .. '?notice=missing')) end
     -- A contact that other records point to stays, or those records would name nobody.
     if #kind.uses(contact.id) > 0 then
       return pv.redirect(url(kind.path .. '/' .. contact.id .. '/remove'))
     end
     pv.delete(kind.table_name, contact.id)
-    return pv.redirect(url(LIST .. '?notice=removed'))
+    return pv.redirect(url(kind.path .. '?notice=removed'))
   end)
 end
 
 --- Routes ---
 
-pv.get(LIST, function(req)
-  return pv.render('contacts', {
-    section     = 'contacts',
-    notice      = page.notice(req.query.notice),
-    pharmacies  = with_links(pharmacies()),
-    prescribers = with_links(prescribers()),
-  })
-end)
-
 routes {
   table_name     = 'pharmacy',
   path           = PHARMACIES,
+  list           = pharmacies,
+  list_heading   = 'Pharmacies',
+  empty          = 'No pharmacy is in the app yet.',
   form_view      = 'pharmacy_form',
   fields         = PHARMACY_FIELDS,
   read           = read_pharmacy,
@@ -235,6 +243,9 @@ routes {
 routes {
   table_name     = 'prescriber',
   path           = PRESCRIBERS,
+  list           = prescribers,
+  list_heading   = 'Prescribers',
+  empty          = 'No prescriber is in the app yet.',
   form_view      = 'prescriber_form',
   fields         = PRESCRIBER_FIELDS,
   read           = read_prescriber,

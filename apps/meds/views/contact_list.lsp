@@ -1,11 +1,11 @@
 <?--
 This file is part of Prescription Tracker
-apps/meds/views/index.lsp
+apps/meds/views/contact_list.lsp
 Author(s): Gabriel Mongefranco
-Created: 2026-09-26
+Created: 2026-09-27
 Last Modified: 2026-10-04
-Summary: The home page of a household with no people yet. Greets it and invites it to add
-         the first person.
+Summary: The Prescribers page or the Pharmacies page under Setup: every record of the kind,
+         each with its details, and the button that adds one.
 Notes: See README file for documentation and full license information.
 
 Copyright © 2026 Gabriel Mongefranco
@@ -24,12 +24,19 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 --?>
 
 <?= render('_nav', { section = section }) ?>
-<div class="meds">
-<p class="meds-mark"><?= icon('capsule') ?></p>
-<h1>Welcome to your prescription tracker.</h1>
-<p><?= greeting ?>. Add the first person to begin.</p>
-<? -- The form goes back to this tab once the person is saved. ?>
-<a class="pv-btn pv-btn-primary" href="<?= url('/setup/people/new?back=' .. (section == 'home' and 'refills' or 'medications')) ?>">
-  <?= icon('plus-lg') ?> Add a person
-</a>
-</div>
+<p><a href="<?= url('/setup') ?>">Back to Setup</a></p>
+<h1><?= heading ?></h1>
+<?= render('_notice', { notice = notice }) ?>
+
+<p class="pv-actions">
+  <a class="pv-btn pv-btn-primary" href="<?= url(path .. '/new') ?>"><?= icon('plus-lg') ?> <?= add_label ?></a>
+</p>
+<? if #contacts == 0 then ?>
+  <p class="pv-empty"><?= empty ?></p>
+<? else ?>
+  <ul class="meds-cards">
+    <? for _, contact in ipairs(contacts) do ?>
+      <?= render('_contact', { contact = contact, path = path }) ?>
+    <? end ?>
+  </ul>
+<? end ?>

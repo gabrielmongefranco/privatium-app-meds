@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/README.md
 Author(s): Gabriel Mongefranco
 Created: 2026-09-26
-Last Modified: 2026-10-03
+Last Modified: 2026-10-04
 Summary: What the meds app folder holds and how to run it.
 Notes: See README file for documentation and full license information.
 
@@ -46,8 +46,7 @@ of a portal, and tracks prior authorizations.
 | `lib/starter_catalog.lua` | The starter catalog of common medications, as a Lua table. `tools/build_seed.py` writes it. |
 | `lib/starter.lua` | Loads the starter catalog the first time a page finds the catalog empty |
 | `static/drug_references.js` | Asks the public drug references about a name. The two scripts below use it. |
-| `static/medication_lookup.js` | The lookup of a new medication in the fill and authorization forms. Every form works without it. |
-| `static/product_search.js` | The product search of the form that tracks a medication: catalog first, then the drug references, with paged results. The server searches without it. |
+| `static/product_search.js` | The product search of every form that needs a product: catalog first, then the drug references, with paged results. The server searches without it. |
 | `static/filter.js` | Narrows the Medications page as a person types. The server does the same when the form is sent. |
 | `static/person_tab.js` | Remembers the person tab chosen last, in the browser, until Privatium offers person profiles. |
 | `SKILL.md` | Context an AI assistant loads before extending this app |

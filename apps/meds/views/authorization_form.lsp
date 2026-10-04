@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/views/authorization_form.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-10-03
+Last Modified: 2026-10-04
 Summary: The form that adds a prior authorization for a tracked medication, or changes one.
 Notes: See README file for documentation and full license information.
 
@@ -39,7 +39,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
       <label for="f-entry_id-list">Medication</label>
       <select id="f-entry_id-list" name="entry_id"<? if errors.entry_id then ?> aria-invalid="true" aria-describedby="f-entry_id-err"<? end ?>>
         <option value="">Choose a medication</option>
-        <option value="<?= new_entry ?>"<? if typed.entry_id == new_entry or typed.medication_name or typed.medication_brand or typed.medication_generic then ?> selected<? end ?>>-- Another medication --</option>
+        <option value="<?= new_entry ?>"<? if typed.entry_id == new_entry or typed.medication_q or typed.medication_choice or typed.medication_brand or typed.medication_generic then ?> selected<? end ?>>-- Another medication --</option>
         <? for _, option in ipairs(listed) do ?>
           <option value="<?= option.value ?>"<? if option.value == typed.entry_id then ?> selected<? end ?>><?= option.label ?></option>
         <? end ?>
@@ -53,8 +53,9 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
               value = typed.person_id, typed_new = typed.person_id_new, options = people, required = true,
               err = errors.person_id, empty_label = 'Choose a person' }) ?>
         <?= render('_medication_names', { names = names }) ?>
-        <?= render('_medication_picker', { prefix = 'medication', typed = typed, pick = pick,
-              legend = 'Product', err = errors.medication_id, catalog_options = catalog_options }) ?>
+        <?= render('_product_box', { prefix = 'medication', typed = typed, pick = pick, single = true,
+              legend = 'Product', err = errors.medication_id, catalog_options = catalog_options,
+              search_url = search_url }) ?>
         <p class="pv-help">If this person does not track this medication yet, it is added to their list as Not started.</p>
       </div>
     </fieldset>

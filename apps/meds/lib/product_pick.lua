@@ -2,7 +2,7 @@
 -- apps/meds/lib/product_pick.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-10-03
--- Last Modified: 2026-10-03
+-- Last Modified: 2026-10-04
 -- Summary: The products of a tracked medication while its form is being filled in: the ones
 --          chosen so far travel in hidden fields, a search of the catalog lists products to
 --          check, the checked ones are added per round trip, and nothing is written until
@@ -34,9 +34,9 @@ local product_pick = {}
 product_pick.MAX         = 12          -- Products one tracked medication can hold in the form
 product_pick.PREFIX      = 'product'   -- The box that finds or adds the next product
 product_pick.QUERY       = 'product_q' -- The search box of the catalog
+product_pick.STEP        = medication_pick.STEP   -- The field that names what a button asks for
 product_pick.ADD         = 'add_product'
 product_pick.FIND        = 'find_product'
-product_pick.RESULTS_MAX = 25          -- Products one search lists, best first
 local REMOVE             = '^remove_product_(%d+)$'
 -- A checked result of the search. The browser and the server name them alike.
 local PICKED             = '^pick_(%w+)$'
@@ -87,21 +87,7 @@ end
 --         ones that hold the name first and the close ones after them. `close` is true
 --         for a name that is near what was typed, which a person must confirm.
 function product_pick.search(typed)
-  local results = {}
-  if typed == '' then return results end
-  local found = medication_search.find(typed)
-  for _, group in ipairs({ found.matches, found.close }) do
-    for _, row in ipairs(group) do
-      if #results >= product_pick.RESULTS_MAX then break end
-      results[#results + 1] = {
-        medication_id = row.medication_id,
-        short_name    = row.short_name,
-        full_name     = row.full_name,
-        close         = group == found.close,
-      }
-    end
-  end
-  return results
+  return medication_pick.search(typed)
 end
 
 --- The products that the hidden fields of a form carry.
@@ -151,7 +137,9 @@ function product_pick.handle(form)
   local chosen, problem = product_pick.read(form)
   if not chosen then return {}, nil, problem, false end
 
-  local action = text.clean(form.action) or ''
+  -- The button is named step, not action: a control named action shadows form.action in
+  -- WebKit, and the page frame's script reads that property to post the form.
+  local action = text.clean(form[product_pick.STEP]) or ''
   local removed = action:match(REMOVE)
   if removed then
     table.remove(chosen, math.tointeger(tonumber(removed)) or 0)
@@ -214,7 +202,7 @@ function product_pick.cleared(form)
   for key, value in pairs(form) do
     if not (type(key) == 'string' and key:match(PICKED)) then copy[key] = value end
   end
-  copy.action = nil
+  copy[product_pick.STEP] = nil
   copy[product_pick.QUERY] = nil
   for _, ending in ipairs(medication_pick.NEW_FIELDS) do
     copy[product_pick.PREFIX .. '_' .. ending] = nil

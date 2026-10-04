@@ -3,9 +3,10 @@ This file is part of Prescription Tracker
 apps/meds/views/_medication_picker.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-10-03
-Summary: The medication box: a name to type that searches the catalog, the choices when a
-         name fits several, and the fields of a new medication with the lookup.
+Last Modified: 2026-10-04
+Summary: The medication box of the review of pasted fills: the choices for a pasted name, a
+         name to type that searches the catalog, and the fields of a new medication. The
+         other forms use _product_box instead.
 Notes: See README file for documentation and full license information.
 
 Copyright © 2026 Gabriel Mongefranco
@@ -70,16 +71,6 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
   <? if explicit then ?></div><div data-show-when="<?= prefix ?>_choice=new"><? end ?>
   <details<? if open_new or explicit then ?> open<? end ?>>
     <summary>Not in the list? Add a medication to the catalog</summary>
-    <? -- The lookup needs a script, so it stays hidden until the script shows it. ?>
-    <div class="meds-lookup" data-lookup="<?= prefix ?>" hidden>
-      <label for="f-<?= prefix ?>-lookup">Look it up</label>
-      <input id="f-<?= prefix ?>-lookup" type="search" autocomplete="off" maxlength="100"
-             aria-describedby="f-<?= prefix ?>-lookup-help" data-lookup-term>
-      <button type="button" class="pv-btn" data-lookup-search><?= icon('search') ?> Look up</button>
-      <p id="f-<?= prefix ?>-lookup-help" class="pv-help">Type the name and choose <strong>Look up</strong>, then pick a result. The details below fill in for you. You can also type them yourself.</p>
-      <p role="status" class="pv-help" data-lookup-status></p>
-      <ul class="meds-lookup-results" data-lookup-results></ul>
-    </div>
     <input type="hidden" name="<?= prefix ?>_rxcui" value="<?= typed_in('_rxcui') ?>">
     <input type="hidden" name="<?= prefix ?>_source" value="<?= typed_in('_source') ?>">
     <input type="hidden" name="<?= prefix ?>_route_ref" value="<?= typed_in('_route_ref') ?>">
@@ -123,6 +114,6 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
   </details>
   <? if explicit then ?></div><? end ?>
   <? if add_button then ?>
-    <p class="pv-actions"><button type="submit" class="pv-btn" name="action" value="<?= add_button ?>"><?= icon('plus-lg') ?> Add this product</button></p>
+    <p class="pv-actions"><button type="submit" class="pv-btn" name="step" value="<?= add_button ?>"><?= icon('plus-lg') ?> Add this product</button></p>
   <? end ?>
 </fieldset>

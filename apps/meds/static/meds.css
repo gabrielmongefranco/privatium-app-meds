@@ -3,7 +3,7 @@
  * apps/meds/static/meds.css
  * Author(s): Gabriel Mongefranco
  * Created: 2026-09-26
- * Last Modified: 2026-10-03
+ * Last Modified: 2026-10-04
  * Summary: Styles for the Prescription Tracker pages, using the shell's accessible color tokens.
  * Notes: See README file for documentation and full license information.
  *
@@ -90,6 +90,8 @@ main form textarea.meds-paste { width: 100%; min-height: 14rem; font-family: ui-
    target of 44 pixels. */
 main form label.meds-option { display: flex; align-items: flex-start; gap: .5rem; min-height: 44px; margin: .25rem 0; padding: .5rem 0; font-weight: 400; }
 main form label.meds-option input { flex: none; margin-top: .2rem; }
+/* A result on another page of the list is hidden; the rule above would keep it in flow. */
+main form label.meds-option[hidden] { display: none; }
 .meds-options { margin: .75rem 0; }
 /* The medication box: a drop-down, a name to type, and the fields of a new medication. */
 .meds-picker details { margin: .5rem 0 0; }

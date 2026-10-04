@@ -58,9 +58,8 @@ view, and must change in the same commit as `schema.sql`.
 | `static/forms.js` | Shows the fields of a new record when **-- Add new --** is chosen. Every form works without it. |
 | `static/filter.js` | Narrows the Medications page as a person types. The server filters the same way on submit. |
 | `static/person_tab.js` | Remembers the person tab chosen last, by id, in local storage. A stopgap until Privatium offers person profiles. |
-| `static/drug_references.js` | Asks RxTerms, then the openFDA NDC Directory, then RxNorm about a name, in the browser; the two scripts below share it |
-| `static/medication_lookup.js` | The lookup of a new medication in the fill and authorization forms |
-| `static/product_search.js` | The product search of the form that tracks a medication: asks `/medications/search` for JSON, pages the results, falls back to the drug references, and suggests similar products while a new medication is typed |
+| `static/drug_references.js` | Asks RxTerms, then the openFDA NDC Directory, then RxNorm about a name, in the browser; the search script uses it |
+| `static/product_search.js` | The product search of every form that needs a product: asks `/medications/search` for JSON, pages the results, falls back to the drug references, and suggests similar products while a new medication is typed |
 | `lib/quick_add.lua` | A person, a pharmacy, a prescriber or a plan that a form adds by name beside its own record |
 | `lib/suggestions.lua` | The values in use that text boxes offer while a person types |
 | `lib/merge.lua` | The plan and the batch of a merge |
@@ -84,9 +83,9 @@ view, and must change in the same commit as `schema.sql`.
 | `GET`, `POST /setup/plans/new`, `/:id/edit`, `/:id/remove`; `GET /setup/plans` | `plans` | Payers and their rules, with removal refused while referenced |
 | `GET /setup/people` | `people` | The family |
 | `GET`, `POST /setup/people/new`, `/:id/edit`, `/:id/remove` | `people` | Add, change, remove |
-| `GET /contacts` | `contacts` | Pharmacies and prescribers |
-| `GET`, `POST /contacts/pharmacies/new`, `/:id/edit`, `/:id/remove` | `contacts` | Add, change, remove |
-| `GET`, `POST /contacts/prescribers/new`, `/:id/edit`, `/:id/remove` | `contacts` | Add, change, remove |
+| `GET /setup/pharmacies`, `GET /setup/prescribers` | `contacts` | The Pharmacies page and the Prescribers page |
+| `GET`, `POST /setup/pharmacies/new`, `/:id/edit`, `/:id/remove` | `contacts` | Add, change, remove |
+| `GET`, `POST /setup/prescribers/new`, `/:id/edit`, `/:id/remove` | `contacts` | Add, change, remove |
 | `GET /setup/catalog` | `catalog` | The catalog, narrowed by `?q=` |
 | `GET /setup/catalog/:id` | `catalog` | One medication with its other names |
 | `GET`, `POST /setup/catalog/new`, `/:id/edit`, `/:id/remove` | `catalog` | Add, change, remove |
@@ -124,10 +123,18 @@ view, and must change in the same commit as `schema.sql`.
 - The person tab chosen last lives in the browser, in `static/person_tab.js`. The server
   never stores it. The script goes when Privatium offers person profiles.
 - A typed name that a record already has picks that record. No form adds a name twice.
-- The product picker of the entry form searches with `product_q` and `action=find_product`,
-  and adds the results that come back checked as `pick_<medication id>=yes`. The browser
-  asks `GET /medications/search?q=` for the same results as JSON. A typed search with
-  nothing checked never saves the form; it comes back with the results.
+- Every form that needs a product shows `views/_product_box.lsp`. The entry form wraps it
+  in `_product_picker.lsp`: a search with `product_q` and `step=find_product`, and the
+  results that come back checked as `pick_<medication id>=yes` are added together. The
+  fill and authorization forms show the box with one radio button per result, named
+  `medication_choice`, which `medication_pick.read` takes as the choice;
+  `medication_pick.searched` says when the form must come back with results instead of
+  saving. The review of pasted fills keeps the explicit `_medication_picker.lsp`. The
+  browser asks `GET /medications/search?q=` for the same results as JSON. A typed search
+  with nothing chosen never saves a form.
+- Submit buttons are named `step`, never `action`: a control named `action` shadows
+  `form.action` in WebKit, and the page frame's script reads that property to post the
+  form (Privatium issue 68).
 - The fields of a new medication carry the route and the form a drug reference gave as
   hints in `_route_ref` and `_dose_form_ref`. The route, form and package type
   drop-downs win over the hints when a person sets them.

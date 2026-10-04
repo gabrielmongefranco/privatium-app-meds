@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 docs/design/README.md
 Author(s): Gabriel Mongefranco
 Created: 2026-09-26
-Last Modified: 2026-10-03
+Last Modified: 2026-10-04
 Summary: Design of the app's screens: tasks, the medication box, adding records from
          inside a form, pasting fills from a portal, the catalog as a copy of a drug
          reference, refill status rules, accessibility and privacy plans, what was
@@ -52,15 +52,15 @@ otherwise.
 | Bring a current medication list to an appointment | Printable medication list |
 | See when a prior authorization ends | Refills, Authorizations |
 | Look up what the household paid | History |
-| Find a pharmacy or prescriber phone number | Contacts |
+| Find a pharmacy or prescriber phone number | Setup, then Prescribers or Pharmacies |
 | Add a person or a medication, or merge two catalog entries | Setup |
 
 A prior authorization is an insurer's approval to cover a medication for a set period.
 
 ### Navigation
 
-The app has six sections. One navigation bar lists them on every page, in this order:
-**Medications**, **Refills**, **History**, **Authorizations**, **Contacts**, **Setup**.
+The app has five sections. One navigation bar lists them on every page, in this order:
+**Medications**, **Refills**, **History**, **Authorizations**, **Setup**.
 The bar marks the current section with `aria-current="page"` and an underline.
 
 Pages that list records for several people show a person filter under the heading. The
@@ -307,12 +307,15 @@ statement may print the generic name, and a person may use an abbreviation. The 
 one catalog entry for the product and any number of other names for it. The catalog is
 the list of products the app knows. It does not say who takes them.
 
-No form sends you to another page to find a product or to add one. Two boxes do the
-work. The form that tracks a medication has the product picker; the fill and
-authorization forms have the older medication box under a drop-down of the tracked
-medications, for a product that nobody tracks yet.
+No form sends you to another page to find a product or to add one. Every form that
+needs a product shows the same box, `views/_product_box.lsp`. The form that tracks a
+medication wraps it in the product picker; the fill and authorization forms show it
+under a drop-down of the tracked medications, for a product that nobody tracks yet, with
+one radio button per result since they take one product. The review of pasted fills
+keeps its explicit box, `views/_medication_picker.lsp`, which lists the candidates for a
+pasted name.
 
-**The product picker**, `views/_product_picker.lsp`, is one section:
+**The product box** is one section:
 
 | Part | What it does |
 |---|---|
@@ -331,14 +334,17 @@ product. A typed search with nothing checked never saves the form, whatever butt
 pressed, so Enter in the search box searches.
 
 The server answers `GET /medications/search?q=` with the same results as JSON for the
-script, and searches itself when the form is sent without one.
+script, and searches itself when the form is sent without one. The submit buttons of
+these forms are named `step`, never `action`: a control named `action` shadows
+`form.action` in WebKit, and the page frame's script reads that property to post the
+form.
 
-**The medication box** of the other forms, `views/_medication_picker.lsp`, has two parts:
+**The explicit box** of the paste review, `views/_medication_picker.lsp`, has two parts:
 
 | Part | What it does |
 |---|---|
-| **Medication name** | A text box that suggests names while you type. It offers every short name and every other name. |
-| **Not in the list? Add a medication to the catalog** | The same fields as the picker, with the lookup in the drug references above them. The app builds the short name. |
+| **Which medication is it?** | The catalog entries that fit the pasted name, one radio button each, with the choices to type a name or to add a new medication. |
+| **Not in the list? Add a medication to the catalog** | The same fields as the product box. The app builds the short name. |
 
 The typed name is compared with the short name, the generic name, the brand name and the
 other names. Capital letters, punctuation and extra spaces do not matter.
@@ -451,19 +457,22 @@ An authorization for a medication that is not on the person's list adds the medi
 to the list, with the status Not started. The Refills page warns about an authorization
 only for a medication on a list.
 
-#### Contacts
+#### Prescribers and Pharmacies
 
-This page lists the prescribers, then the pharmacies. Each entry shows the name, the
-clinic, the phone and fax numbers, the address, the email address, the website and the
-National Provider Identifier (NPI). A phone number is a link that starts a call on a
-phone. A website is a link only when it starts with `http://` or `https://`.
+Two pages under Setup, one for each kind, each with a box of its own on the Setup page.
+Each entry shows the name, the clinic, the phone and fax numbers, the address, the email
+address, the website and the National Provider Identifier (NPI). A phone number is a
+link that starts a call on a phone. A website is a link only when it starts with
+`http://` or `https://`. One page for both kinds was tried first and read as confusing.
 
 #### Setup
 
-This page links to four places, each a box of the launcher list:
+This page links to six places, each a box of the launcher list:
 
 - **Insurance plans**: names, refill overrides and reference-safe removal.
 - **Family**: the household members.
+- **Prescribers**: the prescribers, with their clinics and phone numbers.
+- **Pharmacies**: the pharmacies, with their phone numbers and addresses.
 - **Medication catalog**: every product the household has used, with its other names.
   The starter catalog of common medications loads by itself when the catalog is empty.
 - **Reminder settings**: six reminder day counts and three early refill settings.
@@ -504,7 +513,7 @@ form's own record. A form that is refused adds nothing. A typed name that a reco
 already has picks that record.
 
 A record added this way holds its name only. The rest, such as a phone number, is added
-later under **Contacts** or **Setup**.
+later under **Setup**.
 
 #### Suggestions in text boxes
 
@@ -539,10 +548,10 @@ The catalog gets its entries in three ways.
 | Way | What it adds |
 |---|---|
 | The starter catalog | About 2,507 entries, loaded by the app into an empty catalog |
-| The lookup in a form | One entry at a time, when you add a medication the catalog lacks |
+| The online search in a form | One entry at a time, when you add a medication the catalog lacks |
 | Your own typing | Anything else |
 
-The app loads no catalog of a drug reference. The lookup is for adding a medication, and
+The app loads no catalog of a drug reference. The online search is for adding a medication, and
 it copies only the entry you pick.
 
 **The starter catalog** holds three groups of entries:
@@ -558,13 +567,10 @@ RxTerms is a drug vocabulary of the United States National Library of Medicine, 
 entering prescriptions. [How to build the starter catalog](../how-to/build-the-starter-catalog.md)
 describes the script that writes the file.
 
-**The lookup** sits inside **Not in the list? Add a medication to the catalog**, in the
-medication box of the fill and authorization forms. You type a name and choose **Look
-up**. The app looks in its own catalog first, in the names that the page already holds.
-It shows what it finds, with one more choice: **None of these. Search the drug
-references.** It asks a reference only after that choice, or when the catalog holds
-nothing under the name. The product picker of the form that tracks a medication asks
-the same references through its search box and its **Search online databases** link.
+**The online search** runs from the search box of the product box. The app asks its
+own catalog first, through the server. It asks a drug reference only when the catalog
+holds nothing under the name, or when you choose **Search online databases**. The same
+references answer the search for similar products while a new medication is typed.
 
 The app asks the references in this order, and stops at the first one that finds
 something:
@@ -579,15 +585,14 @@ A reference that limits requests, or takes longer than 8 seconds, counts as not
 answering. You pick one result, and the app fills in the brand name, the generic name and
 the strength. You check them and save the form. Nothing reaches the catalog before that.
 
-The lookup runs in the browser, from `static/medication_lookup.js`, and the product
-search from `static/product_search.js`; both ask the references through
-`static/drug_references.js`. A Tier 1 app has no
+The online search runs in the browser, from `static/product_search.js`, which asks the
+references through `static/drug_references.js`. A Tier 1 app has no
 function that calls a network service, so the node itself never calls one. `app.toml`
 lists the three addresses under `permissions.remote`, and Privatium shows that
-permission when the app is installed. Every form works without the script. The lookup
+permission when the app is installed. Every form works without the script. The online search
 is hidden until the script shows it.
 
-The lookup sends the name you typed into the lookup box to the reference. It sends no
+The online search sends the name you typed into the search box to the reference. It sends no
 other field, no name of a person and no record.
 
 Three columns of the `medication` table record where an entry came from.
@@ -800,7 +805,7 @@ dates, medications, the conditions they treat, prescription numbers and claim nu
   medication.
 - **Logs.** Diagnostic messages hold record ids and counts, never field values.
 - **Starter catalog.** `lib/starter_catalog.lua` holds a starter catalog only, and no person.
-- **Lookup.** The browser sends the name typed into the lookup box to a public drug
+- **Online search.** The browser sends the name typed into the search box to a public drug
   reference, without cookies and without the address of the page. What comes back is
   shown as text, never as markup, and is checked by the server like any typed value.
 - **Real records.** No record of a real household is in this repository. Synthetic data only, in the tests and the pages.
@@ -867,7 +872,7 @@ These design decisions date from 2026-09-27.
 | Household name | Removed. |
 | Starter catalog | The ClinCalc top 200 and a second list of common medications, one entry per strength, plus entries written by hand for glucose monitors and supplies. |
 | Lookup of a new medication | Built, and on for everyone. RxTerms first. The openFDA NDC Directory and RxNorm are asked when RxTerms finds nothing or does not answer. |
-| What the lookup is for | Adding a medication. The app loads no catalog of a reference. |
+| What the online search is for | Adding a medication. The app loads no catalog of a reference. |
 
 ### Build order
 
@@ -886,10 +891,10 @@ Each step ended with a clean `privatium lint`, passing tests and updated documen
     and the review of pasted fills by name. Done.
 12. The manual accessibility checks. **Planned.** [The compliance page](../compliance.md)
     lists them.
-13. The lookup of a new medication in the drug references, and the starter catalog
+13. The online search of the drug references, and the starter catalog
     built from them. Done. See
     [The catalog and the drug references](#the-catalog-and-the-drug-references).
-14. A check of the lookup inside a browser. **Planned.**
+14. A check of the online search inside a browser. **Planned.**
 15. Tracked medications with their products, the search and the Restart button of the
     Medications page, the remembered person tab, and the icons of the dose forms. Done.
 

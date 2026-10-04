@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 docs/compliance.md
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-10-03
+Last Modified: 2026-10-04
 Summary: The security and accessibility controls the app has, the evidence for each, the
          known gaps, and the checks a person still has to make.
 Notes: See README file for documentation and full license information.
@@ -64,7 +64,7 @@ paid. The [data model](data-model.md) marks each such column.
 | Diagnostic messages hold no field values | `page.masked` in `lib/page.lua` | Unit tests |
 | The node calls no network service | The Lua of the app has no function that does | Lint rule PV504 passes. |
 | The browser calls three drug references, and nothing else | `permissions.remote` in `app.toml` lists them. `static/drug_references.js`, which both browser scripts use, names no other address. | Lint rule PV207 passes. |
-| The lookup and the product search send public drug names and product identifiers only | `static/drug_references.js` sends no cookie and no page address | Read in the code. Not measured in a browser. |
+| The online search sends public drug names and product identifiers only | `static/drug_references.js` sends no cookie and no page address | Read in the code. Not measured in a browser. |
 | What a drug reference answers is untrusted | The script writes it with `textContent`. The server checks every field it receives: `lib/catalog_entry.lua`, `lib/reference_words.lua`. | The smoke test sends markup as a source, a route and a dose form, and letters as an identifier. Unit tests cover the words of a reference. |
 
 ### Refill-rule checks, October 1, 2026
@@ -81,8 +81,8 @@ No production data is used by the committed tests.
   explains what the framework protects.
 - Removing a record hides it. The original line stays in the log.
 - Text boxes suggest values that other records hold, such as what a medication is for. Plan drop-downs show recorded payers. Anyone who can open the app can already read those records.
-- A lookup tells the drug reference which name was typed, from which internet address.
-  The reference learns nothing else. The lookup is on for everyone.
+- An online search tells the drug reference which name was typed, from which internet address.
+  The reference learns nothing else. The online search is on for everyone.
 - A browser may keep pages in its history and its cache. On a shared device, close the
   browser after use.
 - A printed medication list is health information on paper.
@@ -113,7 +113,7 @@ forms had labels and no horizontal overflow at 320 pixels or 200 percent scaling
 A synthetic mobile plan form was also checked visually. Plain HTTP forms are covered
 by the smoke test, including the path without client-side scripts.
 
-A screen reader pass remains needed. The live drug lookup and its suggested marks also
+A screen reader pass remains needed. The online search and its suggested marks also
 need an end-user check before relying on them.
 
 ### Checks a person still has to make
@@ -140,7 +140,7 @@ These checks are open:
 9. Check how the screen reader announces the suggestions of a text box. Browsers and
    screen readers differ in their support for the `<datalist>` element. The fields work
    as plain text boxes where the suggestions are not announced.
-10. Look up a medication in a browser, with the keyboard only and with a screen reader.
+10. Search for a product and pick an online result in a browser, with the keyboard only and with a screen reader.
     Check that the status message is announced and that the results can be reached.
 
 Record the date, the browser, the screen reader and the result of each check in this
