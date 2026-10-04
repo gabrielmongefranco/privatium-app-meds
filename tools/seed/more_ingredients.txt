@@ -9,29 +9,46 @@
 #         ingredients separates them with "; ". Text after " = " is the name RxTerms uses,
 #         when it differs. " +salt" at the end keeps the salt that RxNorm names, as in
 #         "Testosterone cypionate", where the salts are different products.
+#         Text after " @ " lists the routes of RxTerms to keep, with commas between them,
+#         as in "Lidocaine @ Topical"; without it every route is kept.
 # Notes: See README file for documentation and full license information.
 #
 # Copyright © 2026 Gabriel Mongefranco
 # Licensed under the GNU General Public License v3.0 or later.
 # See <https://www.gnu.org/licenses/>.
 
+Acarbose
 Albuterol; Ipratropium
 Alprostadil
 Aspirin
+Avanafil
 Azithromycin
 Bismuth subsalicylate
 Budesonide
+Bupropion; Naltrexone
 Carbamide peroxide
 Carboxymethylcellulose
+Cefadroxil
 Cefdinir
+Cefpodoxime
+Cefuroxime
 Cephalexin
 Cetirizine
 Ciprofloxacin
 Ciprofloxacin; Dexamethasone
+Clarithromycin
+Clomiphene
+Dicyclomine
 Diphenhydramine
 Epinephrine
+Erythromycin
+Exenatide
 Fexofenadine
+Follitropin alfa
+Follitropin beta
 Glucagon
+Guanfacine
+Hydrocortisone
 Insulin aspart = Insulin aspart, human
 Insulin glulisine = Insulin analog, glulisine
 Insulin isophane (NPH) = Insulin, human isophane
@@ -39,18 +56,31 @@ Insulin isophane / Insulin regular = Insulin, human mixed
 Insulin regular = Insulin, human regular
 Levalbuterol
 Levofloxacin
+Lidocaine @ Topical
+Lidocaine; Prilocaine
+Liothyronine
+Liraglutide
 Loratadine
+Methimazole
+Minocycline
 Modafinil
 Nandrolone decanoate +salt
 Naproxen
 Ofloxacin
 Olopatadine
 Omalizumab
+Orlistat
+Oxcarbazepine
 Papaverine
+Penicillin V = Penicillin V potassium
+Phentermine; Topiramate
 Polyethylene Glycol 3350
 Polymyxin B; Trimethoprim
+Rizatriptan
 Sildenafil
 Sumatriptan
 Tadalafil
+Tamoxifen
 Testosterone = Testosterone +salt
+Tobramycin
 Vardenafil

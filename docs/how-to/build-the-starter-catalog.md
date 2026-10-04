@@ -32,10 +32,11 @@ Nobody who only uses the app has to do this. The file is part of the repository.
 |---|---|
 | `clincalc_top200.txt` | The 200 drugs most prescribed in the United States in 2024, by ingredient |
 | `clincalc_names_in_rxterms.txt` | The few drugs of that list that RxTerms files under another name |
-| `more_ingredients.txt` | More drugs, by ingredient |
+| `more_ingredients.txt` | More drugs, by ingredient. A line can name the routes to keep, such as the skin products of a drug that is also injected. |
 | `preferred_brands.txt` | The brand a short name shows when a drug has several brands. A brand of this list that no entry names is added with its own products. |
 | `specialty.txt` | Ingredients that suggest specialty handling; check these marks against your payer's rules |
 | `labeled_in_micrograms.txt` | Drugs whose labels print every strength up to 1 mg in micrograms |
+| `labeled_in_units.txt` | Drugs whose labels print every strength in international units, such as the vitamins D, and how many units a milligram is |
 | `supplies.txt` | Syringes and needles, by family. The script makes one entry for each volume, gauge and length. |
 | `by_hand.jsonl` | Entries written by hand: the first catalog of the project, and products that no drug reference holds, such as continuous glucose monitors |
 
@@ -54,7 +55,7 @@ in `specialty.txt`. Coverage differs by payer, so these are suggestions. Change 
 mark in the catalog. The browser lookup uses the same name rules and checks the
 controlled mark with an openFDA request by the chosen product's identifier.
 
-The catalog currently has 231 controlled products and 22 specialty suggestions.
+The catalog currently has 238 controlled products and 29 specialty suggestions.
 
 ### What you need
 
@@ -82,7 +83,7 @@ The catalog currently has 231 controlled products and 22 specialty suggestions.
    does not hold:
 
    ```text
-   build_seed: 61 entries written by hand, 229 syringes and needles, 2217 entries from RxTerms, 454 brand names as other names
+   build_seed: 69 entries written by hand, 229 syringes and needles, 2458 entries from RxTerms, 530 brand names as other names
    ```
 
 4. Run the checks in [How to run the tests](run-the-tests.md). The smoke test opens the
@@ -98,8 +99,12 @@ The catalog currently has 231 controlled products and 22 specialty suggestions.
 4. It puts a strength below 1 mg into the unit of the label. It reads the labels that
    makers filed with openFDA for the same product and the same amount, and uses
    micrograms when most of them print micrograms. A drug on the list of drugs labeled in
-   micrograms needs no count.
-5. It adds the products of every preferred brand that no entry names yet.
+   micrograms needs no count. A drug on the list of drugs labeled in units has its
+   milligrams turned into units, so a vitamin reads `1000 units` and not `0.025 mg`.
+5. It asks RxTerms for the products of every preferred brand. A brand can have products
+   that the lists of ingredients do not reach: a brand filed under a salt, a strength
+   that only the brand comes in, or a pack. A branded product whose generic product is
+   in already is left out, and so is a brand that an entry written by hand names.
 6. For an injection or a nasal product, it reads the cartons on the labels of openFDA.
    It makes one entry for each size of carton, and shows the strength of one device
    where the label prints it so.
@@ -107,7 +112,10 @@ The catalog currently has 231 controlled products and 22 specialty suggestions.
    name, the generic name in brackets, the strength, and the release form when the
    product has one, such as `Metformin 500 mg 24 HR XR` or `Naprosyn (Naproxen) 500 mg DR`.
    A tablet that lets its drug go over a day, or after the stomach, is another product
-   than the plain tablet, so the two never share a name.
+   than the plain tablet, so the two never share a name. A pack, such as a cycle of
+   birth control or a course of tablets, has no strength of its own. Its name holds the
+   drugs in it and the count of tablets, such as `Yasmin (Drospirenone / Ethinyl
+   estradiol) Pack of 28`.
 8. It leaves out a product that an entry written by hand already covers, and gives that
    entry the number of the product. The entry written by hand must name the release
    form too, or it covers the plain product only.
