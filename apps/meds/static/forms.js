@@ -2,7 +2,7 @@
 // apps/meds/static/forms.js
 // Author(s): Gabriel Mongefranco
 // Created: 2026-09-27
-// Last Modified: 2026-09-27
+// Last Modified: 2026-10-05
 // Summary: Shows the fields that add a new record only after a person chooses to add one.
 //          Every form works without this file; the fields are then always there.
 // Notes: See README file for documentation and full license information.
@@ -22,7 +22,7 @@
 (function () {
   'use strict';
 
-  // A page can load this file more than once. The second copy does nothing.
+  // The frame loads this file once in the head; a second copy does nothing.
   if (window.medsFormsLoaded) { return; }
   window.medsFormsLoaded = true;
 
@@ -97,10 +97,7 @@
     if (control && control.form && control.name) { arrange(control.form, control.name); }
   });
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', arrangeAll);
-  } else {
-    arrangeAll();
-  }
-  document.addEventListener('htmx:afterSwap', arrangeAll);
+  // The frame fires this for the first page and for every page or fragment swapped in
+  // after it. Arranging only sets values and hides parts, so running it again is harmless.
+  document.addEventListener('htmx:load', arrangeAll);
 }());
