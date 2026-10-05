@@ -3,10 +3,11 @@ This file is part of Prescription Tracker
 apps/meds/views/_field.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-09-27
+Last Modified: 2026-10-05
 Summary: One labeled field of a form, with its help text, its problem, and the values
          it suggests while a person types. Values are escaped by the output tag, so
-         typed markup is shown and never run.
+         typed markup is shown and never run. A field that is not required is marked
+         optional unless optional_mark is false, for a box that always holds a value.
 Notes: See README file for documentation and full license information.
 
 Copyright © 2026 Gabriel Mongefranco
@@ -32,7 +33,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
   -- Values already in use, offered while a person types. The field accepts any text.
   local offered = suggestions or {}
 ?>
-<label for="f-<?= name ?>"><?= label ?><? if not required then ?> <span class="meds-optional">(optional)</span><? end ?></label>
+<label for="f-<?= name ?>"><?= label ?><? if not required and optional_mark ~= false then ?> <span class="meds-optional">(optional)</span><? end ?></label>
 <input id="f-<?= name ?>" name="<?= name ?>" type="<?= input_type or 'text' ?>" value="<?= value ?>"
        autocomplete="off"
        <? if maxlength then ?>maxlength="<?= maxlength ?>"<? end ?>

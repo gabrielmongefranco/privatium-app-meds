@@ -2,7 +2,7 @@
 -- apps/meds/lib/routes/home.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-10-03
+-- Last Modified: 2026-10-05
 -- Summary: The home page, which is the Refills page once the household has people, and
 --          the household name and the reminder settings, which share the one profile row.
 -- Notes: See README file for documentation and full license information.
@@ -48,6 +48,9 @@ local SETTINGS = {
   { name = 'early_fill_percent', label = 'the early fill percent', max = 100 },
   { name = 'supply_frame_days', label = 'the supply frame days', max = 3650 },
   { name = 'controlled_early_days', label = 'the controlled days early' },
+  { name = 'backup_percent', label = 'the backup supply percent', max = 100 },
+  { name = 'backup_min_days', label = 'the smallest backup supply' },
+  { name = 'specialty_backup_min_days', label = 'the smallest backup supply, specialty' },
 }
 
 -- The reminder settings of this node. At most one row exists, and none until the
@@ -57,7 +60,8 @@ local function profile()
     SELECT id, due_within_days, due_soon_within_days,
            specialty_due_within_days, specialty_due_soon_within_days,
            authorization_notice_days, authorization_due_within_days,
-           early_fill_percent, supply_frame_days, controlled_early_days
+           early_fill_percent, supply_frame_days, controlled_early_days,
+           backup_percent, backup_min_days, specialty_backup_min_days
       FROM profile
      LIMIT 1]])
 end
@@ -67,7 +71,8 @@ local function defaults()
   return pv.query1([[
     SELECT due_within_days, due_soon_within_days, specialty_due_within_days,
            specialty_due_soon_within_days, authorization_notice_days,
-           authorization_due_within_days, early_fill_percent, supply_frame_days, controlled_early_days
+           authorization_due_within_days, early_fill_percent, supply_frame_days, controlled_early_days,
+           backup_percent, backup_min_days, specialty_backup_min_days
       FROM v_reminder_default]])
 end
 
@@ -156,17 +161,21 @@ end)
 
 --- Reminder settings ---
 
+-- Every box shows the number in force: what was typed or saved, or else the default.
+-- A refused form shows back exactly what was typed, so a typing mistake stays visible.
 local function reminders_page(typed, errors)
+  local default, shown, names = defaults(), {}, {}
+  for _, count in ipairs(SETTINGS) do
+    local value = typed[count.name]
+    if value == nil or value == '' then value = default[count.name] end
+    shown[count.name] = value
+    names[#names + 1] = count.name
+  end
   return pv.render('reminders', {
     section  = 'setup',
-    typed    = typed,
+    typed    = shown,
     errors   = errors,
-    problems = page.problems(errors, {
-      'due_within_days', 'due_soon_within_days', 'specialty_due_within_days',
-      'specialty_due_soon_within_days', 'authorization_due_within_days',
-      'authorization_notice_days', 'early_fill_percent', 'supply_frame_days', 'controlled_early_days',
-    }),
-    defaults = defaults(),
+    problems = page.problems(errors, names),
   })
 end
 
@@ -203,6 +212,11 @@ pv.post('/setup/reminders', function(req)
   end
 
   if next(errors) then return reminders_page(req.form, errors) end
+
+  -- A cleared box saves the default, so the stored settings always hold the numbers shown.
+  for _, count in ipairs(SETTINGS) do
+    if row[count.name] == nil then row[count.name] = default[count.name] end
+  end
 
   -- Reusing the id of the stored row makes this an amendment, so the node never holds
   -- a second row of settings.
