@@ -2,7 +2,7 @@
 -- apps/meds/lib/entries.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-10-03
+-- Last Modified: 2026-10-05
 -- Summary: Reads what people track: each tracked medication with its products, its refill
 --          dates, its refill status in words, its group on the Refills page, and the text
 --          the search of the Medications page looks through.
@@ -28,6 +28,7 @@ local form_icon = require 'form_icon'
 local refill    = require 'refill'
 local text      = require 'text'
 local validate  = require 'validate'
+local when_icon = require 'when_icon'
 
 local entries = {}
 
@@ -78,7 +79,8 @@ local function names_of(person_id)
      WHERE ?1 = '' OR tp.person_id = ?1]], { person_id })
 end
 
--- Attaches the products, the icon of the first product and the search text to rows.
+-- Attaches the products, the icons of the first product and of the time of day, and
+-- the search text to rows.
 local function with_products(rows, person_id)
   local by_id = {}
   for _, row in ipairs(rows) do
@@ -97,6 +99,7 @@ local function with_products(rows, person_id)
     local first = row.products[1] or {}
     row.product_name = first.short_name
     row.form_icon, row.form_label = form_icon.of(first.form, first.route, first.package_type)
+    row.when_icons = when_icon.of(row.when_to_take)
     -- The search looks through the preferred name, the person, the prescriber, and
     -- every name of every product. Spaces around the key let a word match whole.
     local parts = { row.medication_name or '', row.person_name or '' }
@@ -112,7 +115,8 @@ end
 -- @param person_id string  The id of one person, or '' for everyone.
 -- @return table  Grain: one row per person_medication row, ordered by person and then
 --         by preferred name. Each row carries `products`, the icon of its first
---         product as `form_icon` and `form_label`, and `search_key`.
+--         product as `form_icon` and `form_label`, the icons of its time of day as
+--         `when_icons`, and `search_key`.
 function entries.list(person_id)
   local rows = pv.query([[
     SELECT pm.id, pm.person_id, pm.display_name AS medication_name, pm.medication_type,

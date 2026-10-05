@@ -46,7 +46,7 @@ approval is about to end.
 
 ### Find your way around
 
-![The Medications page. A dark bar at the top holds the Privatium logo, the title Prescription Tracker, an Apps link and a Menu button. Below it are five tabs: Medications, Refills, History, Authorizations and Setup. The page lists each family member's medicines with how to take them, the prescriber and the refill status.](images/medications.png)
+![The Medications page. A dark bar at the top holds the Privatium logo, the title Prescription Tracker, an Apps link and a Menu button. Below it are five tabs: Medications, Refills, History, Authorizations and Setup. The page lists each family member's medicines with how to take them, the prescriber and the refill status. A small icon stands before each time of day, such as a clock for Anytime and a moon for Night - At Bedtime.](images/medications.png)
 
 The dark bar at the top belongs to Privatium, the program that runs this app.
 
@@ -134,7 +134,7 @@ your pharmacy says so.
 
 ### Change or stop a medicine
 
-![The page for one medicine, Lipitor (Atorvastatin) 40 mg, taken by Alex Example. It has buttons for Record fill, Change and Remove, a status drop-down, and boxes for how to take it, refills, who to call, prior authorizations, fill history and products.](images/medication-page.png)
+![The page for one medicine, Lipitor (Atorvastatin) 40 mg, taken by Alex Example. It has buttons for Record fill, Change and Remove, a status drop-down, and boxes for how to take it, refills, who to call, prior authorizations, fill history and products. The When line shows a moon icon before Night - At Bedtime.](images/medication-page.png)
 
 Choose a medicine on the Medications page to open its own page. It shows how to take
 it, its refill dates, who to call, its insurance approvals, every fill and the products
@@ -151,6 +151,10 @@ To find a medicine quickly, type in **Search the list** on the Medications page.
 list narrows as you type. It matches the name, the products, the prescriber and the
 person.
 
+A small picture stands beside the time of day, so you can spot it at a glance. For
+example, a sunrise means **Morning**, a moon means **Night** and a fried egg means **With
+Meals**. A time you typed yourself shows the words alone.
+
 | Status | Use it when |
 |---|---|
 | Taking regularly | The person takes it on a schedule. It gets refill reminders. |
@@ -158,6 +162,11 @@ person.
 | On hold | A doctor paused it. |
 | Not started | It is prescribed, but the person hasn't begun it. |
 | No longer taking | The person stopped. The history stays. |
+
+**A new fill brings a medicine back.** Say you record a fill for a medicine that is **Not
+started** or **No longer taking**. If that fill still lasts today, the medicine moves to
+**Taking regularly**. If you don't know the days supply, the app counts 30 days. An
+older fill, added just for your records, leaves the status as it is.
 
 ### See what needs a refill
 
@@ -232,7 +241,7 @@ it. Nothing is added until you check it.
 5. Check the review page, described below.
 6. Choose **Add fills**.
 
-![The review page, titled Check the fills. A summary says 2 fills found, 1 ready to add and 1 name new to the app. For the portal name OMEPRAZOLE 20 MG DR CAPSULE, the page lists the closest catalog products to choose from. Below, a new pharmacy is offered to add, and the first fill is marked Already recorded.](images/copy-refill-history-review.png)
+![The review page, titled Check the fills. A summary says 2 fills found, 1 ready to add and 1 name new to the app. For the portal name OMEPRAZOLE 20 MG DR CAPSULE, the page lists the closest catalog products to choose from, then a status drop-down set to Taking regularly. Below, a new pharmacy is offered to add, and the first fill is marked Already recorded.](images/copy-refill-history-review.png)
 
 The review page asks about each medicine name and each pharmacy only once, however many
 fills use it.
@@ -249,6 +258,12 @@ TABLET". For each name, the page shows what the app found:
 
 You can always pick a different medicine instead. The app then remembers the portal's
 name for that medicine, so next time it is a known name.
+
+**Status.** Each medicine also has a drop-down named **Status of ... after these fills
+are added**. It starts at **Taking regularly**, because pasted fills usually mean the
+person takes the medicine. A medicine that is **Taking as needed** or **On hold** keeps
+its status instead. If you are only copying old fills for your records, pick the status
+the medicine should keep, such as **No longer taking**.
 
 **Pharmacies.** The app matches a pharmacy by its number or its name. For a new one, it
 offers to add it with the address and phone number from the portal.

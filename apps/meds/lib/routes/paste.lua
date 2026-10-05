@@ -2,7 +2,7 @@
 -- apps/meds/lib/routes/paste.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-10-03
+-- Last Modified: 2026-10-05
 -- Summary: The screens that turn the pasted text of a portal page into fills: paste, review,
 --          add. The text is untrusted; it is read again and checked again before anything is saved.
 -- Notes: See README file for documentation and full license information.
@@ -34,6 +34,7 @@ local quick_add         = require 'quick_add'
 local store             = require 'store'
 local suggestions       = require 'suggestions'
 local catalog_entry     = require 'catalog_entry'
+local choices           = require 'choices'
 local starter           = require 'starter'
 local text              = require 'text'
 local validate          = require 'validate'
@@ -44,6 +45,7 @@ local PASTE           = '/fills/paste'
 local PASTED_MAX      = 60000   -- Bytes. A Tier 1 request holds 64 KiB, and the form adds a little.
 local SUGGESTIONS_MAX = 8       -- Medications offered for a name that is not known yet
 local NEW_PHARMACY    = 'new'   -- The choice that adds the pharmacy from the pasted details
+local STATUS_OF_FILLED = 'taking_regularly'   -- The status chosen to begin with for a medication the fills bring back
 local NAME_MAX, ADDRESS_MAX, PHONE_MAX, ALIAS_MAX = 120, 200, 40, 200
 
 --- Reads ---
@@ -206,6 +208,27 @@ local function leave_out_repeated(rows, medications, medication_by, person_id, t
   end
 end
 
+-- The status each medication of a paste has after its fills are added. Pasted fills
+-- usually mean the medication is taken, so the choice begins at Taking regularly for a
+-- medication that is new to the person, not started or no longer taken. A medication
+-- that is taken as needed or on hold keeps its status to begin with. After that, the
+-- choice is the person's own; a value that is not a status is ignored.
+local function statuses_of(medications, person_id, typed, submitted)
+  for _, subject in ipairs(medications) do
+    subject.status_field = subject.prefix .. '_status'
+    if not submitted then
+      local id = medication_of(subject, typed, submitted)
+      local entry = id and entries.with_product(person_id, id)
+      local stored = entry and pv.get_row('person_medication', entry.id)
+      local now = stored and stored.status
+      local kept = now ~= nil and now ~= 'not_started' and now ~= 'not_taking'
+      typed[subject.status_field] = kept and now or STATUS_OF_FILLED
+    end
+    local chosen = text.clean(typed[subject.status_field])
+    subject.status = choices.status_label(chosen) and chosen or nil
+  end
+end
+
 -- The key of the pharmacy of a claim: its identifier, or its name.
 local function pharmacy_key(claim)
   return claim.pharmacy_npi or text.key(claim.pharmacy_name)
@@ -295,6 +318,7 @@ local function review(claims, person_id, typed, submitted)
   local known = pharmacies()
   local medications, medication_by = medications_of(claims, rows, person_id, typed, submitted)
   leave_out_repeated(rows, medications, medication_by, person_id, typed, submitted)
+  statuses_of(medications, person_id, typed, submitted)
   local pharmacy_list, pharmacy_by = pharmacies_of(claims, rows, typed, submitted, known)
   for _, row in ipairs(rows) do
     if row.can_add then
@@ -322,6 +346,7 @@ local function review_page(found, person, pasted, typed, err)
     plan_name = plan and plan.name,
     section = 'history', found = found, person = person, pasted = pasted, typed = typed,
     err = err, new_pharmacy = NEW_PHARMACY, names = suggestions.medication_names(),
+    statuses = choices.STATUSES,
     catalog_options = catalog_entry.options(),
     summary = page.counted(#found.rows, 'fill', 'fills') .. ' found. ' .. ready .. ' ready to add. '
       .. page.counted(asked, 'name is', 'names are') .. ' new to the app.',
@@ -430,21 +455,22 @@ pv.post(PASTE .. '/add', function(req)
       end
     end
 
-    local rows = {}
+    local rows, statuses = {}, {}
     for _, row in ipairs(wanted) do
       local subject = row.medication
       row.fill.medication_id, row.fill.pharmacy_id = subject.id, row.pharmacy.id
       if subject.entry then
         row.fill.person_medication_id = subject.entry.id
+        statuses[subject.entry.id] = subject.status
       else
         row.fill.new_entry = {
           person_id = person_id, medication_id = subject.id, display_name = subject.full_name,
-          status = 'taking_regularly', pharmacy_id = row.pharmacy.id,
+          status = subject.status or STATUS_OF_FILLED, pharmacy_id = row.pharmacy.id,
         }
       end
       rows[#rows + 1] = row.fill
     end
-    fills.add_all(tx, rows, nil)
+    fills.add_all(tx, rows, nil, statuses)
   end)
   if not saved then
     return paste_page(req.form, 'The app could not add the fills. Read the text again and check each row.')

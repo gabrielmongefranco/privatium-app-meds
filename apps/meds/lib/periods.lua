@@ -21,12 +21,13 @@
 -- You should have received a copy of the GNU General Public License along
 -- with this program. If not, see <https://www.gnu.org/licenses/>.
 
+local clock = require 'clock'
+
 local periods = {}
 
 --- Configuration ---
 local WEEK_STARTS_ON = 1    -- os.date's weekday number: 1 is Sunday, as on US calendars
 local RECENT_DAYS    = 90   -- "Last 90 days" is today and the 89 days before it
-local SECONDS_A_DAY  = 24 * 60 * 60
 
 -- The periods that move with today, in the order the drop-down lists them.
 local NAMED = {
@@ -39,18 +40,10 @@ local NAMED = {
 
 --- Dates ---
 
--- Noon keeps a shift by whole days clear of the hour that daylight saving adds or removes.
-local function time_of(date)
-  local year, month, day = date:match('^(%d%d%d%d)-(%d%d)-(%d%d)$')
-  return os.time({ year = tonumber(year), month = tonumber(month), day = tonumber(day), hour = 12 })
-end
-
-local function date_of(time) return os.date('%Y-%m-%d', time) end
-
-local function shifted(date, days) return date_of(time_of(date) + days * SECONDS_A_DAY) end
+local shifted = clock.add_days
 
 local function week_start(today)
-  local weekday = os.date('*t', time_of(today)).wday
+  local weekday = clock.weekday(today)
   return shifted(today, -((weekday - WEEK_STARTS_ON) % 7))
 end
 

@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/views/_entries_table.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-10-03
+Last Modified: 2026-10-05
 Summary: A table of tracked medications, one row for each medication of each person, with the
          text the search looks through on each row and a Restart button for one no longer taken.
 Notes: See README file for documentation and full license information.
@@ -45,7 +45,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
       <td role="cell"><span class="pv-cell-label" aria-hidden="true">Person</span><?= row.person_name ?></td>
       <td role="cell"><span class="pv-cell-label" aria-hidden="true">How to take it</span>
         <?= row.instructions or 'Not given' ?>
-        <? if row.when_to_take then ?><span class="pv-meta meds-line"><?= row.when_to_take ?></span><? end ?></td>
+        <? if row.when_to_take then ?><span class="pv-meta meds-line"><?= render('_when_to_take', { when_to_take = row.when_to_take, icons = row.when_icons }) ?></span><? end ?></td>
       <td role="cell"><span class="pv-cell-label" aria-hidden="true">Prescriber</span><?= row.prescriber_name or 'Self-prescribed' ?></td>
       <td role="cell"><span class="pv-cell-label" aria-hidden="true">Refill</span>
         <? if row.status == 'not_taking' then ?>

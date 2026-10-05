@@ -49,7 +49,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 <h2>How to take it</h2>
 <div class="pv-card"><dl>
   <dt>Instructions</dt><dd><?= entry.instructions or 'Not given' ?></dd>
-  <dt>When</dt><dd><?= entry.when_to_take or 'Not given' ?></dd>
+  <dt>When</dt><dd><? if entry.when_to_take then ?><?= render('_when_to_take', { when_to_take = entry.when_to_take, icons = entry.when_icons }) ?><? else ?>Not given<? end ?></dd>
   <dt>Reason</dt><dd><?= entry.prescribed_for or 'Not given' ?></dd>
   <? if entry.notes then ?><dt>Notes</dt><dd class="meds-notes-text"><?= entry.notes ?></dd><? end ?>
   <? if entry.medication_type then ?><dt>Type</dt><dd><?= entry.medication_type ?></dd><? end ?>
@@ -142,7 +142,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 <? end ?>
 
 <h2>Products</h2>
-<p class="pv-help">The products this medication comes as. A fill of any of them counts here.</p>
+<p class="pv-help">These are the products the pharmacy may give you for this medication, such as different package sizes. A fill of any of them counts as a fill of this medication.</p>
 <? if #products == 0 then ?>
   <p class="pv-empty">No product yet. Choose <strong>Change</strong> to add one.</p>
 <? else ?>

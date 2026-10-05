@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/views/fill_form.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-10-04
+Last Modified: 2026-10-05
 Summary: The form that records a fill or changes one. A new fill starts with the values of
          the last fill of the same tracked medication, all of them visible.
 Notes: See README file for documentation and full license information.
@@ -64,7 +64,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
         <?= render('_product_box', { prefix = 'medication', typed = typed, pick = pick, single = true,
               legend = 'Product', err = errors.medication_id, catalog_options = catalog_options,
               search_url = search_url }) ?>
-        <p class="pv-help">If this person does not track this medication yet, it is added to their list.</p>
+        <p class="pv-help">If this person does not track this medication yet, it is added to their list as Taking regularly.</p>
       </div>
     </fieldset>
   <? end ?>
@@ -105,6 +105,11 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
           maxlength = 500, help = 'Anything worth remembering about this fill.' }) ?>
   </details>
 
+  <? if is_new then ?>
+    <p class="pv-help">A medication that was not started, or no longer taken, moves to
+       Taking regularly when this fill still lasts today. An older fill leaves its status
+       as it is.</p>
+  <? end ?>
   <p class="pv-actions">
     <button type="submit" class="pv-btn pv-btn-primary"><?= icon('check-lg') ?> Save the fill</button>
     <a class="pv-btn" href="<?= url('/refills') ?>">Cancel</a>

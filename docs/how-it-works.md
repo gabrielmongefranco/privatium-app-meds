@@ -109,6 +109,10 @@ Only medicines with the status **Taking regularly** raise refill reminders. Medi
 taken as needed, on hold or not started still show their dates, but quietly, further
 down the page.
 
+A new fill can bring a medicine back. If the medicine was **Not started** or **No longer
+taking**, and the fill still lasts today, its status becomes **Taking regularly**. An
+old fill, added for the record, changes nothing.
+
 | Status on the Refills page | When |
 |---|---|
 | Overdue | The recorded medicine has run out. |
