@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/views/_medication_names.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-10-04
+Last Modified: 2026-10-05
 Summary: The names that every medication box on a page suggests while a person types.
 Notes: See README file for documentation and full license information.
 
@@ -27,5 +27,3 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
     <option value="<?= entry.value ?>"<? if entry.label ~= entry.value then ?> label="<?= entry.label ?>"<? end ?> data-id="<?= entry.medication_id ?>"></option>
   <? end ?>
 </datalist>
-<script src="<?= url('/static/drug_references.js') ?>" defer></script>
-<script src="<?= url('/static/product_search.js') ?>" defer></script>
