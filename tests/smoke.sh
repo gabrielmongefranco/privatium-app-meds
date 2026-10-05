@@ -1013,6 +1013,19 @@ expect_text "the restarted medication is taken regularly" '"status":"taking_regu
 expect_status "medications page after the restart" 200 "$(get "/medications?person=$alex&notice=saved")"
 expect_text "one medication stays stopped" "No longer taking (1)"
 
+# A fill brings a stopped medication back, but only while its supply lasts.
+expect_status "the medication is stopped again" 303 "$(post /setup/people/new "/medications/$norvasc/status" 'status=not_taking')"
+expect_status "an old fill of a stopped medication is saved" 303 "$(post /fills/new /fills/new \
+  "entry_id=$norvasc" "pharmacy_id=$pharmacy" "filled_on=$(day '-200 days')" 'days_supply=30' "plan_id=$plan_a")"
+curl -s -m 10 "$APP/api/row/person_medication/$norvasc" >"$BODY"
+expect_text "an old fill leaves the medication stopped" '"status":"not_taking"'
+expect_status "a fill that still lasts is saved" 303 "$(post /fills/new /fills/new \
+  "entry_id=$norvasc" "pharmacy_id=$pharmacy" "filled_on=$(day '-5 days')" 'days_supply=30' "plan_id=$plan_a")"
+curl -s -m 10 "$APP/api/row/person_medication/$norvasc" >"$BODY"
+expect_text "a fill that still lasts brings the medication back" '"status":"taking_regularly"'
+expect_status "the new fill form" 200 "$(get /fills/new)"
+expect_text "the fill form explains the status rule" "moves to"
+
 ### Prior Authorizations ###
 expect_status "authorizations page" 200 "$(get /authorizations)"
 expect_status "the authorization form" 200 "$(get "/authorizations/new?entry=$entry")"
@@ -1233,6 +1246,10 @@ expect_text "a pharmacy that is known says so" "Known pharmacy"
 expect_text "a pharmacy that is not known can be added" "Add SAMPLE DRUGS, with the address and phone number that were pasted"
 expect_text "a fill that was not paid starts unmarked" 'name="include_4" type="checkbox" value="yes">'
 expect_text "a fill that is ready starts marked" 'name="include_1" type="checkbox" value="yes" checked>'
+expect_flat_text "a pasted medication starts as Taking regularly" \
+  'name="medication_4_status" aria-describedby="status-help"> <option value="taking_regularly" selected>'
+expect_flat_text "a medication taken regularly keeps its status" \
+  'name="medication_1_status" aria-describedby="status-help"> <option value="taking_regularly" selected>'
 
 fills_before="$(count_of fill)"; names_before="$(count_of medication_alias)"; pharmacies_before="$(count_of pharmacy)"
 medications_before="$(count_of medication)"
@@ -1255,7 +1272,8 @@ expect_status "the fills are added" 303 "$(post /fills/paste /fills/paste/add "p
   'include_1=yes' "medication_1_choice=$prinivil" \
   'medication_2_choice=new' 'medication_2_generic=Never Added' \
   'include_3=yes' "medication_3_choice=$prinivil" \
-  'include_4=yes' "medication_4_choice=$lipitor" 'pharmacy_4=new')"
+  'include_4=yes' "medication_4_choice=$lipitor" 'pharmacy_4=new' \
+  'medication_1_status=cured' 'medication_4_status=taking_regularly')"
 expect_status "only the fills that can be added are added" "$((fills_before + 2))" "$(count_of fill)"
 expect_status "the names of the portal are remembered" "$((names_before + 2))" "$(count_of medication_alias)"
 expect_status "the new pharmacy is added once" "$((pharmacies_before + 1))" "$(count_of pharmacy)"
@@ -1314,7 +1332,10 @@ RX NUMBER
 
 DAYS SUPPLY
 30"
+expect_status "a medication is stopped before a paste" 303 "$(post /setup/people/new "/medications/$entry/status" 'status=not_taking')"
 expect_status "a later page is read" 200 "$(post /fills/paste /fills/paste/read "person_id=$alex" "pasted=$later")"
+expect_flat_text "a stopped medication starts as Taking regularly" \
+  'name="medication_1_status" aria-describedby="status-help"> <option value="taking_regularly" selected>'
 expect_text "a fill with a known name and pharmacy is ready" "3 fills found. 2 ready to add. 1 name is new to the app."
 expect_text "a claim that was not paid says so" "Not paid"
 expect_text "a claim that was not paid names its status" "Reversed"
@@ -1326,11 +1347,16 @@ expect_text "the new name is taken apart" 'name="medication_3_generic" data-look
 medications_before="$(count_of medication)"; names_before="$(count_of medication_alias)"
 expect_status "a fill with a new medication is added" 303 "$(post /fills/paste /fills/paste/add \
   "person_id=$alex" "pasted=$later" 'include_1=yes' 'include_3=yes' 'medication_3_choice=new' \
-  'medication_3_brand=Pastedol ER' 'medication_3_generic=Pastedoline' 'medication_3_strength=7.5 mg')"
+  'medication_3_brand=Pastedol ER' 'medication_3_generic=Pastedoline' 'medication_3_strength=7.5 mg' \
+  'medication_1_status=taking_regularly' 'medication_3_status=taking_as_needed')"
 expect_status "the new medication is in the catalog" "$((medications_before + 1))" "$(count_of medication)"
 expect_status "the name of the portal belongs to it" "$((names_before + 1))" "$(count_of medication_alias)"
 curl -s -m 10 "$APP/api/q/v_active_medication" >"$BODY"
 expect_text "the new medication is on the list under its full name" '"medication_name":"Pastedoline (Pastedol ER) 7.5 mg"'
+curl -s -m 10 "$APP/api/row/person_medication/$(entry_of Pastedoline)" >"$BODY"
+expect_text "a new medication gets the status chosen on the review" '"status":"taking_as_needed"'
+curl -s -m 10 "$APP/api/row/person_medication/$entry" >"$BODY"
+expect_text "the status chosen on the review brings a medication back" '"status":"taking_regularly"'
 
 # A prescription number that an earlier fill has names the medication, however the
 # portal writes the number and the name.
@@ -1441,6 +1467,21 @@ DAYS SUPPLY
 done
 expect_status "a page with 60 names is read" 200 "$(post /fills/paste /fills/paste/read "person_id=$alex" "pasted=$many")"
 expect_text "every fill of the long page is found" "60 fills found."
+
+### Time Of Day ###
+# A time of day of the starter list shows its icons before the words; a time the
+# household typed itself shows the words alone.
+expect_status "medications with a starter time and a typed time are recorded" 200 "$(curl -s -m 10 -o /dev/null -w '%{http_code}' \
+  -H 'Content-Type: application/json' \
+  -d "{\"events\":[{\"op\":\"put\",\"tbl\":\"person_medication\",\"id\":\"01J8MEDS0000000000TEST0020\",\"d\":{\"person_id\":\"$alex\",\"display_name\":\"Twice a day\",\"status\":\"taking_regularly\",\"when_to_take\":\"Morning and Evening\",\"refills_left\":0}},{\"op\":\"put\",\"tbl\":\"person_medication\",\"id\":\"01J8MEDS0000000000TEST0021\",\"d\":{\"person_id\":\"$alex\",\"display_name\":\"Every other day\",\"status\":\"taking_regularly\",\"when_to_take\":\"Every other day at noon\",\"refills_left\":0}}]}" \
+  "$APP/api/events")"
+expect_status "the medication page with a time of day" 200 "$(get /medications/01J8MEDS0000000000TEST0020)"
+if flat_body | grep -qE '<dt>When</dt><dd><svg [^>]*aria-hidden="true"[^>]*>.*</svg> <svg [^>]*aria-hidden="true"[^>]*>.*</svg> Morning and Evening</dd>'; then
+  pass; else fail "the When row shows two hidden icons before the words"; fi
+expect_status "the medications page with a time of day" 200 "$(get "/medications?person=$alex")"
+if flat_body | grep -qE '<span class="pv-meta meds-line"><svg [^>]*aria-hidden="true"[^>]*>.*</svg> <svg [^>]*>.*</svg> Morning and Evening</span>'; then
+  pass; else fail "the list shows the icons before the time of day"; fi
+expect_flat_text "a time of the household shows no icon" '<span class="pv-meta meds-line">Every other day at noon</span>'
 
 ### Setup ###
 expect_status "setup page" 200 "$(get /setup)"

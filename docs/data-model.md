@@ -316,6 +316,13 @@ The refill rules depend on the status, so the five values are fixed in the schem
 | `not_started` | Not started |
 | `not_taking` | No longer taking |
 
+A new fill can change the status. When a fill is added to a medication that is
+`not_started` or `not_taking`, the status becomes `taking_regularly` if `filled_on` plus
+`days_supply` (30 days when it is missing) is today or later. The rule is
+`refill.status_after_fill`, applied in `fills.add_all`. On the paste review, the person
+picks the status for each medication instead. It starts at `taking_regularly` unless the
+medication is `taking_as_needed` or `on_hold`.
+
 ### Choices
 
 Five columns hold a choice as plain text: `route`, `form`, `package_type`,

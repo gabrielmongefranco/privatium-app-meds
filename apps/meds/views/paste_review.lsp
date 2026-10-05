@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/views/paste_review.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-10-03
+Last Modified: 2026-10-05
 Summary: The review of pasted fills: what was read, what it matched, and what will be added.
          Every value from the text is escaped by the output tag.
 Notes: See README file for documentation and full license information.
@@ -45,12 +45,21 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
   <? end ?>
   <p>The portal writes each name its own way. Tell the app once which medication a name
      means, and the app remembers it for the next paste.</p>
+  <p id="status-help" class="pv-help">Each medication is set to Taking regularly to begin
+     with, unless it is taken as needed or on hold. Change the status if the fills are
+     only for your records.</p>
   <? for _, subject in ipairs(found.medications) do ?>
     <? if subject.known then ?>
       <div class="pv-card meds-claim">
         <h3><?= subject.name ?></h3>
         <p><span class="pv-badge pv-badge-ok"><?= icon('check-circle') ?> Known name</span>
            This is <strong><?= subject.known.short_name ?></strong>.</p>
+        <label for="f-<?= subject.status_field ?>">Status of <?= subject.name ?> after these fills are added</label>
+        <select id="f-<?= subject.status_field ?>" name="<?= subject.status_field ?>" aria-describedby="status-help">
+          <? for _, status in ipairs(statuses) do ?>
+            <option value="<?= status.value ?>"<? if status.value == typed[subject.status_field] then ?> selected<? end ?>><?= status.label ?></option>
+          <? end ?>
+        </select>
       </div>
     <? else ?>
       <div class="meds-claim">
@@ -76,6 +85,12 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
               legend = 'Which medication is ' .. subject.name .. '?', candidates = subject.candidates,
               pick = subject.used and subject.pick or nil, explicit = true,
               catalog_options = catalog_options }) ?>
+        <label for="f-<?= subject.status_field ?>">Status of <?= subject.name ?> after these fills are added</label>
+        <select id="f-<?= subject.status_field ?>" name="<?= subject.status_field ?>" aria-describedby="status-help">
+          <? for _, status in ipairs(statuses) do ?>
+            <option value="<?= status.value ?>"<? if status.value == typed[subject.status_field] then ?> selected<? end ?>><?= status.label ?></option>
+          <? end ?>
+        </select>
       </div>
     <? end ?>
   <? end ?>
@@ -151,8 +166,8 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
   <? end ?>
 
   <p>Adding a fill lowers the refills left of its medication by one. A product that is on
-     no list of <?= person.display_name ?> is added to the list, with the status Taking
-     regularly and the full name of the product as its name.</p>
+     no list of <?= person.display_name ?> is added to the list, with the full name of the
+     product as its name. Each medication gets the status chosen above.</p>
   <p class="pv-actions">
     <button type="submit" class="pv-btn pv-btn-primary"><?= icon('check-lg') ?> Add fills</button>
     <a class="pv-btn" href="<?= url('/fills/paste?person=' .. person.id) ?>">Start over</a>

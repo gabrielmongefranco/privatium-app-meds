@@ -124,7 +124,7 @@ The target is the Web Content Accessibility Guidelines (WCAG) 2.2, level AA.
 | The app uses the shell's color tokens only | Lint rule PV406 passes. The tokens meet the contrast floors in both color schemes. |
 | Tables are real tables with header cells | Lint rule PV407 passes |
 | The chart has a text equivalent | The SVG has `role="img"`, a title and a description in words, and the table under it holds every number. The average line is dashed, so it never rests on color alone. |
-| Every icon beside text is hidden from screen readers | Lint rule PV401 passes |
+| Every icon beside text is hidden from screen readers | Lint rule PV401 passes. The smoke test checks that the time-of-day icons carry `aria-hidden="true"`. |
 | Every save works without JavaScript | The smoke test uses plain form posts only. The scripts of the app only show fields, filter rows, page results and fill fields in. |
 | After a page change, focus lands on the new page heading | The page frame moves it after each swap, to the field marked `autofocus` or else the `<h1>`. The headless browser run of 2026-10-05 found the focus on the `<h1>` after each section change. |
 | The footer status line is a polite live region | `<p id="pv-status" role="status">` in the page frame. Privatium writes it on a connection change; the app writes nothing to it. Not yet heard with a screen reader. |

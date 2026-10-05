@@ -2,9 +2,10 @@
 -- apps/meds/lib/clock.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-09-27
--- Summary: The local date and hour of the computer that runs the node, and the greeting
---          for an hour. Every screen reads the time here, so none of them shows UTC.
+-- Last Modified: 2026-10-05
+-- Summary: The local date and hour of the computer that runs the node, the greeting for
+--          an hour, and whole-day steps between dates. Every screen reads the time here,
+--          so none of them shows UTC.
 -- Notes: See README file for documentation and full license information.
 --
 -- Copyright © 2026 Gabriel Mongefranco
@@ -26,6 +27,7 @@ local clock = {}
 --- Configuration ---
 local NOON_HOUR    = 12   -- Morning ends here, on a 24-hour clock
 local EVENING_HOUR = 18   -- Afternoon ends here
+local SECONDS_A_DAY = 24 * 60 * 60
 
 --- Local time ---
 
@@ -54,6 +56,29 @@ end
 -- @return integer  0 to 23.
 function clock.hour()
   return tonumber(os.date('%H'))
+end
+
+--- Dates ---
+
+-- Noon keeps a shift by whole days clear of the hour that daylight saving adds or removes.
+local function time_of(date)
+  local year, month, day = date:match('^(%d%d%d%d)-(%d%d)-(%d%d)$')
+  return os.time({ year = tonumber(year), month = tonumber(month), day = tonumber(day), hour = NOON_HOUR })
+end
+
+--- A date some whole days before or after another.
+-- @param date string    The date as YYYY-MM-DD.
+-- @param days integer   The days to add; negative goes back.
+-- @return string  The date as YYYY-MM-DD. The month and the year roll over as needed.
+function clock.add_days(date, days)
+  return os.date('%Y-%m-%d', time_of(date) + days * SECONDS_A_DAY)
+end
+
+--- The day of the week of a date.
+-- @param date string  The date as YYYY-MM-DD.
+-- @return integer  1 for Sunday through 7 for Saturday, as os.date numbers them.
+function clock.weekday(date)
+  return os.date('*t', time_of(date)).wday
 end
 
 --- The greeting that suits an hour of the day.

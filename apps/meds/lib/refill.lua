@@ -2,9 +2,9 @@
 -- apps/meds/lib/refill.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-10-03
--- Summary: The words and the group for a refill status. Pure Lua with no framework calls, so
---          plain Lua can test it.
+-- Last Modified: 2026-10-05
+-- Summary: The words and the group for a refill status, and the status a new fill leads
+--          to. Pure Lua with no framework calls, so plain Lua can test it.
 -- Notes: See README file for documentation and full license information.
 --
 -- Copyright © 2026 Gabriel Mongefranco
@@ -21,9 +21,14 @@
 -- You should have received a copy of the GNU General Public License along
 -- with this program. If not, see <https://www.gnu.org/licenses/>.
 
+local clock = require 'clock'
+
 local refill = {}
 
 --- Configuration ---
+-- A fill with no days supply is taken to last this long when deciding whether it is
+-- still in use. Thirty days is the most common supply of a retail fill.
+refill.ASSUMED_DAYS_SUPPLY = 30
 -- The groups of the Refills page, in the order the page shows them. `alert` marks the
 -- groups that ask for action.
 refill.GROUPS = {
@@ -87,6 +92,22 @@ function refill.phrase(refill_status, days, runs_out)
   if days == 0 then return 'Due today' end
   if days == 1 then return 'Due tomorrow' end
   return 'Due in ' .. days .. ' days'
+end
+
+--- The status of a tracked medication after a fill is added.
+-- A fill of a medication that was not started, or no longer taken, means it is taken
+-- again, but only while the supply of that fill lasts. An old fill typed in for the
+-- record leaves a stopped medication stopped.
+-- @param status string        The status before the fill.
+-- @param filled_on string     The date of the fill as YYYY-MM-DD.
+-- @param days_supply integer|nil  The days the fill lasts; nil uses ASSUMED_DAYS_SUPPLY.
+-- @param today string         Today's date as YYYY-MM-DD.
+-- @return string  'taking_regularly', or the status unchanged.
+function refill.status_after_fill(status, filled_on, days_supply, today)
+  if status ~= 'not_started' and status ~= 'not_taking' then return status end
+  local lasts = math.tointeger(tonumber(days_supply)) or refill.ASSUMED_DAYS_SUPPLY
+  if clock.add_days(filled_on, lasts) >= today then return 'taking_regularly' end
+  return status
 end
 
 return refill

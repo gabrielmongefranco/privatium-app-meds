@@ -46,7 +46,7 @@ view, and must change in the same commit as `schema.sql`.
 |---|---|
 | `app.lua` | The entry point. It loads the route modules, in the order paths are tried. |
 | `lib/routes/` | One module for each part of the app. Loading a module registers its routes. |
-| `lib/text.lua`, `validate.lua`, `choices.lua`, `medication_name.lua`, `page.lua`, `clock.lua`, `form_icon.lua` | Pure Lua with no framework calls, so plain Lua 5.4 can test them |
+| `lib/text.lua`, `validate.lua`, `choices.lua`, `medication_name.lua`, `page.lua`, `clock.lua`, `form_icon.lua`, `when_icon.lua`, `periods.lua`, `spending_chart.lua` | Pure Lua with no framework calls, so plain Lua 5.4 can test them |
 | `lib/match.lua` | Pure Lua: how well a typed name matches a name of a medication |
 | `lib/medication_search.lua` | The search that every screen uses to find a medication |
 | `lib/written_name.lua` | Pure Lua: takes apart a name as a portal wrote it, and compares it with a name and a strength |
@@ -65,7 +65,7 @@ view, and must change in the same commit as `schema.sql`.
 | `lib/suggestions.lua` | The values in use that text boxes offer while a person types |
 | `lib/merge.lua` | The plan and the batch of a merge |
 | `lib/entries.lua` | Reads the tracked medications with their products, refill dates, words, groups and search text |
-| `lib/refill.lua` | Pure Lua: the group and the words of a refill status |
+| `lib/refill.lua` | Pure Lua: the group and the words of a refill status, and the status a new fill leads to |
 | `lib/fills.lua` | Checks a fill and writes it, with the tracked medication that goes with it |
 | `lib/portal_reader.lua` | Pure Lua: takes the pasted text of a portal page apart into claims |
 | `lib/authorization_watch.lua` | Finds the prior authorizations that end soon or have ended |

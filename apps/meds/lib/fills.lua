@@ -25,6 +25,7 @@
 local pv       = require 'privatium'
 local clock    = require 'clock'
 local entries  = require 'entries'
+local refill   = require 'refill'
 local store    = require 'store'
 local text     = require 'text'
 local validate = require 'validate'
@@ -168,20 +169,26 @@ end
 -- `new_entry` = { person_id, medication_id, display_name, status, pharmacy_id } when the
 -- product is on no list of the person; the tracked medication is then added first.
 -- Several fills of one tracked medication share one row of it, which is written once,
--- after every fill has lowered its count.
+-- after every fill has lowered its count. A medication that was not started or no
+-- longer taken becomes taken regularly when one of its new fills still lasts, unless
+-- `statuses` names its status.
 -- @param tx table    The batch.
 -- @param rows table  Rows that fills.read returned with no problems.
 -- @param refills_left integer|nil  The refills left after the fill, when the person
 --        typed them. Nil lowers the count by one for each fill.
+-- @param statuses table|nil  The status a person chose for a tracked medication, by its
+--        id. Each value must be a status of choices.STATUSES.
 -- @return table  The ids of the fills, in the order of `rows`.
-function fills.add_all(tx, rows, refills_left)
+function fills.add_all(tx, rows, refills_left, statuses)
+  statuses = statuses or {}
+  local today = clock.today()
   local ids, touched, order = {}, {}, {}
   for _, row in ipairs(rows) do
     local key = row.person_medication_id
       or ('new ' .. row.new_entry.person_id .. ' ' .. tostring(row.new_entry.medication_id))
     local state = touched[key]
     if not state then
-      state = { id = row.person_medication_id, fills = 0 }
+      state = { id = row.person_medication_id, fills = 0, rows = {} }
       if not state.id then
         -- A tracked medication added here starts with the refills typed, or none.
         local fields = row.new_entry
@@ -193,6 +200,7 @@ function fills.add_all(tx, rows, refills_left)
     end
     row.person_medication_id, row.new_entry = state.id, nil
     state.fills = state.fills + 1
+    state.rows[#state.rows + 1] = row
     ids[#ids + 1] = tx.append('fill', row)
   end
   for _, key in ipairs(order) do
@@ -203,6 +211,14 @@ function fills.add_all(tx, rows, refills_left)
       entry.id = nil
       -- With no count given, each fill uses up one refill.
       entry.refills_left = refills_left or math.max(entry.refills_left - state.fills, 0)
+      local status = statuses[id]
+      if not status then
+        status = entry.status
+        for _, fill in ipairs(state.rows) do
+          status = refill.status_after_fill(status, fill.filled_on, fill.days_supply, today)
+        end
+      end
+      entry.status = status
       tx.append('person_medication', id, entry)
     end
   end

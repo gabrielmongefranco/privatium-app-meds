@@ -343,7 +343,7 @@ checks still open.
 | Keyboard | Every control is a link, a button or a field. Disclosures use `<details>`. The frame supplies the focus ring. |
 | Page changes | The frame moves focus to the new heading after each swap. |
 | Repeated buttons | Each **Record fill** button carries hidden text naming its medication. |
-| Icons | Each dose form icon carries the form as its label, so a screen reader hears "Tablet". Icons come from the Bootstrap set Privatium ships, except a drawn syringe in `views/_form_icon.lsp`. |
+| Icons | Each dose form icon carries the form as its label, so a screen reader hears "Tablet". Icons come from the Bootstrap set Privatium ships, except a drawn syringe in `views/_form_icon.lsp`. The time-of-day icons from `lib/when_icon.lua` are hidden from screen readers, because the words beside them say the same. |
 | No JavaScript | Every save and search is a plain form. |
 | Color schemes | The app uses the frame's color tokens only, so it follows light and dark mode. |
 | Time limits | None. A status message stays until you leave the page. |

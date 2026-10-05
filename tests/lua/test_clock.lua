@@ -2,7 +2,7 @@
 -- tests/lua/test_clock.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-09-27
+-- Last Modified: 2026-10-05
 -- Summary: Unit tests for apps/meds/lib/clock.lua.
 -- Notes: See README file for documentation and full license information.
 --
@@ -33,4 +33,13 @@ return function(equal)
   equal('today has the form YYYY-MM-DD', clock.today():match('^%d%d%d%d%-%d%d%-%d%d$') ~= nil, true)
   equal('today is the local date', clock.today(), os.date('%Y-%m-%d'))
   equal('the hour is the local hour', clock.hour(), tonumber(os.date('%H')))
+
+  equal('a day later', clock.add_days('2026-10-05', 1), '2026-10-06')
+  equal('a day earlier across a month', clock.add_days('2026-03-01', -1), '2026-02-28')
+  equal('across a leap day', clock.add_days('2028-02-28', 1), '2028-02-29')
+  equal('across the end of a year', clock.add_days('2025-12-20', 30), '2026-01-19')
+  equal('across a change to daylight saving', clock.add_days('2026-03-07', 2), '2026-03-09')
+  equal('no days', clock.add_days('2026-10-05', 0), '2026-10-05')
+  equal('a Sunday', clock.weekday('2026-10-04'), 1)
+  equal('a Saturday', clock.weekday('2026-10-10'), 7)
 end

@@ -2,7 +2,7 @@
 -- tests/lua/test_refill.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-10-01
+-- Last Modified: 2026-10-05
 -- Summary: Unit tests for apps/meds/lib/refill.lua.
 -- Notes: See README file for documentation and full license information.
 --
@@ -67,4 +67,29 @@ return function(equal)
   equal('one left', refill.ask_for_more('taking_regularly', 1, 'due'), false)
   equal('on hold', refill.ask_for_more('on_hold', 0, 'due'), false)
   equal('no longer taken', refill.ask_for_more('not_taking', 0, 'overdue'), false)
+
+  --- The status after a fill ---
+  local today = '2026-10-05'
+  equal('a stopped medication with a fill in use is taken again',
+    refill.status_after_fill('not_taking', '2026-09-20', 30, today), 'taking_regularly')
+  equal('a medication not started with a fill in use is taken',
+    refill.status_after_fill('not_started', '2026-10-05', 1, today), 'taking_regularly')
+  equal('a supply that ends today still counts',
+    refill.status_after_fill('not_taking', '2026-09-05', 30, today), 'taking_regularly')
+  equal('a supply that ended yesterday leaves it stopped',
+    refill.status_after_fill('not_taking', '2026-09-04', 30, today), 'not_taking')
+  equal('an old fill leaves it not started',
+    refill.status_after_fill('not_started', '2025-01-10', 90, today), 'not_started')
+  equal('no days supply counts as thirty days',
+    refill.status_after_fill('not_taking', '2026-09-05', nil, today), 'taking_regularly')
+  equal('no days supply, thirty-one days ago',
+    refill.status_after_fill('not_taking', '2026-09-04', nil, today), 'not_taking')
+  equal('a supply across the end of the year',
+    refill.status_after_fill('not_taking', '2025-12-20', 30, '2026-01-19'), 'taking_regularly')
+  equal('taken as needed stays as needed',
+    refill.status_after_fill('taking_as_needed', '2026-10-01', 30, today), 'taking_as_needed')
+  equal('on hold stays on hold',
+    refill.status_after_fill('on_hold', '2026-10-01', 30, today), 'on_hold')
+  equal('taken regularly stays so',
+    refill.status_after_fill('taking_regularly', '2020-01-01', 30, today), 'taking_regularly')
 end
