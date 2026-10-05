@@ -20,8 +20,8 @@ See <https://www.gnu.org/licenses/fdl-1.3.html>. See README for full license inf
 [Back to project README](../../README.md)
 
 This page shows how to check the app before you commit a change. It is for developers.
-There are three checks: the lint, the unit tests and the smoke test. Run all three from
-the root of the repository.
+There are four checks: the lint, the unit tests, the supply tests and the smoke test.
+Run them all from the root of the repository.
 
 ### What you need
 
@@ -29,7 +29,7 @@ the root of the repository.
 |---|---|---|
 | Privatium | The lint and the smoke test | Version 0.3.2 or later. The app declares a `[ui]` table in its manifest, which an older Privatium refuses as an unknown table. The project README names the same version. |
 | Lua 5.4 | The unit tests | On many systems the command is `lua5.4`. Plain `lua` may be an older version. |
-| Python 3 | Supply regression tests | Standard library only |
+| Python 3 | The supply and catalog tests | Standard library only |
 | Bash and curl | The smoke test | |
 
 ### Steps
@@ -51,16 +51,18 @@ the root of the repository.
    The last line gives the counts, such as "290 passed, 0 failed". The command
    exits with code 1 when a test fails, and with code 2 when Lua is older than 5.4.
 
-3. Check the supply views against an independent daily simulation:
+3. Run the supply and catalog tests:
 
    ```sh
    python3 tests/test_supply.py
    python3 tests/test_catalog.py
    ```
 
-   It uses in-memory SQLite and 3,000 invented histories. It checks payer changes,
-   gaps, frame boundaries, controlled fills, missing supply, and row counts.
-   Catalog tests use invented reference responses and make no network calls.
+   The supply test checks the refill date views against a simple day-by-day simulation
+   of 3,000 invented fill histories, in an in-memory SQLite database. It covers plan
+   changes, gaps, the edges of the supply frame, controlled medicines, missing days
+   supply and row counts. The catalog test uses invented answers from the drug
+   references and makes no network calls.
 
 4. Run the smoke test:
 
@@ -77,7 +79,7 @@ the root of the repository.
 |---|---|
 | Lint | The rules of Privatium for an app: bound SQL parameters, the `csrf()` token in every form, labels on every field, heading order, and more |
 | Unit tests | The Lua modules with no framework calls: cleaning text, checking dates, numbers, amounts, phone numbers, email and website addresses, building a short name, merging choices, matching names, refill words, reading a pasted portal page, taking apart a name as a portal wrote it, the words of a drug reference, and the icon of a dose form |
-| Supply tests | SQL dates against daily simulation, date boundaries, frame special values, invalid rules and view grain |
+| Supply and catalog tests | The refill dates against a day-by-day simulation, date edges, the special frame values, invalid rules and view grain; the catalog builder against invented reference answers |
 | Smoke test | The screens over HTTP, on a real node: adding, changing and removing records, empty and invalid input, the longest values, and requests that must be refused |
 
 The smoke test includes these checks of requests that must be refused:
@@ -105,9 +107,12 @@ temporary directory.
 
 ### What no test covers
 
-No test drives a browser, so no test runs the lookup of a new medication as a person
-would. The smoke test checks what the server does with the fields the lookup fills in. Keyboard use, a screen reader, zoom and small screens need a
-person. [The compliance page](../compliance.md) lists those checks.
+No committed test drives a browser, so none runs the online lookup of a new medication
+as a person would. The smoke test checks what the server does with the fields the lookup
+fills in. The screenshot script in
+[How to update the screenshots](update-the-screenshots.md) does drive Firefox, but it
+only takes pictures and checks no behavior. Keyboard use, a screen reader, zoom and small
+screens need a person. [The compliance page](../compliance.md) lists those checks.
 
 The smoke test works out its dates from today with `date -d`, which is the GNU form of
 the command. On macOS, install GNU coreutils first.
@@ -119,7 +124,8 @@ documentation matches the change.
 
 ### Additional resources
 
-- [App design](../design/README.md)
+- [Architecture](../architecture.md)
+- [How to update the screenshots](update-the-screenshots.md)
 - [Compliance](../compliance.md)
 - [Data model](../data-model.md)
 - [Project preferences](../../skills/project-preferences/SKILL.md)

@@ -20,10 +20,10 @@ See <https://www.gnu.org/licenses/fdl-1.3.html>. See README for full license inf
 
 [Back to project README](../README.md)
 
-This page lists the security and accessibility controls of the app and the evidence for
-each one. It is for the people who decide whether to trust the app with their records, and
-for developers and auditors. It states what was checked and what was not. It makes no
-claim of compliance with any law or standard.
+This page lists what the app does to protect your records and to work for people with
+disabilities, and the evidence for each control. It is for families deciding whether to
+trust the app with their records, and for developers and auditors. It says plainly what
+was checked and what was not. It makes no claim to meet any law or standard.
 
 ### Review status
 
@@ -68,12 +68,32 @@ paid. The [data model](data-model.md) marks each such column.
 | The online search sends public drug names and product identifiers only | `static/drug_references.js` sends no cookie and no page address | Read in the code. Not measured in a browser. |
 | What a drug reference answers is untrusted | The script writes it with `textContent`. The server checks every field it receives: `lib/catalog_entry.lua`, `lib/reference_words.lua`. | The smoke test sends markup as a source, a route and a dose form, and letters as an identifier. Unit tests cover the words of a reference. |
 
-### Refill-rule checks, October 1, 2026
+### Evidence from the refill rule tests
 
-Synthetic tests check percent and frame bounds, payer references, CSRF, escaped plan
-names, and removal while referenced. SQLite tests compare 3,000 invented histories
-against an independent daily simulation, including frame special values and empty frames.
-No production data is used by the committed tests.
+Checked on 2026-10-01. Tests with invented data check the limits of the percent and the
+frame, plan references, the token against cross-site request forgery, escaped plan names,
+and removal of a plan still in use. The supply test compares the refill dates of 3,000
+invented histories with a separate day-by-day simulation, including the special frame
+values and empty frames. No committed test uses real data.
+
+### Evidence from the first build
+
+Checked from 2026-09-26 to 2026-09-27 with Privatium 0.3:
+
+| Check | Result |
+|---|---|
+| `privatium lint apps/meds` | No findings |
+| Unit tests of the Lua modules | All passed |
+| Smoke test of every screen over HTTP | All passed |
+| `date('now', 'localtime')` inside the node | Returned the local date |
+| Loading invented rows through the data API on the node's own address | Accepted |
+| Loading the same rows a second time | Nothing added |
+| Loading a row that had changed since the first load | Refused with status 409, nothing added |
+| Reading the views with a SQLite library that lacks the decimal extension | Every view ran except the spending view |
+| Each of the three drug references, called from the repository's tools | Answered, and allows calls from a browser page on another address |
+| The lookup script, run outside a browser against the three references | Each reference answered a name meant for it |
+
+The lookup script was not run inside a browser at that time.
 
 ### Known gaps in security
 
@@ -81,7 +101,9 @@ No production data is used by the committed tests.
   computer and its backups. [Privatium's security page](https://github.com/gabrielmongefranco/privatium/blob/main/docs/security.md)
   explains what the framework protects.
 - Removing a record hides it. The original line stays in the log.
-- Text boxes suggest values that other records hold, such as what a medication is for. Plan drop-downs show recorded payers. Anyone who can open the app can already read those records.
+- Text boxes suggest values that other records hold, such as what a medication is for,
+  and plan drop-downs show the recorded plans. Anyone who can open the app can already
+  read those records.
 - An online search tells the drug reference which name was typed, from which internet address.
   The reference learns nothing else. The online search is on for everyone.
 - A browser may keep pages in its history and its cache. On a shared device, close the
@@ -109,22 +131,18 @@ The target is the Web Content Accessibility Guidelines (WCAG) 2.2, level AA.
 | A refused form keeps what was typed and lists its problems | The smoke test checks both |
 | Buttons are at least 44 CSS pixels high | The shell's button style. Not measured in a browser. |
 
-### Browser checks, October 1, 2026
+### Evidence from browser checks
 
-Firefox submitted an insurance plan using keyboard input. Tab order reached each field
-and Save, whose focus outline was visible. Plan, person, catalog, fill and reminder
-forms had labels and no horizontal overflow at 320 pixels or 200 percent scaling.
-A synthetic mobile plan form was also checked visually. Plain HTTP forms are covered
-by the smoke test, including the path without client-side scripts.
+**Keyboard and zoom, 2026-10-01.** In Firefox, an insurance plan was saved with the
+keyboard only. The Tab key reached each field and the Save button, and the focus outline
+was visible. The plan, person, catalog, fill and reminder forms had labels and no
+sideways scrolling at 320 pixels wide or at 200 percent zoom. A plan form at phone size
+was also checked by eye. The smoke test covers the plain forms, including use without
+scripts.
 
-A screen reader pass remains needed. The online search and its suggested marks also
-need an end-user check before relying on them.
-
-### Browser checks, October 5, 2026
-
-A script drove headless Firefox over WebDriver BiDi against a node on this computer, with
-two invented people and the starter catalog, at 1280 pixels wide. It is not part of the
-committed tests. It found:
+**Page changes and reflow, 2026-10-05.** A script drove headless Firefox over WebDriver
+BiDi against a node on the same computer, with two invented people and the starter
+catalog, at 1280 pixels wide. The script is not part of the committed tests. It found:
 
 - Each of the five scripts and the stylesheet was in the head of the page once, and no
   script or stylesheet was inside the page.
@@ -146,39 +164,39 @@ committed tests. It found:
 
 ### Checks a person still has to make
 
-The committed tests do not drive a browser, and the headless run above did not use a
-phone, a screen reader or a lost connection. These remain open from this change:
+The committed tests don't drive a browser, and the headless runs above used no phone, no
+screen reader and no lost connection. Automated checks find only part of the
+accessibility problems. These checks are open:
 
-- On a phone over the local network, move between the five sections and into a form. The
-  bar must not move and nothing must flash.
-- With the keyboard only, open the menu after a page change. It must list **Print list**
-  when one person is selected, then a separator, then Privatium's settings pages.
-- With a screen reader, change pages and listen for the new heading. Turn the network
-  off and on; the footer must say the app is offline and then connected again, once per
-  change.
-
-The committed tests do not drive a browser. Automated checks find only part of the accessibility problems.
-These checks are open:
-
-1. Finish each main task with the keyboard only: see the refills, record a fill, paste
-   fills, add a medication to a list. Include the medication box: pick a suggestion
-   while typing, and open **Not in the list? Add a medication to the catalog**.
+1. Finish each main task with the keyboard only: see the refills, record a fill, copy
+   fills from a portal, and add a medicine to a list. In the product box, pick a
+   suggestion while typing and open **Not in the list? Add a medication to the catalog**.
 2. Finish the same tasks with a screen reader.
-3. Check that the list of problems takes the focus when a refused form comes back.
-4. Zoom to 200% and look for overlap and cut-off text.
-5. Narrow the window to 320 CSS pixels and look for sideways scrolling, above all in
-   the tables.
-6. Turn JavaScript off in the node's own browser and save a fill.
-7. Open a print preview of the medication list.
-8. Check both color schemes.
-9. Check how the screen reader announces the suggestions of a text box. Browsers and
-   screen readers differ in their support for the `<datalist>` element. The fields work
-   as plain text boxes where the suggestions are not announced.
-10. Search for a product and pick an online result in a browser, with the keyboard only and with a screen reader.
-    Check that the status message is announced and that the results can be reached.
+3. With the keyboard only, open the menu after a page change. It must list **Print
+   list** when one person is chosen, then a separator, then Privatium's settings pages.
+4. With a screen reader, change pages and listen for the new heading.
+5. Turn the network off and on. The footer must say the app is offline and then
+   connected again, once per change, and a screen reader must announce it.
+6. On a phone over the local network, move between the five tabs and into a form. The
+   bar must not move and nothing must flash.
+7. Check that the list of problems takes the focus when a refused form comes back.
+8. Zoom to 200% and look for overlap and cut-off text.
+9. Narrow the window to 320 CSS pixels and look for sideways scrolling, above all in the
+   tables.
+10. Turn JavaScript off and save a fill.
+11. Open a print preview of the medication list.
+12. Check both color schemes.
+13. Check how a screen reader announces the suggestions of a text box. Browsers and
+    screen readers differ in their support for the `<datalist>` element. The fields work
+    as plain text boxes where the suggestions are not announced.
+14. Search for a product and pick an online result in a browser, with the keyboard only
+    and with a screen reader. Check that the status message is announced and that the
+    results can be reached.
+15. Check the specialty and controlled marks that the online search suggests against a
+    real label before relying on them.
 
-Record the date, the browser, the screen reader and the result of each check in this
-section when it is done.
+Record the date, the browser, the screen reader and the result of each check here when
+it is done.
 
 ### Data retention
 
@@ -189,14 +207,15 @@ copy of it.
 ### Conclusion
 
 You now know which controls are in place, what supports each one, and what is still
-open. Treat the open checks as work to do before relying on the app for a person who
-uses assistive technology.
+open. Finish the open checks before you rely on the app for someone who uses assistive
+technology.
 
 ### Additional resources
 
 - [How to run the tests](how-to/run-the-tests.md)
 - [Data model](data-model.md)
-- [App design](design/README.md)
+- [Architecture](architecture.md)
+- [How the app works](how-it-works.md)
 - [WCAG 2.2 quick reference](https://www.w3.org/WAI/WCAG22/quickref/)
 - [Privatium's security page](https://github.com/gabrielmongefranco/privatium/blob/main/docs/security.md)
 

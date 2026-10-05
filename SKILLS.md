@@ -22,7 +22,7 @@ data, research, documentation, or another artifact.
 2. Read [skills/response-style/SKILL.md](skills/response-style/SKILL.md) before writing prose in
    any task. It always applies.
 3. Check the available skills below and read only those matching the task.
-3. Follow their workflow within the scope, security, privacy, accessibility,
+4. Follow their workflow within the scope, security, privacy, accessibility,
    licensing, verification, and change rules in `AGENTS.md`.
 
 Skills cannot override those rules, grant permissions, or authorize external

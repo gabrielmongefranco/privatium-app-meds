@@ -4,9 +4,9 @@ docs/usage.md
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
 Last Modified: 2026-10-05
-Summary: How to use the app: refills, medication lists, fills, pasted fills, prior
-         authorizations and setup, and how to add a missing record from
-         inside a form.
+Summary: The user guide: how a family uses each screen of the app, from adding people and
+         medications to recording fills, copying fills from a patient portal, prior
+         authorizations, insurance plans and reminders.
 Notes: See README file for documentation and full license information.
 
 Copyright © 2026 Gabriel Mongefranco
@@ -17,514 +17,445 @@ See <https://www.gnu.org/licenses/fdl-1.3.html>. See README for full license inf
 
 # Prescription Tracker
 
-## Using the app
+## User guide
 
 [Back to project README](../README.md)
 
-This page shows how to use every screen of the app. It is for anyone who runs the app for
-a household. Start with the first three sections if the app is new to you.
+This guide shows you how to use Prescription Tracker to keep your family's medicines
+in order. It is for anyone in the household, with no technical or pharmacy background
+needed. If you are new to the app, read the first three sections, then jump to the task
+you need.
 
-All names on this page are invented.
+When a word is new to you, look it up in [Words to know](glossary.md). Every person,
+doctor and pharmacy in the pictures is invented.
+
+### What the app does for you
+
+Prescription Tracker answers three everyday questions:
+
+- **What needs a refill, and when?** The Refills page lists what to order now and what
+  is coming up. It aims to refill while a few days of medicine are still on hand, but
+  never before your insurance will pay.
+- **What does each person take?** The Medications page keeps each person's list, with
+  how to take each medicine and who prescribed it. You can print it for a doctor's visit.
+- **What did we get, and what did we pay?** The History page lists every fill and adds
+  up what you paid.
+
+It also reminds you when a prescription has no refills left and when an insurance
+approval is about to end.
 
 ### Find your way around
 
-Every page has the same bar at the top. It belongs to Privatium, so it looks the same in
-every app: the Privatium mark on the left opens the list of your apps, **Prescription
-Tracker** in the middle opens the home page of this app, and **Apps** and **Menu** sit on
-the right. The menu holds this app's actions for the page you are on, such as **Print
-list**, and under them Privatium's own settings pages.
+![The Medications page. A dark bar at the top holds the Privatium logo, the title Prescription Tracker, an Apps link and a Menu button. Below it are five tabs: Medications, Refills, History, Authorizations and Setup. The page lists each family member's medicines with how to take them, the prescriber and the refill status.](images/medications.png)
 
-Under the bar, the app has its own row of five sections:
+The dark bar at the top belongs to Privatium, the program that runs this app.
 
-| Link | What it holds |
+- The **Privatium** logo on the left opens the list of all your Privatium apps.
+- **Prescription Tracker** in the middle takes you back to this app's first page.
+- **Menu** on the right holds extra actions for the page you are on, such as
+  **Print list**, and Privatium's own settings.
+
+Under the bar, the app has five tabs:
+
+| Tab | What you find there |
 |---|---|
-| **Medications** | What each person tracks: their medications, with the catalog products behind each. This is the home page. |
-| **Refills** | What needs a refill now |
+| **Medications** | Each person's medicines. This is the first page you see. |
+| **Refills** | What needs a refill now, and what is coming up |
 | **History** | Every fill, and what you paid |
-| **Authorizations** | Prior authorizations and when they end |
-| **Setup** | Insurance plans, the family, prescribers, pharmacies, the medication catalog, the reminder settings |
+| **Authorizations** | Insurance approvals and when they end |
+| **Setup** | Your family, prescribers, pharmacies, insurance plans, the medication catalog and the reminder settings |
 
-The row underlines the section you are in. Moving between pages changes the page under
-the bar without reloading the whole screen, so nothing flashes, and the heading of the
-new page takes the focus. The back button of the browser reloads the page it returns to.
+On pages that list several people, a row of names sits under the heading. Choose a
+name to see only that person, or **Everyone** to see the whole family. The app
+remembers your last choice in this browser.
 
-The footer is Privatium's too. Its status line tells you when the device is offline, that
-your changes are saved on the device and sent later, and when it is connected again.
+At the bottom of the page, Privatium shows a short message when your device goes
+offline. Changes you make offline are kept and sent when the connection comes back.
 
-On pages that list records, a row of names
-under the heading narrows the list to one person. The app remembers the person you chose
-last, in your browser, and opens the next page on that person until you choose another
-or **Everyone**. The memory holds the person's id only, and clearing the site data of
-the browser forgets it. When Privatium offers person profiles, this memory goes away
-and the profile takes over; [the issue that tracks it](https://github.com/gabrielmongefranco/privatium-app-meds/issues/10) is in the
-repository.
+### Get started
 
-Every medication name carries a small icon for its dose form: a tablet, a capsule, a
-drop, an inhaler, a syringe and so on. A screen reader hears the form instead. A tracked
-medication shows the icon of its first product.
+1. Choose **Setup**, then **Family**, and add each person. A first name is enough. A
+   birth date is optional; it shows on the printed medication list.
+2. Choose **Setup**, then **Insurance plans**, and add your plan. Use a name you will
+   recognize, such as "Work insurance". Don't type member numbers. Then open each
+   person under **Family** and choose their plan.
+3. Add each person's medicines, as [Add a medicine to someone's list](#add-a-medicine-to-someones-list)
+   shows.
+4. Record the last fill of each medicine, so the app can work out the next one. You can
+   type it, or copy it from your insurance website.
 
-### Set up the app
+You don't have to set everything up first. Whenever a form asks for a person, doctor,
+pharmacy or plan that isn't in the app yet, you can add it right there.
 
-1. Choose **Setup**, then **Family**, and add the first person. A first name is enough.
-   The birth date is optional.
+The app already knows about 2,850 common medicine products. This catalog loads by
+itself the first time you open a page that needs it. It holds only medicine names, never
+anything about your family.
 
-The catalog of medications fills itself. The first time you open a page that needs it,
-such as Track new medication or the catalog in Setup, the app loads its starter catalog.
-It holds about 2,507 medications: the 200 drugs most prescribed in the
-United States at every strength, and common supplies such as glucose monitor sensors, syringes and needles. It
-adds no person and no record about anyone.
+### Add a medicine to someone's list
 
-A product that comes by the carton has one catalog entry for each size of carton, such
-as "2 Pack" and "6 Pack". Pick the one on your box, so a fill counts the right carton.
+![The Track new medication form. The person drop-down is at the top. Under Find the product, the search box holds the word lisinopril, and the results list ten matching products, each with a check box. Below are the Preferred name, Status and How to take it fields.](images/track-new-medication.png)
 
-You do not have to add everyone and everything first. Every form lets you add what it
-needs. The next section shows how.
-
-### Add what is missing without leaving a form
-
-A form often needs a record that is not in the app yet, such as a new pharmacy. You add
-it in the same form.
-
-**A person, a pharmacy or a prescriber.** Open the drop-down and choose
-**-- Add new --**. A box for the name appears. Type the name. Saving the form adds the
-pharmacy too. You can fill in its phone number and address later, under **Setup**, **Pharmacies**.
-
-The route, the form and the other choices of a form work the same way.
-
-If your browser runs no scripts, the box is always there, under the drop-down.
-
-If you type a name that is already in the app, the app uses that record. It never adds
-a name twice.
-
-**A product of the catalog.** Every form that needs a product shows the same box: a
-search of the catalog with a **Find** button, the results to pick from, and a closed
-part named **Not in the list? Add a medication to the catalog** for a product the
-catalog lacks. [Keep the medication lists](#keep-the-medication-lists) walks through it.
-In the fill and authorization forms, which take one product, each result has a radio
-button instead of a check box.
-
-| Part | Use it when |
-|---|---|
-| **Search the catalog** | It is in the catalog. Type a few letters of any of its names and press Enter or choose **Find**, then pick it from the results. |
-| **Not in the list? Add a medication to the catalog** | It is not in the catalog. Type the brand name, the generic name, or both, and the strength. Choose the route, the form and the package type from the drop-downs, or choose **-- Add new --** and type one. For a product that comes by the carton, type the package too, such as 2 and Pack. Tick **controlled** or **specialty** when the label says so. |
-
-The catalog is the list of products the app knows. It says nothing about who takes them.
-A fill or a prior authorization form offers the medications a person tracks in a
-drop-down first, and shows the box when you choose **-- Another medication --**. A
-product that is on no list of the person is then added to the list with the fill, named
-after the product.
-
-When the name you typed fits several medications, the form comes back and asks which one
-you mean. When the name is close to one the app knows, the form offers that medication,
-and you decide.
-
-**Online drug references.** When the catalog has nothing under a name, the app asks the
-public drug references of the United States government at once and lists what they
-hold. **Search online databases** under the search box does the same even when the
-catalog found something. Pick a result, and the app fills in the brand name, the generic
-name and the strength under **Not in the list? Add a medication to the catalog**. Check
-them, then go on.
-
-The online search needs a connection to the internet and a browser that runs scripts. It
-sends public drug names and product identifiers, with no household records. Without a
-connection, fill in the fields yourself.
-
-**Text that repeats.** Some text boxes suggest previous values: the clinic, instructions,
-what a medication is for, and catalog names and strengths. Pick a suggestion, or type something new.
-
-### See what needs a refill
-
-Choose **Refills**. The page lists what needs attention, most urgent first.
-
-| Group | Meaning |
-|---|---|
-| Overdue | Recorded physical supply has run out |
-| Due | The next fill date has passed, is today, or is up to 3 days away |
-| Due soon | The next fill date is 4 to 7 days away |
-| New prescriptions to ask for | No refill is left, and the next fill is overdue, due or due soon |
-| Prior authorizations | A prior authorization has expired, is due or is due soon |
-| As needed | Taken as needed. The dates are shown and raise no alert. |
-| Missing information | No fill yet, or a last fill with no days supply |
-| Not due yet | Everything else in use. Open the group to see it. |
-| Paused | On hold or not started. The dates are shown and raise no alert. |
-
-A specialty medication is due earlier: due at up to 5 days, due soon at 6 to 10 days.
-Only a medication with the status Taking regularly raises an alert.
-
-Each row shows two dates:
-
-- The **next fill date** is when to fill so a backup supply is still on hand. It is
-  never before the day the payer allows. For a 90-day fill the backup starts at 13 days,
-  and for a 30-day fill at 7.
-- **Lasts until** shows when all recorded supply runs out, whoever paid.
-
-Early fills add supply, while gaps do not. After the next fill date passes, the row reads
-"Fill now. Runs out in N days" until supply runs out. Only then does it become overdue.
-The [data model](data-model.md#how-the-dates-are-worked-out) explains the calculation.
-
-When no refill is left, the row names the prescriber to ask for a new prescription.
-
-**New prescriptions to ask for** lists every medication with no refill left whose next
-fill is near. It covers the medications taken regularly and the ones taken as needed.
-Some prescribers take a request for refills from the patient only, never from the
-pharmacy, so the page reminds you to ask.
-
-**Prior authorizations** shows three levels:
-
-| Level | Meaning | What to do |
-|---|---|---|
-| Expired | The expiration date has passed | Ask for a new authorization before the next fill |
-| Due | It expires within 14 days | Ask for a new authorization now |
-| Due soon | It expires within 30 days | Plan to ask |
-
-### Record a fill
-
-1. On the Refills page, choose **Record fill** in the row of the medication.
-2. Check the values. The form starts with the pharmacy, the days supply, the quantity,
-   the prescription number of the last fill. The plan starts with the person's current
-   plan, then the last fill's plan, then no plan.
-3. When the medication comes in more than one package, choose the **Product** that
-   was dispensed. The form starts with the product of the last fill.
-4. Type the amount you paid. A currency sign is fine. Under **More details**, add the
-   claim number and any notes about this fill; the notes show in the history.
-5. Check **Refills left after this fill**. The form starts with one fewer than before.
-   If you leave it empty, the app lowers the count by one.
-6. Choose **Save the fill**.
-
-For a medication that is not on the page, choose **Record a fill** at the top. The form
-then offers every tracked medication in a drop-down, by person. Choose
-**-- Another medication --** for a product that nobody tracks yet: pick the person
-and find the product, and saving the fill adds the medication to the person's list,
-with the status Taking regularly.
-
-### Copy refill history from a patient portal
-
-The portal of an insurer or a pharmacy lists the fills it paid for. You can copy that
-list and let the app read it. Medications are matched to your medication list and fills
-you have already are skipped, and you check everything before anything is added.
-
-1. In the portal, open the details of each fill.
-2. Select the list, from the first date to the end of the last fill, and copy it.
-3. In the app, choose **Refills**, then **Copy refill history from patient portal**.
-4. Under **This refill history belongs to:**, choose the person, paste the text and
-   choose **Read the text**.
-5. Check the review page. It has three parts, described below.
-6. Choose **Add fills**.
-
-The review page asks about each medication name and each pharmacy once, however many
-fills use it.
-
-**Medications.** Each name the portal wrote is listed with what the app made of it.
-
-| The page says | Meaning | What you do |
-|---|---|---|
-| Known name | The app has seen this name before | Nothing |
-| Matched | One medication has the same name and the same strength. It is chosen for you. | Check it |
-| Choose a medication | Some medications are close. The best match comes first. | Pick one |
-| New name | The catalog holds nothing like it. The app filled in a new medication from the name. | Check the brand name, the generic name and the strength |
-
-For every name you can also pick **Another medication** and type its name, or pick
-**A new medication**. The app remembers the portal's name as another name of the
-medication you choose. The next paste knows it.
-
-**Pharmacies.** A pharmacy that the app knows is matched by its identifier or its name.
-For a new one, the app offers to add it with the address and phone number that were
-pasted. You can pick one of your pharmacies instead.
-
-**Fills.** Each fill has a result and a box labeled **Add this fill**.
-
-| Result | Meaning |
-|---|---|
-| Ready | Every value was read. The fill is ticked for you. |
-| Not paid | The claim status is not Paid. Tick the fill only if it took place. |
-| Already recorded | The person has a fill with the same prescription number and date, or the tracked medication has a fill on the same date. It is left out. |
-| Details missing | The details were not open in the portal. Open them and copy again. |
-| Could not read | A value is not a date or a number. The row says which. |
-
-If a choice is still open when you choose **Add fills**, the page comes back and marks
-it. Nothing is added until every fill you ticked has a medication and a pharmacy.
-
-The app also looks at the prescription number. When an earlier fill of the person has
-the same number, the app knows its medication. If the portal's name fits that medication
-too, it is chosen for you. If the name does not fit, the medication comes first in the
-list and you decide. Hyphens and spaces in a number do not matter.
-
-Each added fill uses the person's current plan. The review names it, or says there is
-no plan. Set the person's plan under **Setup**, **Family** before pasting.
-
-Adding a pasted fill lowers the refills left of its medication by one. A product that is
-on no list of the person is added to the list, named after the product. What the plan
-paid and the deductible are shown and not stored.
-
-Pasting the same page twice adds nothing the second time. A fill that you typed by hand
-without a prescription number is found by its medication and its date.
-
-The app reads one layout of portal page today. The
-[app design](design/README.md) shows that layout.
-
-### Keep the medication lists
-
-Choose **Medications** to see what each person tracks, grouped by status.
-
-A tracked medication is yours: it has the name you prefer, and it stands for one or more
-products of the catalog. Most medications stand for one product. A medication that comes
-in two carton sizes stands for two, and every fill of either counts under the one
-medication. One product can be on one tracked medication of a person only, so the app
-refuses to put it on a second one and names the first.
-
-To track a medication:
-
-1. Choose **Track a new medication**.
+1. On the **Medications** page, choose **Track a new medication**.
 2. Choose who takes it.
-3. Under **Find the product**, type a few letters of the name into **Search the
-   catalog** and press Enter or choose **Find**. Picking a suggestion while you type
-   finds it at once, with that product checked. The results list up to 25 products,
-   10 a page on a tablet or a desktop and 5 on a phone, each with a check box. A
-   **Close match** badge marks a name that is only near what you typed.
-4. Check the product, or several when the same medication comes in two carton sizes,
-   and choose **Add to this medication**. Each product then shows under **Products**
-   with a **Remove** button, and the search box folds into **Add another product**.
-   Open it to add a second carton size later.
-5. If the catalog has nothing under the name, the app searches the online drug
-   references at once and lists what they hold. **Search online databases** under the
-   search box does the same even when the catalog found something. Check one of those
-   results, and its brand name, generic name and strength fill in under **Not in the
-   list? Add a medication to the catalog**. Check them, then choose **Add to this
-   medication**.
-6. For a product that no reference holds, open **Not in the list? Add a medication to
-   the catalog** and type the brand name, the generic name, or both. While you type,
-   the app searches for similar products and shows "Searching for similar products...".
-   If it lists the product you mean, check it. Otherwise fill in the strength, the
-   route, the form and the package, tick **controlled** or **specialty** when the label
-   says so, and choose **Add to this medication**.
-7. Check the **Preferred name**. It starts as the full name of the first product. Type
-   the name you use, such as the brand name alone. Two of your medications cannot share
-   a name; another person's can.
-8. Choose the status. Add the instructions, when to take it, what it is for, your
-   notes, the refills left, the prescriber and the pharmacy. The form calls the purpose
-   **Reason for taking it**.
-9. Choose **Save**.
+3. Under **Find the product**, type a few letters of the medicine's name into **Search
+   the catalog**. Either the brand or the generic name works. Press Enter or choose
+   **Find**.
+4. Check the product that matches the label, then choose **Add to this medication**.
+   Look closely at the strength and the form, such as tablet or capsule. On a phone you
+   see 5 results at a time, and 10 on a bigger screen. A **Close match** tag means the
+   name is only similar to what you typed, so read it carefully.
+5. Check the **Preferred name**. It starts as the product's full name. Change it to the
+   name your family uses, if you like.
+6. Choose the **Status**, such as **Taking regularly**. Only medicines taken regularly
+   get refill reminders.
+7. Fill in what you know: how to take it, when, what it is for, refills left, the
+   prescriber and the pharmacy. All of these are optional. You can add notes too, such
+   as how to store it.
+8. Choose **Save**.
 
-Without scripts, the Find button and Enter still search: the form comes back with the
-results in one list. The online databases need a script and a connection to the
-internet.
+**Same medicine, two box sizes.** Some medicines, like injection pens, come in boxes of
+different sizes. Check both sizes in step 4, or add the second one later with **Add
+another product**. Every fill of either box then counts toward the same medicine. A
+product can be on only one of a person's medicines, so the app stops you from adding
+it twice.
 
-To find a medication in the list, type into the search box at the right of the buttons.
-The list narrows as you type, by the preferred name, every name of the products, the
-prescriber and the person. A match under **No longer taking** opens that section. Without
-scripts, press Enter and the page does the same.
+**Can't find it?** If the catalog has nothing under that name, the app searches public
+drug lists from the United States government and shows what they have. You can also
+choose **Search online databases** to do this at any time. Pick a result, and the app
+fills in the name and strength for you to check. This needs an internet connection. The
+app sends only the name you typed, never anything about your family.
 
-Choose a medication in the list to open its page. The page shows how to take it, its
-refills, who to call, its prior authorizations, its fills and its products. You can change
-the status there without opening the whole form, and **Change** lets you rename it and
-add or remove products. A product with fills stays, and so does the last product.
+**Still can't find it?** Open **Not in the list? Add a medication to the catalog**. Type
+the brand name, the generic name or both. While you type, the app looks for similar
+products, in case it already has the one you mean. If not, fill in the strength as the
+label prints it, such as "10 mg". Then choose the route, the form and the package, and
+choose **Add to this medication**. Tick **Controlled** or **Specialty** if the label or
+your pharmacy says so.
 
-Under **No longer taking**, each row has a **Restart** button that sets the status back
-to Taking regularly.
+### Change or stop a medicine
+
+![The page for one medicine, Lipitor (Atorvastatin) 40 mg, taken by Alex Example. It has buttons for Record fill, Change and Remove, a status drop-down, and boxes for how to take it, refills, who to call, prior authorizations, fill history and products.](images/medication-page.png)
+
+Choose a medicine on the Medications page to open its own page. It shows how to take
+it, its refill dates, who to call, its insurance approvals, every fill and the products
+behind it.
+
+- To change the status, pick a new one and choose **Save the status**. For example,
+  choose **On hold** while a doctor pauses a medicine.
+- To change anything else, such as the name or the instructions, choose **Change**.
+- When someone stops taking a medicine, set the status to **No longer taking**. It
+  moves to a closed section at the bottom of the Medications page, and its history
+  stays. **Restart** brings it back.
+
+To find a medicine quickly, type in **Search the list** on the Medications page. The
+list narrows as you type. It matches the name, the products, the prescriber and the
+person.
 
 | Status | Use it when |
 |---|---|
-| Taking regularly | The person takes it on a schedule. It raises refill alerts. |
-| Taking as needed | The person takes it now and then |
-| On hold | The person paused it |
-| Not started | It is prescribed and not begun |
-| No longer taking | The person stopped. The history stays, and **Restart** brings it back. |
+| Taking regularly | The person takes it on a schedule. It gets refill reminders. |
+| Taking as needed | The person takes it only now and then. Its dates are shown, with no reminders. |
+| On hold | A doctor paused it. |
+| Not started | It is prescribed, but the person hasn't begun it. |
+| No longer taking | The person stopped. The history stays. |
 
-### Print a medication list
+### See what needs a refill
 
-1. Choose **Medications** and choose one person.
-2. Open **Menu** in the top bar and choose **Print list**. The item is there only while
-   one person is chosen.
-3. Use the print command of your browser.
+![The Refills page. A summary row counts Overdue 1, Due 2, Due soon 2, New prescriptions to ask for 1 and Authorizations due soon 1. Below, a table for each group lists the medicine, the person, the refill status with its two dates, the last fill, the refills left and a Record fill button.](images/refills.png)
 
-The list shows what the person takes now, how, when, what for, and who prescribed it.
-The printed page leaves out the bar, the footer, the section row and the buttons.
+Choose **Refills**. The most urgent medicines are at the top. The summary row shows how
+many are in each group, and each count jumps to its group.
 
-**Print list** lives in the menu rather than as a button on the page so the page keeps one
-primary action, **Track a new medication**. If people miss it there, a button can return
-beside the menu item.
+| Group | What it means | What to do |
+|---|---|---|
+| **Overdue** | The medicine you recorded has run out. | Refill now. If you did refill, record the fill. |
+| **Due** | The next fill date is 3 days away or fewer, or has passed. | Order the refill now. |
+| **Due soon** | The next fill date is 4 to 7 days away. | Plan to order soon. |
+| **New prescriptions to ask for** | No refills are left, and a refill is near. | Ask the prescriber for a new prescription. The row shows their phone number. |
+| **Prior authorizations** | An insurance approval has ended or ends within 30 days. | Ask the prescriber to request a new approval. |
+| **As needed** | Medicines taken as needed. | Nothing. The dates are there if you want them. |
+| **Missing information** | No fill is recorded yet, or the last fill has no days supply. | Record a fill, or add the days supply. |
+| **Not due yet** | Everything else. This group starts closed. | Nothing. |
+| **Paused** | Medicines on hold or not started. | Nothing. |
 
-### Track prior authorizations
+A specialty medicine takes longer to arrive, so it shows as due at 5 days and due soon
+at 10. You can change all these numbers in the
+[reminder settings](#change-the-reminder-settings).
 
-A prior authorization is an insurer's approval to cover a medication for a set period.
+**The two dates.** Each row shows two dates:
+
+- **Next fill date** is when the app suggests you refill. It leaves you a small backup
+  supply, about 15 percent of the last fill and at least 7 days. It is never before your
+  plan will pay.
+- **Lasts until** is when all the medicine you have recorded would run out.
+
+When the next fill date has passed, the row says "Fill now. Runs out in 4 days", for
+example. It only becomes overdue after the medicine runs out. [How the app
+works](how-it-works.md) explains these dates in more detail.
+
+The page also works on a phone. Each row becomes a card that you can scroll through.
+
+![The Refills page on a phone. The tabs wrap onto two lines, and each medicine is a card with its person, refill status, last fill, refills left and a Record fill button.](images/refills-phone.png)
+
+### Record a fill
+
+![The Record a fill form for Lipitor (Atorvastatin) 40 mg, for Alex Example. It shows the date filled, the pharmacy, the days supply, the quantity, the amount you paid, the refills left after this fill, the prescription number and the insurance plan, with Save the fill and Cancel buttons.](images/record-fill.png)
+
+1. On the Refills page, choose **Record fill** in the medicine's row.
+2. Check the values. The form copies the pharmacy, the days supply, the quantity, the
+   prescription number and the plan from the last fill, so often you only need the date
+   and the amount.
+3. If the medicine comes in more than one box size, choose the **Product** you got.
+4. Type the amount you paid. A dollar sign is fine.
+5. Check **Refills left after this fill**. It starts at one fewer than before. If you
+   leave it empty, the app lowers the count by one.
+6. Under **More details**, you can add the claim number and a note.
+7. Choose **Save the fill**.
+
+For a medicine that isn't on the Refills page, choose **Record a fill** at the top of the
+page and pick the medicine. If nobody tracks that medicine yet, choose **-- Another
+medication --**, pick the person and find the product. Saving the fill also adds the
+medicine to that person's list.
+
+### Copy fills from your insurance website
+
+![The Copy refill history from patient portal page. A drop-down asks who the refill history belongs to, and a large box holds text copied from a portal.](images/copy-refill-history.png)
+
+Your insurance plan's or pharmacy's website, often called a patient portal, lists the
+fills it paid for. Instead of typing each one, you can copy the list and let the app read
+it. Nothing is added until you check it.
+
+1. On the portal, open the details of each fill, so they show on the screen.
+2. Select the list from the first date to the end of the last fill, and copy it.
+3. In the app, choose **Refills**, then **Copy refill history from patient portal**.
+4. Choose who the fills belong to, paste the text and choose **Read the text**.
+5. Check the review page, described below.
+6. Choose **Add fills**.
+
+![The review page, titled Check the fills. A summary says 2 fills found, 1 ready to add and 1 name new to the app. For the portal name OMEPRAZOLE 20 MG DR CAPSULE, the page lists the closest catalog products to choose from. Below, a new pharmacy is offered to add, and the first fill is marked Already recorded.](images/copy-refill-history-review.png)
+
+The review page asks about each medicine name and each pharmacy only once, however many
+fills use it.
+
+**Medicines.** Portals spell names their own way, such as "LOSARTAN POTASSIUM 50 MG
+TABLET". For each name, the page shows what the app found:
+
+| The page says | What it means | What you do |
+|---|---|---|
+| Known name | The app has seen this name before. | Nothing |
+| Matched | One medicine has the same name and strength. It is chosen for you. | Check it |
+| Choose a medication | Some medicines are close. The best match is first. | Pick one |
+| New name | Nothing in the catalog is like it. The app filled in a new medicine from the name. | Check the names and the strength |
+
+You can always pick a different medicine instead. The app then remembers the portal's
+name for that medicine, so next time it is a known name.
+
+**Pharmacies.** The app matches a pharmacy by its number or its name. For a new one, it
+offers to add it with the address and phone number from the portal.
+
+**Fills.** Each fill has a check box labeled **Add this fill**.
+
+| Result | What it means |
+|---|---|
+| Ready | Everything was read. The box is ticked for you. |
+| Not paid | The plan didn't pay this claim. Tick it only if you did get the medicine. |
+| Already recorded | You already have this fill, so it is left out. |
+| Details missing | The details weren't open on the portal. Open them and copy again. |
+| Could not read | A date or number didn't make sense. The row says which one. |
+
+If you choose **Add fills** while a question is still open, the page comes back and
+marks it. Each added fill uses the person's current plan and lowers that medicine's
+refills left by one. Pasting the same list twice adds nothing the second time.
+
+The app reads one portal layout. If your portal lays out its page differently, the
+review says "No fills can be added from this text." Record those fills by hand.
+
+### Keep track of insurance approvals
+
+![The Prior authorizations page. A table lists each approval with the medicine, the person, the first day, the expiration date and its state, such as Due soon or Expired.](images/authorizations.png)
+
+Some medicines need your plan's approval before it will pay. This is called a **prior
+authorization**. It usually lasts a year. Your prescriber has to ask for a new one before
+it ends, and that can take a couple of weeks.
 
 1. Choose **Authorizations**, then **Add an authorization**.
-2. Choose the tracked medication from the drop-down, by person. For a product that
-   nobody tracks yet, choose **-- Another medication --**, pick the person and find
-   the product.
-4. Check the first day. The form starts with the first day of this month. Clear the
-   field if you do not know the first day.
-5. Check the expiration date. The form starts with one year after the first day of this
-   month. The insurer's letter shows the date.
-6. Choose **Save**.
+2. Choose the medicine. If it isn't on anyone's list yet, choose **-- Another
+   medication --**, pick the person and find the product.
+3. Check the first day. The form starts with the first day of this month. Clear it if
+   you don't know it.
+4. Check the expiration date. Your plan's letter shows it. The form starts one year
+   after the first day of this month.
+5. Choose **Save**.
 
-A product that is on no list of the person is added to the list, named after the
-product, with the status Not started. The Refills page can then warn you when the
-authorization ends.
+The Refills page warns you 30 days before an approval ends. From 14 days before, it
+shows as due, meaning you should ask for a new one now. After a renewal, add the new
+approval and the warning goes away.
 
-The Refills page shows the latest authorization of a medication in use from 30 days
-before it expires. From 14 days before, it is due. After a renewal, add the new
-authorization and the reminder goes away.
+### Set up insurance plans
 
-### Look at the history
+![The Insurance plans page. Cash has an early fill percent of 0, and Example Health Plan uses the household defaults.](images/insurance-plans.png)
 
-Choose **History** to see every fill, newest first. The quantity and the days supply
-have a column each. A quantity shows decimals only when it has them, such as 2.5. Narrow the list by person,
-tracked medication, pharmacy or year. When a fill names a product with another name than
-the medication, the product shows under the name. Under the filters, the page shows the number of fills and
-the total you paid. The table **Paid by year** shows the total for each person in each
-year.
-
-Choose **Change** in a row to correct a fill or to remove it.
-
-### Find a medication by any name
-
-Every medication box and the search box of the catalog look through the short name,
-the brand name, the generic name and the other names. Capital letters and punctuation do
-not matter.
-
-| You type | The app shows |
-|---|---|
-| A name or the start of one, such as "apap" or "atorva" | The medications that answer to it |
-| A name with a typing mistake, such as "Lipitro" | The closest names, under **Did you mean one of these?** |
-
-A close name is only a suggestion. Different medications can have names that look alike,
-so read the name before you choose.
-
-### Teach the app another name
-
-A label, a statement and a person may each use a different name for one medication. Teach
-the app a name once, and the search finds the medication by it from then on.
-
-1. Choose **Setup**, then **Medication catalog**, and search for the name as it is
-   written.
-2. Under **Teach the app this name**, choose the medication that the name belongs to.
-
-You can also open a medication in the catalog and type the name under
-**Add another name**.
-
-### Add a medication to the catalog
-
-The catalog lists products. It does not say who takes them.
-
-The quickest way is inside any form, as **Add what is missing without leaving a form**
-shows. The catalog page has the full form, with every field.
-
-1. Choose **Setup**, then **Medication catalog**.
-2. Use the search box to check that the medication is not there yet.
-3. Choose **Add a medication**.
-4. Type the brand name, the generic name, or both.
-5. Type the strength as the label prints it, with the unit. Examples are "10 mg",
-   "100 units/mL", and "875-125 mg" for a product with two drugs.
-6. For the route, the form and the package type, pick from the list or type a new choice
-   in the box under it. A choice that you type appears in the list from then on.
-7. Check **Specialty** and **Controlled**. The starter catalog and the online search suggest these
-   marks from public references. Specialty lists vary, and missing products stay unmarked.
-   You can change either mark before saving. Controlled medications count every fill
-   across payers, and by default wait until supply runs out.
-8. Leave the short name empty. The app builds it, such as "Examplol (Exampline) 10 mg",
-   or "Examplol (Exampline) 10 mg 2 Pack" when you gave a package.
-   Type a short name only if you want a different one.
-9. Choose **Save**.
-
-Under **Reference codes** you can type the RxNorm identifier of the product. RxNorm is
-the drug list of the United States National Library of Medicine. The field is optional,
-and the app works the same without it.
-
-### Merge two entries for one product
-
-If the catalog holds one product twice, under two names, merge the two entries.
-
-1. Open the entry that should go away.
-2. Choose **Merge into another medication**.
-3. Find the entry that stays and choose **Keep this one**.
-4. Read what will happen, then choose **Merge**.
-
-The fills and the tracked medications that hold the entry move to the entry that stays.
-The names of the entry that goes away become other names of the entry that stays. When a
-person would end up with the entry that stays on two tracked medications, the page says
-so; take it off one of them afterwards. A merge cannot be undone in the app, so merge
-only entries with the same strength.
-
-### Set insurance plans
+The app uses your plan's rules to estimate the first day a refill will be paid.
 
 1. Choose **Setup**, then **Insurance plans**, then **Add an insurance plan**.
-2. Enter a name you recognize, without member numbers or personal details.
-3. Enter its early fill percent and supply frame days, or leave them empty for household defaults.
-4. Choose **Save**. Open each person's form under **Setup**, **Family** and choose their current plan.
+2. Type a name you recognize. Leave out member numbers and other personal details.
+3. Leave the two numbers empty to use the household settings, or type your plan's own:
+   - **Early fill percent**: how much of the last fill may be left when the plan pays
+     for the next one. At 25 percent, a 30-day fill can be refilled 7 days early, and a
+     90-day fill 22 days early. Use 0 for cash or over-the-counter purchases.
+   - **Supply frame**: how many past days the plan looks at, usually 180. Use 0 to
+     count only the last fill, or 3650 to count every fill.
+4. Choose **Save**.
+5. Under **Setup**, **Family**, open each person and choose their current plan.
 
-At 25 percent, a 30-day fill allows 7 days early, and 90 days allows 22. Use 0 percent
-for cash or over-the-counter purchases to wait for physical supply to run out.
-The frame starts at the proposed next fill date and looks back, initially 180 days.
-Use 0 for the last fill only, or 3650 for every fill. Controlled medications ignore
-plan overrides and count every fill, with their household days early setting.
+When a person changes plans, their old fills keep the plan that paid for them. History
+shows the plan of each fill.
 
-A plan drop-down can add a new plan by name in the same form. It starts with household
-rules. Set overrides under **Insurance plans** afterward. An existing fill keeps its payer
-when you change the person's current plan. History shows the payer of each fill.
+Controlled medicines follow stricter rules. They count every fill, whoever paid, and by
+default they aren't refilled early at all.
 
 ### Change the reminder settings
 
+![The Reminder settings page. Boxes show the numbers in use: due at 3 days and due soon at 7, 5 and 10 for specialty medicines, 14 and 30 for prior authorizations, an early fill percent of 25, a backup supply of 15 percent and at least 7 days, 10 for specialty medicines, a supply frame of 180 days and 0 days early for controlled medicines.](images/reminder-settings.png)
+
 1. Choose **Setup**, then **Reminder settings**.
-2. Each box shows the number in use. Change day counts from 0 to 365, a percent from
-   0 to 100, or a frame from 0 to 3650. Clear a box to go back to the number the app
-   starts with.
+2. Change any number. Each box shows the number the app uses now. To go back to the
+   app's own number, clear the box.
 3. Choose **Save**.
 
-| Setting | The app starts with |
-|---|---|
-| Due | 3 days |
-| Due soon | 7 days |
-| Due, for a specialty medication | 5 days |
-| Due soon, for a specialty medication | 10 days |
-| Due, for a prior authorization | 14 days |
-| Due soon, for a prior authorization | 30 days |
-| Early fill percent | 25 percent |
-| Supply frame | 180 days |
-| Days early for controlled medications | 0 days |
-| Backup supply percent | 15 percent |
-| Backup supply, at least | 7 days |
-| Backup supply for a specialty medication, at least | 10 days |
+| Setting | Starts at | What it does |
+|---|---|---|
+| Due | 3 days | A refill is due this many days before its next fill date. |
+| Due soon | 7 days | A refill is due soon this many days before. |
+| Due, specialty | 5 days | The same, for a specialty medicine. |
+| Due soon, specialty | 10 days | The same, for a specialty medicine. |
+| Prior authorization due | 14 days | When to ask for a new approval. |
+| Prior authorization due soon | 30 days | When to start planning for it. |
+| Early fill percent | 25 percent | How early your plan usually pays for a refill. Each plan can have its own. |
+| Backup supply percent | 15 percent | How much of a fill to keep as a backup. |
+| Backup supply, at least | 7 days | The smallest backup. |
+| Backup supply for a specialty medication, at least | 10 days | The smallest backup for a specialty medicine. |
+| Supply frame | 180 days | How many past days of fills count. |
+| Days early for controlled medications | 0 days | How early a controlled medicine may be refilled. |
 
-The backup supply decides how close to running out you refill. It is a share of the
-last fill's days supply, but never less than the minimum days, and never more than
-your plan allows early. For example, a 90-day fill that runs out on March 30 keeps
-13 days, so its next fill date is March 17.
+Here is an example. A 90-day fill that runs out on March 30 keeps a 13-day backup, 15
+percent of 90. So its next fill date is March 17, as long as the plan will pay by then.
+
+### See your history and spending
+
+![The History page. A row of names and drop-downs for medication, pharmacy and year sit above a table of fills, newest first, with the date, medicine, person, pharmacy, plan, quantity, days supply and amount paid. Above the table it reads 18 fills, total paid 161.00.](images/history.png)
+
+Choose **History** to see every fill, newest first. You can narrow the list by person,
+medicine, pharmacy or year. Under the filters, the page counts the fills and adds up
+what you paid. The **Paid by year** table shows each person's total for each year,
+which helps at tax time.
+
+To fix or remove a fill, choose **Change** in its row.
+
+### Print a medication list
+
+![A printable medication list for Alex Example, with the birth date, the date printed, and a table of each medicine with how to take it, when, the reason and the prescriber.](images/printable-list.png)
+
+A current list is handy for a doctor's visit or an emergency.
+
+1. Choose **Medications**, then choose one person.
+2. Open **Menu** in the top bar and choose **Print list**. It appears only when one
+   person is chosen.
+3. Use your browser's print command.
+
+The printed page leaves out the bars and buttons. It shows the medicines the person
+takes now, and a second table of the ones on hold. Treat a printed list like any paper
+with health details on it.
+
+### Find a medicine by any name
+
+Every search box looks at the brand name, the generic name and any other names a
+product has. Capital letters and punctuation don't matter.
+
+| You type | The app shows |
+|---|---|
+| Part of a name, such as "atorva" | The medicines whose names start that way |
+| A name with a typo, such as "Lipitro" | The closest names, under **Did you mean one of these?** |
+
+Some different medicines have names that look alike. So the app never picks a close
+match for you. Read the name before you choose it.
+
+**Teach the app another name.** A label, a bill and a person may each call a medicine
+something different. Choose **Setup**, then **Medication catalog**, and search for the
+name you use. Under **Teach the app this name**, choose the medicine it belongs to.
+From then on, every search finds the medicine by that name. You can also open a
+medicine in the catalog and type the name under **Add another name**.
+
+### Fix the catalog
+
+The catalog is the list of medicine products the app knows. Usually you add to it
+from inside a form, as [Add a medicine to someone's list](#add-a-medicine-to-someones-list)
+shows. The catalog page has every field.
+
+![The Setup page, with six tiles: Insurance plans, Family, Prescribers, Pharmacies, Medication catalog and Reminder settings.](images/setup.png)
+
+**Add a product.**
+
+1. Choose **Setup**, then **Medication catalog**.
+2. Search first, to make sure it isn't there already.
+3. Choose **Add a medication**.
+4. Type the brand name, the generic name or both.
+5. Type the strength as the label prints it, with the unit, such as "10 mg" or "100
+   units/mL".
+6. Pick the route, the form and the package type, or choose **-- Add new --** and type
+   your own.
+7. Tick **Specialty** or **Controlled** if they apply. The starter catalog suggests these
+   marks, but plans differ, so check them.
+8. Leave the short name empty, and the app builds one such as "Lipitor (Atorvastatin) 40
+   mg". Type one only if you want a different name.
+9. Choose **Save**.
+
+**Merge two entries for the same product.** If the catalog has one product twice, under
+two names, open the one that should go away and choose **Merge into another
+medication**. Find the one to keep, choose **Keep this one**, read what will happen, and
+choose **Merge**. Its fills and names move to the one you keep. A merge can't be undone,
+so only merge entries with the same strength.
 
 ### Remove a record
 
-Every **Remove** button opens a page that asks first. Choose **Remove** to go on, or
-**Keep it** to go back.
+Every **Remove** button asks first. Choose **Remove** to go ahead, or **Keep it** to go
+back.
 
-Removing hides the record in the app. Privatium keeps the original line in its log on
-the device, so the record stays on the disk.
+The app won't remove a person, product, medicine, pharmacy, prescriber or plan that
+other records still use. The page tells you what uses it. To keep a medicine's history
+but take it off the active list, change its status to **No longer taking** instead.
 
-The app does not remove a person, a catalog product, a tracked medication, a pharmacy, a
-prescriber or a plan that other records still use. The page says what uses the record.
-To keep a medication on the list as one no longer taken, change its status instead.
+Removing hides the record in the app. Privatium still keeps the original on your
+computer, as part of its history of changes.
 
-### When a form comes back
+### When a form comes back with problems
 
-If something in a form is not right, the form comes back with a list of problems at the
-top. Each entry in the list links to its field. Everything you typed is still there.
+If something in a form isn't right, the form comes back with a list of problems at the
+top. Each problem links to its field. Everything you typed is still there.
 
-### Times and dates
+### About dates and your data
 
-Every date the app compares with today uses the clock of the computer that runs
-Privatium. If you open the app from another time zone, you see that computer's date.
+All dates use the clock of the computer that runs Privatium. If you open the app while
+traveling in another time zone, you still see that computer's date.
+
+Your records stay on your own computer as plain text files. Anyone who can open those
+files can read them, so protect the computer and its backups as you would any health
+papers. [How the app works](how-it-works.md#your-privacy) explains what the app sends
+over the internet, which is only medicine names when you search online.
 
 ### Conclusion
 
-You can now keep the medication lists of a household, with the products behind each
-medication, add what is missing from inside any form, record fills by hand or from a
-portal, and see what needs a refill.
+You can now keep each person's medicine list, record fills by hand or from your
+insurance website, and see what needs a refill before it runs out. For the reasons
+behind the dates, read [How the app works](how-it-works.md).
 
 ### Additional resources
 
-- [App design](design/README.md), with the rules behind the refill dates.
-- [Data model](data-model.md), what the app stores.
-- [The app folder](../apps/meds/README.md)
-- [Privatium](https://github.com/gabrielmongefranco/privatium), the framework this app runs on.
+- [Words to know](glossary.md)
+- [How the app works](how-it-works.md)
+- [Compliance](compliance.md): the security and accessibility checks
+- [Privatium's guide to using your apps](https://github.com/gabrielmongefranco/privatium/blob/main/docs/usage.md)
+- [Privatium's security page](https://github.com/gabrielmongefranco/privatium/blob/main/docs/security.md)
 
 [Back to project README](../README.md)
 

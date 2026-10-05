@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 docs/how-to/build-the-starter-catalog.md
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-10-03
+Last Modified: 2026-10-05
 Summary: How to build the starter catalog the app ships, what it is built from, and
          the licenses of its sources.
 Notes: See README file for documentation and full license information.
@@ -21,8 +21,9 @@ See <https://www.gnu.org/licenses/fdl-1.3.html>. See README for full license inf
 [Back to project README](../../README.md)
 
 This page shows how to rebuild `apps/meds/lib/starter_catalog.lua`, the starter catalog
-that the app loads into an empty catalog by itself. It is for developers. You need it when you add a drug
-to the lists, or when you want newer strengths from the drug reference.
+that the app loads by itself into an empty catalog. It is for developers. You need it
+when you add a drug to the lists, or when you want newer strengths from the drug
+references.
 
 Nobody who only uses the app has to do this. The file is part of the repository.
 
@@ -46,16 +47,17 @@ its drug list, which gives every product a number.
 ### Controlled and specialty marks
 
 The builder reads openFDA's `dea_schedule` and product identifiers to mark controlled
-products. It asks once per ingredient, reading at most 100 National Drug Code (NDC)
-records, and caches the answer. Products missing from those records remain unmarked.
-Check the mark before relying on its reminder rules.
+products. It asks once per ingredient, reads up to 100 National Drug Code (NDC) records,
+and keeps the answer. A product missing from those records stays unmarked, so check the
+mark before you rely on its refill rules.
 
-Specialty marks come from generic names ending in `mab` or `cept`, and the small list
-in `specialty.txt`. Coverage differs by payer, so these are suggestions. Change either
-mark in the catalog. The browser lookup uses the same name rules and checks the
-controlled mark with an openFDA request by the chosen product's identifier.
+Specialty marks come from generic names that end in `mab` or `cept`, and from the short
+list in `specialty.txt`. Plans differ in what they call specialty, so these are only
+suggestions, and a person can change either mark in the catalog. The online lookup in
+the browser uses the same name rules, and checks the controlled mark by asking openFDA
+about the chosen product.
 
-The catalog currently has 264 controlled products and 29 specialty suggestions.
+The catalog has 264 controlled products and 29 specialty suggestions.
 
 ### What you need
 
@@ -88,8 +90,9 @@ The catalog currently has 264 controlled products and 29 specialty suggestions.
 
 4. Run the checks in [How to run the tests](run-the-tests.md). The smoke test opens the
    catalog on an empty app, which loads the new module, and reads its counts from it.
-5. Update the counts in [the data model](../data-model.md) and
-   [the usage page](../usage.md), if they changed.
+5. If the counts changed, update them in [the data model](../data-model.md),
+   [How the app works](../how-it-works.md), [Words to know](../glossary.md), the
+   [user guide](../usage.md) and the project README.
 
 ### What the script does
 
@@ -152,7 +155,6 @@ with the project's own license needs anything more. This page makes no claim abo
   it about 700 times. The answers are kept, so a later run asks for little.
 - The cartons come from the labels that makers filed. A carton that no label lists has
   no entry. Add it in the app, or write it into `by_hand.jsonl`.
-
 - A strength below 1 mg stays in milligrams when openFDA holds no label for the product,
   or when as many labels print milligrams as micrograms.
 - The syringes and needles name sizes, not brands. Some sizes on the list are rare, and
@@ -168,7 +170,7 @@ You can now rebuild the starter catalog and say where each of its entries came f
 
 ### Additional resources
 
-- [App design](../design/README.md#the-catalog-and-the-drug-references)
+- [Architecture: the catalog and the drug references](../architecture.md#the-catalog-and-the-drug-references)
 - [Data model](../data-model.md)
 - [How to run the tests](run-the-tests.md)
 - [RxTerms search, National Library of Medicine](https://clinicaltables.nlm.nih.gov/apidoc/rxterms/v3/doc.html)
