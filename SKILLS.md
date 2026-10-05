@@ -47,7 +47,7 @@ conflicts, follow the applicable higher-priority instructions and identify the c
   project branding or media pack, with three accessible options, approved exports,
   a branding guide, and README integration.
 - [privatium-overview](skills/privatium-overview/SKILL.md): read first when building on
-  Privatium and the tier is not already decided. Exported from Privatium v0.3.
+  Privatium and the tier is not already decided. Exported from Privatium v0.3.2.
 - [privatium-tier1-lua](skills/privatium-tier1-lua/SKILL.md): apply when writing or
   changing the app's Lua, SQL or LSP templates under `apps/meds/`.
 - [privatium-security](skills/privatium-security/SKILL.md): apply with the tier guide

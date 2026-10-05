@@ -64,10 +64,28 @@ request's data in a global expecting to find it later, and do not build a cache 
 mutating a load-time table — that one does persist, per VM, and is what the linter warns
 about.
 
+Under `[ui] navigation = "swap"` your pages share one document, and that document keeps
+the policy and the scripts it loaded first. That is why a swap never crosses your mount:
+the frame sends any link or form that leaves `/a/<slug>/`, or touches `/settings`, `/api`,
+`/skills`, `/static` or `/ws`, to a fresh document under its own policy, on the encrypted
+channel and on plain HTTPS alike (`spec/protocol.md §8.3.1`). Do not work around it — no
+`hx-target` or `hx-select` that pulls another app's page or a settings page into yours.
+htmx runs no script that arrives in swapped content and ignores a swapped page's head, by
+design, so a script your view carries would never run after the first page (`PV111`):
+list it in `[ui] scripts`. Do not turn `allowScriptTags` back on to "fix" that, and do
+not turn htmx's history cache on: it would copy each page into browser storage.
+
 ## Tier 2 (Web)
 
 Default CSP is `script-src 'self'` scoped to the app's path. Inline `<script>` does not run.
 Put JavaScript in external files.
+
+The bar and footer the node inserts into your document (`spec/app-contract.md §5`) add
+nothing inline and nothing cross-origin: two same-origin assets in the head with their
+integrity hashes, and markup rendered from your manifest with every value escaped. Your
+policy is unchanged by them, and you need no permission for them. Do not widen the
+policy to "make room" for the chrome; if a bar is missing, the load warning names the
+anchor your document lacks.
 
 Every non-default permission is shown to the owner at install:
 
@@ -77,7 +95,7 @@ Every non-default permission is shown to the owner at install:
 | `wasm` / `eval` | A WASM loader requires it |
 | `sql` | The app needs ad-hoc queries rather than named views |
 | `cross_origin_isolated` | Solo mode only; see `privatium-games` |
-| `remote` | **The app phones out.** This is the one thing the project exists to avoid. Expect the owner to refuse. |
+| `remote` | The app uses online services. The owner is shown a privacy warning listing each one, and may refuse. |
 
 Vendor libraries into `web/vendor/`. A CDN is a `remote` permission, an offline failure, and
 an IP leak.
@@ -144,7 +162,12 @@ substituted node, and the channel protects application data from passive listene
 Integrity pins same-origin external scripts and stylesheets to channel bytes. A remote
 resource allowed by existing app permissions needs a hash in authenticated HTML;
 imported framework and app modules lack that protection. None authenticates a later
-bootstrap. Describe the exposure as every visit, including stored device keys.
+bootstrap. Describe the exposure as every visit, including stored device keys, when you
+write for a developer. The notice the owner sees on the pairing screen is written in plain
+words instead (`spec/protocol.md §7.7`): it tells them to use Privatium only on a network
+they trust, that nobody can listen in, and that on a shared network someone could change
+the pages they open and read their data. If you write that notice for an app of your own,
+keep those facts and never present the risk as ending once a device is paired.
 
 Full-page navigation uses a fresh bootstrap with the destination app's CSP. Form
 responses may remain briefly as bounded, unpolled streams in node RAM. Only an opaque

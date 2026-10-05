@@ -33,6 +33,23 @@ Tiers mix freely on one node. A Tier 2 game can sit beside a Tier 1 tracker.
 Use `url('/path')` (Lua) or `pv.url('/path')` (JS) for every internal link. **Never
 hardcode `/a/<slug>/`** — it breaks in solo mode, and the linter flags it.
 
+## The bar every app shares
+
+Every app wears the same chrome: a top bar with the Privatium mark on the left linking
+to the launcher, the app's title in the centre linking to its first page, and on the
+right an Apps link and one Menu; a footer with a status line the framework writes when
+the connection changes. A Tier 1 view renders inside the page frame that carries it. A
+Tier 2 document, and a Tier 1 view that owns its document with `layout()`, receive the
+bar and footer inserted at three anchors — `</head>`, the opening `<body>`, `</body>` —
+unless `app.toml` says `[ui] chrome = "none"`, which an app with its own full-window
+interface (a canvas, a game) does. An app adds its own items to the menu through `[ui]`
+in `app.toml` and the `menu()` template helper, writes its own task status through
+`pv.status()`, and never draws a second way back or a second menu (`PV408`). A Tier 1 app
+can also set `[ui] navigation = "swap"`, so its pages change inside one document under a
+bar that never moves; the swap never crosses the app's mount. The details
+are in `privatium-tier1-lua`, `privatium-tier2-web`, `spec/lua-api.md §4.1` and
+`spec/app-contract.md §5`.
+
 ## Invariants — true in every tier
 
 1. **JSONL is the only truth.** The SQLite cache, snapshots, and CSV are caches; deleting all of them
