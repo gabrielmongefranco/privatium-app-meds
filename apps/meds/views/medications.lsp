@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/views/medications.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-10-03
+Last Modified: 2026-10-05
 Summary: What each person tracks, grouped by status, with a search box that narrows the
          list by any name, the prescriber or the person.
 Notes: See README file for documentation and full license information.
@@ -23,8 +23,8 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <https://www.gnu.org/licenses/>.
 --?>
 
+<? if filter.selected then menu('Print list', '/people/' .. filter.id .. '/medication-list', 'printer') end ?>
 <?= render('_nav', { section = section }) ?>
-<script src="<?= url('/static/filter.js') ?>" defer></script>
 <h1>Medications</h1>
 <?= render('_notice', { notice = notice }) ?>
 <?= render('_people_filter', { filter = filter, base = '/medications' }) ?>
@@ -32,9 +32,6 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 <div class="meds-toolbar">
   <p class="pv-actions">
     <a class="pv-btn pv-btn-primary" href="<?= url('/medications/new' .. (filter.id ~= '' and ('?person=' .. filter.id) or '')) ?>"><?= icon('plus-lg') ?> Track a new medication</a>
-    <? if filter.selected then ?>
-      <a class="pv-btn" href="<?= url('/people/' .. filter.id .. '/medication-list') ?>"><?= icon('printer') ?> Print list</a>
-    <? end ?>
   </p>
   <form method="get" action="<?= url('/medications') ?>" role="search" class="meds-search">
     <? if filter.id ~= '' then ?><input type="hidden" name="person" value="<?= filter.id ?>"><? end ?>
@@ -50,8 +47,10 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
   </form>
 </div>
 <p class="pv-meta" role="status" data-filter-status><?= matched ?></p>
-<? if not filter.selected and #filter.people > 0 then ?>
-  <p class="pv-help">Choose one person to print their list.</p>
+<? if filter.selected then ?>
+  <p class="pv-help">To print this list, open the menu in the top bar and choose Print list.</p>
+<? elseif #filter.people > 0 then ?>
+  <p class="pv-help">Choose one person to print their list from the menu in the top bar.</p>
 <? end ?>
 
 <? local shown = 0 ?>
