@@ -23,15 +23,17 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <https://www.gnu.org/licenses/>.
 --?>
 
+<? -- keep: an optional query string, already encoded, that each link carries along. ?>
+<? local suffix = (keep and keep ~= '') and ('&' .. keep) or '' ?>
 <? if #filter.people > 1 then ?>
   <? -- person_tab.js, loaded from the manifest, remembers the tab chosen last in the
      -- browser. The Everyone link names an empty person on purpose, so the script knows
      -- it was chosen and leaves it. ?>
   <nav aria-label="Show one person" data-person-filter>
     <ul class="pv-subnav meds-filter">
-      <li><a href="<?= url(base .. '?person=') ?>"<? if filter.id == '' then ?> aria-current="true"<? end ?>>Everyone</a></li>
+      <li><a href="<?= url(base .. '?person=' .. suffix) ?>"<? if filter.id == '' then ?> aria-current="true"<? end ?>>Everyone</a></li>
       <? for _, person in ipairs(filter.people) do ?>
-        <li><a href="<?= url(base .. '?person=' .. person.id) ?>"<? if filter.id == person.id then ?> aria-current="true"<? end ?>><?= person.display_name ?></a></li>
+        <li><a href="<?= url(base .. '?person=' .. person.id .. suffix) ?>"<? if filter.id == person.id then ?> aria-current="true"<? end ?>><?= person.display_name ?></a></li>
       <? end ?>
     </ul>
   </nav>

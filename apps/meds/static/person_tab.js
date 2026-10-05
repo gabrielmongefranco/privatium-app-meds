@@ -7,7 +7,8 @@ Last Modified: 2026-10-05
 Summary: Remembers the person tab that was chosen last, in the local storage of the
          browser, and opens a page that names no person on that tab, by following the
          tab's own link so the page changes the way every other link does. The value is
-         the id of a person, never a name.
+         the id of a person, never a name. It also marks a row of tabs whose second group
+         has wrapped under the first, so the line between the groups can go.
          TODO: Replace with Privatium person profiles when they exist; see
          https://github.com/gabrielmongefranco/privatium-app-meds/issues/10
 Notes: See README file for documentation and full license information.
@@ -90,8 +91,32 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
     }
   }
 
+  // CSS cannot tell when a flex row wraps, so the row is marked here when its second
+  // group of tabs sits lower than the first, and the line between them is dropped.
+  function markWrapped(row) {
+    var groups = row.children;
+    if (groups.length < 2) { return; }
+    row.classList.toggle('meds-wrapped', groups[1].offsetTop > groups[0].offsetTop);
+  }
+
+  // One observer serves every row; a row that is swapped away is no longer observed.
+  var rowWatcher = window.ResizeObserver ? new ResizeObserver(function (entries) {
+    entries.forEach(function (entry) { markWrapped(entry.target); });
+  }) : null;
+
+  function watchRows(root) {
+    var rows = root.querySelectorAll ? root.querySelectorAll('.meds-tab-row:not([data-wrap-watched])') : [];
+    for (var index = 0; index < rows.length; index += 1) {
+      rows[index].setAttribute('data-wrap-watched', '');
+      markWrapped(rows[index]);
+      if (rowWatcher) { rowWatcher.observe(rows[index]); }
+    }
+  }
+
   // The frame fires this for the first page and for every page swapped in after it.
   document.addEventListener('htmx:load', function (event) {
-    openRemembered(event.detail && event.detail.elt ? event.detail.elt : document);
+    var root = event.detail && event.detail.elt ? event.detail.elt : document;
+    openRemembered(root);
+    watchRows(root);
   });
 }());

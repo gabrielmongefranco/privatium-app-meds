@@ -158,6 +158,12 @@ try {
   await go('/fills', 'History');
   await shot('history');
 
+  await go('/fills/reports', 'History');
+  await shot('reports');
+
+  await go(`/fills/reports/print?person=${ALEX}`, 'spending report');
+  await shot('printable-report');
+
   await go('/authorizations', 'Prior authorizations');
   await shot('authorizations');
 

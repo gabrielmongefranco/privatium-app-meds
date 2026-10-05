@@ -4,9 +4,10 @@ apps/meds/static/filter.js
 Author(s): Gabriel Mongefranco
 Created: 2026-10-03
 Last Modified: 2026-10-05
-Summary: Filters the rows of the Medications page while a person types, hides the status
-         groups that have no match, and opens the closed section of medications no longer
-         taken when a match is inside it. The server does the same when the form is sent.
+Summary: Filters the rows of the Medications page and the Fill history while a person types,
+         hides the status groups that have no match, and opens the closed section of
+         medications no longer taken when a match is inside it. The server does the same when
+         the form is sent.
          The script loads once for the whole app and listens on the document, so it works
          on every page that is swapped in without a reload.
 Notes: See README file for documentation and full license information.
@@ -45,6 +46,24 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
     return key === '' ? [] : key.split(' ');
   }
 
+  // A row may stand in a group with rows of its own, such as a fill and its note; the
+  // whole group is shown or hidden with it.
+  function targetOf(row) {
+    return (row.closest && row.closest('[data-search-group]')) || row;
+  }
+
+  // The words of the count: data-filter-noun="fill|fills" on the status line, or
+  // medications when it says nothing.
+  function countText(status, shown) {
+    var nouns = (status.getAttribute('data-filter-noun') || 'medication|medications').split('|');
+    var words = shown + ' ' + (shown === 1 ? nouns[0] + ' matches' : nouns[1] + ' match');
+    // Rows on other pages were never sent, so the count covers this page only.
+    if (status.hasAttribute('data-filter-paged')) {
+      return words + ' on this page. Choose Find to search every page.';
+    }
+    return words + '.';
+  }
+
   function apply(input) {
     var words = wordsOf(input.value);
     var rows = document.querySelectorAll('tr[data-search]');
@@ -53,14 +72,18 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
       var row = rows[index];
       var searched = ' ' + row.getAttribute('data-search') + ' ';
       var matches = words.every(function (word) { return searched.indexOf(word) !== -1; });
-      row.hidden = !matches;
+      targetOf(row).hidden = !matches;
       if (matches) { shown += 1; }
     }
     // A group with no row left is hidden with its heading.
     var groups = document.querySelectorAll('[data-filter-group]');
     for (var place = 0; place < groups.length; place += 1) {
       var group = groups[place];
-      var visible = group.querySelectorAll('tr[data-search]:not([hidden])').length;
+      var inside = group.querySelectorAll('tr[data-search]');
+      var visible = 0;
+      for (var at = 0; at < inside.length; at += 1) {
+        if (!targetOf(inside[at]).hidden) { visible += 1; }
+      }
       group.hidden = words.length > 0 && visible === 0;
       // A match among the medications no longer taken is shown, not hidden in a
       // closed section.
@@ -68,8 +91,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
     }
     var status = document.querySelector('[data-filter-status]');
     if (status) {
-      status.textContent = words.length === 0 ? '' :
-        shown + (shown === 1 ? ' medication matches.' : ' medications match.');
+      status.textContent = words.length === 0 ? '' : countText(status, shown);
     }
   }
 

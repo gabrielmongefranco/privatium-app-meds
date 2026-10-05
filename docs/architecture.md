@@ -24,8 +24,8 @@ See <https://www.gnu.org/licenses/fdl-1.3.html>. See README for full license inf
 
 This page explains how the app is put together, for developers who change it. It covers
 the parts of the app folder, how pages change inside Privatium's page frame, how forms
-find and add records, how pasted portal text becomes fills, and how the catalog uses the
-public drug references. The [data model](data-model.md) describes every table and the
+find and add records, how the History filters and reports work, how pasted portal text
+becomes fills, and how the catalog uses the public drug references. The [data model](data-model.md) describes every table and the
 exact date rules. [How the app works](how-it-works.md) gives the same rules in plain
 words for families.
 
@@ -85,9 +85,9 @@ never sees a fresh page. So every script follows these rules:
 
 | Script | Job |
 |---|---|
-| `forms.js` | Shows the box for a new record when **-- Add new --** is chosen, and empties it when another choice is made |
-| `filter.js` | Narrows the Medications page as you type, and opens the closed section when a match is inside it |
-| `person_tab.js` | Remembers the last person tab, by id, in local storage, and opens it by following the tab's own link |
+| `forms.js` | Shows the box for a new record when **-- Add new --** is chosen, and empties it when another choice is made. Shows and runs the **Print** button of the printable report. |
+| `filter.js` | Narrows the Medications page and the Fill history as you type, and opens the closed section when a match is inside it. A fill and its note row form one `tbody` and hide together. |
+| `person_tab.js` | Remembers the last person tab, by id, in local storage, and opens it by following the tab's own link. On the History tabs, it drops the line between the two groups of tabs when the person tabs wrap underneath, which CSS cannot detect. |
 | `drug_references.js` | Asks RxTerms, then the openFDA NDC Directory, then RxNorm about a name. It is listed first because the search script uses it. |
 | `product_search.js` | The product search of every form: asks `/medications/search` for JSON, pages the results, falls back to the drug references, and suggests similar products while a new medication is typed |
 
@@ -98,6 +98,43 @@ tracks replacing it once profiles exist.
 Submit buttons are named `step`, never `action`. Privatium's frame script reads
 `form.action` to post a form, and in WebKit a control named `action` shadows that
 property, so the post would go to the wrong address.
+
+### History, reports and the chart
+
+The two History tabs, `/fills` and `/fills/reports`, and the printable report,
+`/fills/reports/print`, share one set of filters in `lib/history_filter.lua`:
+
+- `read` takes the person, medication, pharmacy, time period, search words and page from
+  the address. A value that is not on offer counts as no filter. That is how a
+  medication of one person goes back to "Every medication" when another person's tab is
+  chosen.
+- `fills` runs one fixed query for the fills under the person, medication, pharmacy and
+  date filters. It then keeps the fills whose `text.key` holds every search word. The
+  words are matched in Lua because Privatium's lint (PV201) refuses SQL built from
+  pieces, and so the server and `filter.js` match the same text.
+- `group` adds up fills by year, person or medication. It sums amounts with `pv.dec`,
+  so money never passes through a floating-point number.
+- `query`, `link` and `tabs` build addresses that keep the filters, for the page links,
+  the person tabs and the two History tabs.
+
+`lib/periods.lua` turns a time period into a first and last date. Weeks start on Sunday,
+a constant at the top of the file.
+
+`lib/spending_chart.lua` lays out the Paid by year bar chart: bars, axis lines, labels,
+the average line and a sentence that describes the chart. It works in whole cents, so
+the average is exact. `views/reports.lsp` draws it as inline SVG, with no chart library.
+The page's Content Security Policy refuses inline styles, so the drawing uses classes
+from `meds.css` and the shell's color variables, which also covers dark mode. The SVG
+has `role="img"`, a title and a description. The table under it holds every number as
+text.
+
+The printable report is an ordinary page, like the printable medication list. A print
+rule in `meds.css` hides the bar, the tabs and the buttons on paper. Its **Print** button
+arrives hidden, and `forms.js` shows it and calls `window.print()`. The Reports tab links
+to it with `target="_blank"`, so it opens in a new tab and the Reports page stays.
+
+`lib/money.lua` and `views/_money.lsp` show every amount in US dollars, grouped by
+Privatium's locale setting through `fmt.money`. There is no currency setting yet.
 
 ### Finding and adding records inside a form
 
