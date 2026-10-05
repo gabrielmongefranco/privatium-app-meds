@@ -2,7 +2,7 @@
 -- apps/meds/lib/medication_search.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-10-01
+-- Last Modified: 2026-10-05
 -- Summary: Finds the medications of the catalog that a typed name matches. Every screen that
 --          asks for a medication searches here, so all of them find the same things.
 -- Notes: See README file for documentation and full license information.
@@ -105,7 +105,8 @@ end
 --         medication row with `matched_name`, the name that matched. `matches` holds the
 --         medications whose name is or contains what was typed. `close` holds the ones
 --         that are near it, which a person must confirm; it is filled in only when
---         `matches` is empty. The two lists hold 50 medications at most. `exact` says whether a name is exactly what was typed.
+--         `matches` is empty. The two lists hold FOUND_MAX medications at most. `exact`
+--         says whether a name is exactly what was typed.
 function medication_search.find(typed)
   local found = { matches = {}, close = {}, exact = false }
   local words = words_of(text.key(typed))

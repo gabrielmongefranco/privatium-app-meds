@@ -22,15 +22,15 @@ This folder is the app itself. Privatium loads it from the `apps/` folder of its
 directory, and nothing outside this folder is needed to run it. The rest of the
 repository holds the documentation, the license and the assistant guides.
 
-### What it does today
+### What it does
 
-The app shows which refills are due, keeps the medication list of each person with the
-catalog products behind each medication, records fills by hand or from the pasted text
-of a portal, and tracks prior authorizations.
-[The usage page](../../docs/usage.md) shows how to use every screen.
+The app shows which refills are due, keeps each person's medication list with the
+catalog products behind each medicine, records fills by hand or from text copied from a
+patient portal, and tracks prior authorizations.
+[The user guide](../../docs/usage.md) shows how to use every screen.
 
 [The data model page](../../docs/data-model.md) describes each table, and
-[the app design](../../docs/design/README.md) explains the rules behind the screens.
+[the architecture page](../../docs/architecture.md) explains how the parts fit together.
 
 ### Files
 
@@ -47,7 +47,7 @@ of a portal, and tracks prior authorizations.
 | `lib/starter.lua` | Loads the starter catalog the first time a page finds the catalog empty |
 | `static/forms.js` | Shows the fields of a new record when **-- Add new --** is chosen. Every form works without it. |
 | `static/filter.js` | Narrows the Medications page as a person types. The server does the same when the form is sent. |
-| `static/person_tab.js` | Remembers the person tab chosen last, in the browser, until Privatium offers person profiles. |
+| `static/person_tab.js` | Remembers the person tab chosen last, by id, in the browser |
 | `static/drug_references.js` | Asks the public drug references about a name. The product search uses it. |
 | `static/product_search.js` | The product search of every form that needs a product: catalog first, then the drug references, with paged results. The server searches without it. |
 | `SKILL.md` | Context an AI assistant loads before extending this app |
@@ -63,9 +63,10 @@ twice. The Privatium guide `skills/privatium-tier1-lua/SKILL.md` shows the patte
 
 ### Run it
 
-Link this folder into the `apps/` folder of your Privatium data directory, then start the
-development loop. Every node start prints its data directory on a line beginning
-`privatium: data in`.
+To use the app, copy this folder into the `apps/` folder of your Privatium data directory
+and start Privatium, as the project README shows. To work on it, link the folder instead
+and start the development loop. Every node start prints its data directory on a line
+beginning `privatium: data in`.
 
 ```sh
 ln -s ~/git/privatium-app-meds/apps/meds ~/.local/share/privatium/apps/meds
@@ -81,7 +82,7 @@ privatium lint apps/meds
 ```
 
 The command exits with code 3 while any finding remains.
-[The test how-to](../../docs/how-to/run-the-tests.md) covers the unit tests and the smoke
-test.
+[The test how-to](../../docs/how-to/run-the-tests.md) covers the unit tests, the supply
+tests and the smoke test.
 
 [Back to the project README](../../README.md)

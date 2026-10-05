@@ -457,7 +457,8 @@ SELECT b.person_medication_id, b.person_id, b.status, b.refills_left,
 --- v_active_medication: everything about each medication in use, in readable columns ---
 -- Grain: one row per person_medication row whose status is not 'not_taking'.
 -- Eligibility uses next_fill_on; overdue uses lasts_until, both against local today.
--- The query uses the time zone of the computer that runs it. It is 'overdue', 'due', 'due_soon', 'not_due', or 'no_fill'.
+-- The query uses the time zone of the computer that runs it. refill_status is 'overdue',
+-- 'due', 'due_soon', 'not_due' or 'no_fill'.
 -- A specialty medication uses the specialty day counts. The marks come from the
 -- products, as 1 or 0.
 CREATE VIEW v_active_medication AS

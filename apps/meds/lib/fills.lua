@@ -2,7 +2,7 @@
 -- apps/meds/lib/fills.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-10-03
+-- Last Modified: 2026-10-05
 -- Summary: Checks the values of a fill and writes it. The form and the reader of pasted fills
 --          both save through here, so a fill is checked the same way however it arrives, and a
 --          fill for a product on no list adds the tracked medication beside it.
@@ -201,7 +201,7 @@ function fills.add_all(tx, rows, refills_left)
       local entry = entries.stored(state.id)
       local id = entry.id
       entry.id = nil
-      -- With no count given, each fill uses up one refill. The count never goes below zero.
+      -- With no count given, each fill uses up one refill.
       entry.refills_left = refills_left or math.max(entry.refills_left - state.fills, 0)
       tx.append('person_medication', id, entry)
     end

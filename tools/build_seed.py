@@ -10,7 +10,7 @@ tools/build_seed.py
 
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-10-03
+Last Modified: 2026-10-05
 Notes: See README file for documentation and full license information.
 
 Usage, from the root of the repository:
@@ -439,7 +439,7 @@ class Reference:
     def controlled_products(self, ingredient):
         """Return scheduled product identifiers for one ingredient, using cached public data.
 
-        Reads at most 100 NDC products. Missing records leave products unmarked.
+        Reads at most LABELS_MAX NDC products. Missing records leave products unmarked.
         No credentials or household data are sent. Network failures stop the build.
         """
         query = urllib.parse.urlencode({
@@ -828,7 +828,7 @@ def by_package(entry, reference):
             strengths[label] = strengths.get(label, 0) + 1
     if strengths:
         entry["strength"] = max(sorted(strengths), key=strengths.get)
-        # The strength names the volume now, so the package does not repeat it.
+        # The label strength names the volume, so the package leaves it out.
         entry["package"] = VOLUME.sub("", entry["package"] or "")
     if not packs or packs == {1}:
         return [entry]

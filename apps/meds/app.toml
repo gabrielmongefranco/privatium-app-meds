@@ -35,11 +35,9 @@ license     = "GPL-3.0-or-later"
 order     = 10
 advertise = true
 
-# The frame's standard top bar and footer are the default and need no key. Pages change
-# by swapping the main region inside the open document, so every stylesheet and script
-# the app has is named here and loads once in the head of every page; a view carries
-# none of its own. The scripts are deferred and run in this order: drug_references.js
-# must come before product_search.js, which reads what it exposes.
+# Pages change by swapping the main region, so every stylesheet and script is named here
+# and loads once in the head of every page. The scripts are deferred and run in this
+# order: drug_references.js must come before product_search.js, which reads what it exposes.
 [ui]
 navigation = "swap"
 styles     = ["static/meds.css"]

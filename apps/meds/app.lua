@@ -2,7 +2,7 @@
 -- apps/meds/app.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-26
--- Last Modified: 2026-10-01
+-- Last Modified: 2026-10-05
 -- Summary: Entry point of the Prescription Tracker app. The routes live in lib/routes,
 --          one module for each part of the app; loading a module registers its routes.
 -- Notes: See README file for documentation and full license information.
@@ -23,7 +23,7 @@
 
 -- A path that matches a pattern is handled by the first route registered for it, so
 -- the order below is the order in which paths are tried.
-require 'routes.home'       -- The home page, the household name, Setup, reminder settings
+require 'routes.home'       -- The Refills page, Setup and the reminder settings
 require 'routes.plans'      -- Insurance plans and their refill rules
 require 'routes.people'     -- The people of the household
 require 'routes.contacts'   -- Pharmacies and prescribers

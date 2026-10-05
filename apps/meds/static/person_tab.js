@@ -7,9 +7,9 @@ Last Modified: 2026-10-05
 Summary: Remembers the person tab that was chosen last, in the local storage of the
          browser, and opens a page that names no person on that tab, by following the
          tab's own link so the page changes the way every other link does. The value is
-         the id of a person, never a name. The script goes when Privatium offers person
-         profiles: https://github.com/gabrielmongefranco/privatium-app-meds/issues/10
-         tracks that.
+         the id of a person, never a name.
+         TODO: Replace with Privatium person profiles when they exist; see
+         https://github.com/gabrielmongefranco/privatium-app-meds/issues/10
 Notes: See README file for documentation and full license information.
 
 Copyright © 2026 Gabriel Mongefranco

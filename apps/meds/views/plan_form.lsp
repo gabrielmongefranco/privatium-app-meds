@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/views/plan_form.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-10-01
-Last Modified: 2026-10-01
+Last Modified: 2026-10-05
 Summary: The form for a payer and its refill rules.
 Notes: See README file for documentation and full license information.
 
@@ -35,7 +35,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
         help = 'From 0 to 100. Empty uses the household setting. At 25 percent, 30 days allows 7 days early and 90 allows 22. Use 0 for cash or over-the-counter purchases to wait until supply runs out.' }) ?>
   <?= render('_field', { name = 'supply_frame_days', label = 'Supply frame, in days', value = typed.supply_frame_days,
         err = errors.supply_frame_days, inputmode = 'numeric', maxlength = 4,
-        help = 'Empty uses the household setting, initially 180 days. Fills this many days old still count on the next fill date. Use 0 for the last fill only, or 3650 for every fill.' }) ?>
+        help = 'Empty uses the household setting, 180 days by default. Fills this many days old still count on the next fill date. Use 0 for the last fill only, or 3650 for every fill.' }) ?>
   <p class="pv-actions">
     <button type="submit" class="pv-btn pv-btn-primary"><?= icon('check-lg') ?> Save</button>
     <a class="pv-btn" href="<?= url('/setup/plans') ?>">Cancel</a>

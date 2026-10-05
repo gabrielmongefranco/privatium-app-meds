@@ -2,7 +2,7 @@
 -- apps/meds/lib/catalog_entry.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-10-03
+-- Last Modified: 2026-10-05
 -- Summary: The checks of a catalog entry, shared by the catalog form and by every form
 --          that adds a medication beside its own record.
 -- Notes: See README file for documentation and full license information.
@@ -177,7 +177,8 @@ function catalog_entry.read(form, existing, offered)
   local built_before = existing
     and medication_name.short(existing.brand_name, existing.generic_name, existing.strength,
                               existing.package_size, existing.package_type)
-  -- A name that the app built before the package was part of it counts as built too.
+  -- A name built from brand, generic and strength alone, without the package, also counts
+  -- as built, so adding a package to such an entry rebuilds its name.
   local built_plain = existing
     and medication_name.short(existing.brand_name, existing.generic_name, existing.strength)
   if problem then
