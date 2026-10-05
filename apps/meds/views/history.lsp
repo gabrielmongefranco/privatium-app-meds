@@ -26,8 +26,10 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 <?= render('_nav', { section = section }) ?>
 <h1>History</h1>
 <?= render('_notice', { notice = notice }) ?>
-<?= render('_history_tabs', { tabs = tabs }) ?>
-<?= render('_people_filter', { filter = filter, base = '/fills', keep = keep }) ?>
+<div class="meds-tab-row">
+  <?= render('_history_tabs', { tabs = tabs }) ?>
+  <?= render('_people_filter', { filter = filter, base = '/fills', keep = keep }) ?>
+</div>
 
 <p class="pv-actions">
   <a class="pv-btn pv-btn-primary" href="<?= url('/fills/new' .. (filter.id ~= '' and ('?person=' .. filter.id) or '')) ?>"><?= icon('plus-lg') ?> Record a fill</a>

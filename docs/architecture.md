@@ -87,7 +87,7 @@ never sees a fresh page. So every script follows these rules:
 |---|---|
 | `forms.js` | Shows the box for a new record when **-- Add new --** is chosen, and empties it when another choice is made. Shows and runs the **Print** button of the printable report. |
 | `filter.js` | Narrows the Medications page and the Fill history as you type, and opens the closed section when a match is inside it. A fill and its note row form one `tbody` and hide together. |
-| `person_tab.js` | Remembers the last person tab, by id, in local storage, and opens it by following the tab's own link |
+| `person_tab.js` | Remembers the last person tab, by id, in local storage, and opens it by following the tab's own link. On the History tabs, it drops the line between the two groups of tabs when the person tabs wrap underneath, which CSS cannot detect. |
 | `drug_references.js` | Asks RxTerms, then the openFDA NDC Directory, then RxNorm about a name. It is listed first because the search script uses it. |
 | `product_search.js` | The product search of every form: asks `/medications/search` for JSON, pages the results, falls back to the drug references, and suggests similar products while a new medication is typed |
 

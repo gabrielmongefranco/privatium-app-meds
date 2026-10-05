@@ -349,7 +349,7 @@ search box and filters, so you can switch tabs without setting them again.
 
 #### Find a fill
 
-![The Fill history tab of the History page. Under the tabs Fill history and Reports, and the person tabs Everyone, Alex Example, Jamie Example and Sam Example, there is a search box and drop-downs for medication, pharmacy and time period. Below them, 36 fills, total paid $591.00, and a table with the date, medicine, person, pharmacy, quantity, days supply, amount paid and a Change button. The note Delivered with an ice pack sits on its own line under its fill.](images/history.png)
+![The Fill history tab of the History page. One row of tabs holds Fill history and Reports, a thin dividing line, and the person tabs Everyone, Alex Example, Jamie Example and Sam Example. Below them is a search box and drop-downs for medication, pharmacy and time period. Below them, 36 fills, total paid $591.00, and a table with the date, medicine, person, pharmacy, quantity, days supply, amount paid and a Change button. The note Delivered with an ice pack sits on its own line under its fill.](images/history.png)
 
 Choose **History** to see every fill, newest first. To narrow the list:
 
@@ -371,7 +371,7 @@ on its own line under the fill.
 
 #### See what you paid each year
 
-![The Reports tab. A bar chart shows the total paid each year from 2023 to 2026. The 2026 bar is outlined and labeled 2026 so far. A dashed line marks the average of the full years, $144.33 a year. Below the chart, a table lists each year and person with the number of fills and the total paid, and a button opens the printable report in a new tab.](images/reports.png)
+![The Reports tab, with the same row of tabs and filters as Fill history. A bar chart shows the total paid each year from 2023 to 2026. The 2026 bar is outlined and labeled 2026 so far. A dashed line marks the average of the full years, $144.33 a year. Below the chart, a table lists each year and person with the number of fills and the total paid, and a button opens the printable report in a new tab.](images/reports.png)
 
 Choose **Reports** to see a bar chart of what you paid each year. The filters work here
 too. For example, choose one person and one medicine to see what that medicine cost

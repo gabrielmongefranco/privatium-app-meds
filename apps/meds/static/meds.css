@@ -143,8 +143,13 @@ details.meds-another > summary { flex-direction: column; align-items: flex-start
 main form textarea.meds-notes { display: block; width: 100%; max-width: 40rem; }
 .meds-notes-text { white-space: pre-line; }
 
-/* The History tabs sit above the person tabs, so they keep a little room below. */
-.meds-tabs { margin-bottom: .5rem; }
+/* The History tabs and the person tabs share one row, with a line between the two
+   groups. When the person tabs wrap under the History tabs, person_tab.js marks the
+   row and the line goes, since nothing stands beside it. */
+.meds-tab-row { display: flex; flex-wrap: wrap; align-items: stretch; margin: 0 0 1.5rem; border-bottom: 1px solid var(--pv-line); }
+.meds-tab-row .pv-subnav { margin: 0; border-bottom: 0; }
+.meds-tab-row > nav + nav { margin-left: .75rem; padding-left: .75rem; border-left: 1px solid var(--pv-line); }
+.meds-tab-row.meds-wrapped > nav + nav { margin-left: 0; padding-left: 0; border-left: 0; }
 /* The history filters: the search box and three drop-downs side by side, wrapping on a
    narrow screen. */
 main form.meds-history-filters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 0 1rem; margin: 0 0 1.5rem; }

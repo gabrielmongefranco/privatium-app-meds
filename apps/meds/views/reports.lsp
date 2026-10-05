@@ -26,8 +26,10 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 
 <?= render('_nav', { section = section }) ?>
 <h1>History</h1>
-<?= render('_history_tabs', { tabs = tabs }) ?>
-<?= render('_people_filter', { filter = filter, base = '/fills/reports', keep = keep }) ?>
+<div class="meds-tab-row">
+  <?= render('_history_tabs', { tabs = tabs }) ?>
+  <?= render('_people_filter', { filter = filter, base = '/fills/reports', keep = keep }) ?>
+</div>
 
 <?= render('_history_filters', { chosen = chosen, path = '/fills/reports', is_narrowed = is_narrowed, live = false }) ?>
 
