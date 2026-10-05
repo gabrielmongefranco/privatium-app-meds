@@ -2,7 +2,7 @@
 # apps/meds/app.toml
 # Author(s): Gabriel Mongefranco
 # Created: 2026-09-26
-# Last Modified: 2026-10-03
+# Last Modified: 2026-10-05
 # Summary: Manifest for the Prescription Tracker app. Tier 1 (Lua), API 1.
 # Notes: See README file for documentation and full license information.
 #
@@ -23,7 +23,7 @@
 [app]
 slug        = "meds"
 title       = "Prescription Tracker"
-version     = "0.5.0"
+version     = "0.6.0"
 api         = 1
 tier        = "lua"
 description = "A personal prescription tracker for families with chronic conditions."
@@ -34,6 +34,22 @@ license     = "GPL-3.0-or-later"
 [nav]
 order     = 10
 advertise = true
+
+# The frame's standard top bar and footer are the default and need no key. Pages change
+# by swapping the main region inside the open document, so every stylesheet and script
+# the app has is named here and loads once in the head of every page; a view carries
+# none of its own. The scripts are deferred and run in this order: drug_references.js
+# must come before product_search.js, which reads what it exposes.
+[ui]
+navigation = "swap"
+styles     = ["static/meds.css"]
+scripts    = [
+  "static/forms.js",
+  "static/filter.js",
+  "static/person_tab.js",
+  "static/drug_references.js",
+  "static/product_search.js",
+]
 
 [permissions]
 # The product search and the lookup of a new medication run in the browser and ask

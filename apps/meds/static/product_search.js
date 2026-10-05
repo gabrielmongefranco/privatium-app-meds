@@ -2,7 +2,7 @@
 // apps/meds/static/product_search.js
 // Author(s): Gabriel Mongefranco
 // Created: 2026-10-03
-// Last Modified: 2026-10-04
+// Last Modified: 2026-10-05
 // Summary: The product box of every form that needs a product: searches the catalog as a
 //          person asks, lists the results a page at a time with a check box or a radio
 //          button each, asks the public drug references when the catalog has nothing, and
@@ -25,12 +25,12 @@
 (function () {
   'use strict';
 
-  // A page can load this file more than once. The second copy does nothing.
+  // The frame loads this file once in the head; a second copy does nothing.
   if (window.medsProductSearchLoaded) { return; }
   window.medsProductSearchLoaded = true;
 
   /* Configuration */
-  var refs = window.medsDrugReferences;   // Loaded by the page before this file
+  var refs = window.medsDrugReferences;   // The manifest loads drug_references.js before this file
   var RESULTS_MAX = 25;                   // Results listed from either source
   var PAGE_SIZE_WIDE = 10;                // Results on one page on a tablet or a desktop
   var PAGE_SIZE_NARROW = 5;               // Results on one page on a phone
@@ -498,10 +498,8 @@
     }
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', dress);
-  } else {
-    dress();
-  }
-  document.addEventListener('htmx:afterSwap', dress);
+  // The frame fires this for the first page and for every page or fragment swapped in
+  // after it. A container that already has its pager is left alone, so running it again
+  // is harmless.
+  document.addEventListener('htmx:load', dress);
 }());

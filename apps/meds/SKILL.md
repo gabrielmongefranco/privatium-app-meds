@@ -55,10 +55,11 @@ view, and must change in the same commit as `schema.sql`.
 | `lib/catalog_entry.lua` | The checks of a catalog entry, shared by the catalog form and the medication box |
 | `lib/reference_words.lua` | Pure Lua: turns the route and the dose form of a drug reference into words of the catalog |
 | `lib/authorization_words.lua` | Pure Lua: the levels of a prior authorization that needs attention, and their words |
+| `static/meds.css`, `static/*.js` | The one stylesheet and the five scripts. `[ui]` in `app.toml` names them all, and the frame loads them once, deferred, in the head of every page; no view carries a `<script>` or a stylesheet link. |
 | `static/forms.js` | Shows the fields of a new record when **-- Add new --** is chosen. Every form works without it. |
 | `static/filter.js` | Narrows the Medications page as a person types. The server filters the same way on submit. |
-| `static/person_tab.js` | Remembers the person tab chosen last, by id, in local storage. A stopgap until Privatium offers person profiles. |
-| `static/drug_references.js` | Asks RxTerms, then the openFDA NDC Directory, then RxNorm about a name, in the browser; the search script uses it |
+| `static/person_tab.js` | Remembers the person tab chosen last, by id, in local storage, and opens it by following the tab's own link. A stopgap until Privatium offers person profiles. |
+| `static/drug_references.js` | Asks RxTerms, then the openFDA NDC Directory, then RxNorm about a name, in the browser; the search script uses it, so it is listed first |
 | `static/product_search.js` | The product search of every form that needs a product: asks `/medications/search` for JSON, pages the results, falls back to the drug references, and suggests similar products while a new medication is typed |
 | `lib/quick_add.lua` | A person, a pharmacy, a prescriber or a plan that a form adds by name beside its own record |
 | `lib/suggestions.lua` | The values in use that text boxes offer while a person types |
@@ -122,6 +123,18 @@ view, and must change in the same commit as `schema.sql`.
   template reads them.
 - The person tab chosen last lives in the browser, in `static/person_tab.js`. The server
   never stores it. The script goes when Privatium offers person profiles.
+- The top bar and the footer are the page frame's. The app draws its section tabs in
+  `views/_nav.lsp` and nothing else around a page. `[ui] navigation = "swap"` in
+  `app.toml` makes a link or a form inside the page replace only the main region, so a
+  script runs once for the whole visit and never sees a fresh page. A script therefore
+  listens on `document`, or sets up each new page on `htmx:load` and marks what it set
+  up so it is never bound twice; it never calls `location.replace` to change the page,
+  because that brings back the full reload. Lint rule PV111 refuses a `<script>` or a
+  `<link rel="stylesheet">` in a view; name the file in `[ui]` instead.
+- A page-specific action, such as **Print list**, goes in the frame's menu through
+  `menu(label, path, icon)` at the top of the view that `pv.render` names, before its
+  markup, never in a partial. An action every page needs would be an `[[ui.menu]]` entry
+  in the manifest; the section tabs carry Setup, so the app declares none.
 - A typed name that a record already has picks that record. No form adds a name twice.
 - Every form that needs a product shows `views/_product_box.lsp`. The entry form wraps it
   in `_product_picker.lsp`: a search with `product_q` and `step=find_product`, and the

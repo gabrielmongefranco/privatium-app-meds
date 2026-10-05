@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 docs/design/README.md
 Author(s): Gabriel Mongefranco
 Created: 2026-09-26
-Last Modified: 2026-10-04
+Last Modified: 2026-10-05
 Summary: Design of the app's screens: tasks, the medication box, adding records from
          inside a form, pasting fills from a portal, the catalog as a copy of a drug
          reference, refill status rules, accessibility and privacy plans, what was
@@ -59,15 +59,35 @@ A prior authorization is an insurer's approval to cover a medication for a set p
 
 ### Navigation
 
-The app has five sections. One navigation bar lists them on every page, in this order:
-**Medications**, **Refills**, **History**, **Authorizations**, **Setup**.
-The bar marks the current section with `aria-current="page"` and an underline.
+The top bar and the footer of every page are Privatium's page frame, shared by every app:
+the Privatium mark that opens the launcher, the app's title in the middle, the **Apps**
+link, the one **Menu**, and a footer with a status line that the framework writes when
+the connection changes. The app adds nothing to the bar and draws no way back of its own.
+
+Below the bar, the app has five sections. Its own row of tabs, in `views/_nav.lsp`, lists
+them on every page, in this order: **Medications**, **Refills**, **History**,
+**Authorizations**, **Setup**. The row marks the current section with
+`aria-current="page"` and an underline. The row is part of the page, so it changes with
+the page.
+
+Pages change inside one document. The manifest sets `[ui] navigation = "swap"`, so a link
+or a form inside the page fetches the next page and the frame replaces only the main
+region, keeps the bar still, takes the new title, moves the focus to the new heading, and
+refreshes the menu's items for the page. The back button reloads the page it returns to.
+Every stylesheet and script is named once in the manifest and loads in the head of every
+page; the views carry none, and each script listens on the document or sets up each new
+page on the `htmx:load` event, guarded so nothing is bound twice.
+
+The menu holds the app's secondary actions. The Medications page adds **Print list** for
+the chosen person with the `menu()` helper, so the page keeps one primary button. The app
+declares no app-wide menu item, because the section row already carries Setup.
 
 Pages that list records for several people show a person filter under the heading. The
 filter is a row of links: **Everyone**, then one link per person. The app hides the
 filter when the household has one person. A small script, `static/person_tab.js`, keeps
 the person chosen last in the local storage of the browser, as an id, and opens a page
-that names no person on that tab. The **Everyone** link carries an empty `person`
+that names no person on that tab by following the tab's own link, so the page changes
+the way a click would. The **Everyone** link carries an empty `person`
 parameter, so choosing it is remembered too. Without scripts, every page opens on
 Everyone. The script is a stopgap until Privatium offers person profiles; [issue 10](https://github.com/gabrielmongefranco/privatium-app-meds/issues/10) tracks its removal.
 
@@ -382,9 +402,9 @@ status back to Taking regularly.
 
 Each row shows the medication with its form icon, its products when there are several,
 the instructions, when to take it, what it is for, the prescriber, the refill status and
-the next fill date. The page has two actions, **Track a new medication** and
-**Print list**, and a search box at the right of them. The second button appears when one
-person is selected. The search narrows the list by the preferred name, every name of the
+the next fill date. The page has one button, **Track a new medication**, and a search
+box at the right of it. When one person is selected, **Print list** appears in the menu
+of the top bar, and a line under the search box says so. The search narrows the list by the preferred name, every name of the
 products, the prescriber and the person; `static/filter.js` does it as you type and opens
 the closed disclosure when a match is inside it, and the server does the same when the
 form is sent. Each row carries its search text in `data-search`.
@@ -423,9 +443,9 @@ is stored, and the date of printing. A table follows, with five columns: medicat
 to take it, when, what it is for, and prescriber. The table holds the medications with
 the status Taking regularly or Taking as needed. A second table holds the ones on hold.
 
-A print stylesheet hides the navigation and the buttons. The page tells you to use the
-browser's own print command. A print button would need a script, and the app ships none
-of its own.
+A print stylesheet hides the bar, the footer, the section row and the buttons. The page
+tells you to use the browser's own print command; the app has no print button, so the
+page works the same with scripts off.
 
 #### History
 
@@ -760,7 +780,7 @@ The target is the Web Content Accessibility Guidelines (WCAG) 2.2, level AA.
 | Zoom and small screens | Forms are one column. Nothing has a fixed width. The layout reflows at 320 CSS pixels. |
 | Repeated buttons | Each **Record fill** button carries hidden text that names its medication. |
 | Headings | One `<h1>` on every page, with heading levels in order. |
-| No JavaScript | Every save and every search is a plain form. Suggestions while you type come from the browser. The app ships two scripts: one shows the fields of a new record when you choose to add one, and one looks up a new medication. Every form works without them. |
+| No JavaScript | Every save and every search is a plain form. Suggestions while you type come from the browser. The app ships five scripts, which show the fields of a new record, filter the Medications page as you type, remember the person tab, and search for products in the catalog and the drug references. Every form works without them. |
 | Lookup results | Each result is a button, so the keyboard reaches it. A status message says how many results came, from which reference, and what was filled in. Focus moves to the first field that was filled in. |
 | Time limits | None. A status message stays until you leave the page. |
 | Color schemes | The app uses the shell's color tokens only, so it follows light and dark mode. |

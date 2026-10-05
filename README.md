@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 README.md
 Author(s): Gabriel Mongefranco
 Created: 2026-09-26
-Last Modified: 2026-10-03
+Last Modified: 2026-10-05
 Summary: Provides an overview of the project, in Markdown format.
 Notes: See README file for documentation and full license information.
 
@@ -30,7 +30,7 @@ It is a Privatium app: a folder of Lua, SQL and HTML templates that a Privatium 
 
 This is the app that Privatium was built for. It shows which refills are due, keeps each person's medication list, records fills by hand or from the pasted text of an insurer's portal, and tracks prior authorizations. It starts with a catalog of the most prescribed medications in the United States, and looks up any other medication by name in the public drug references RxTerms, openFDA and RxNorm. The [documentation](./docs) describes every screen and table.
 
-Tested with Privatium v0.3.
+Tested with Privatium v0.3.2.
 
 **A note on your data.** Privatium stores every record as plain text by design. Anyone who can read the files on your computer can read what this app stores, so protect the computer and its backups the way you protect any file with health information in it. [Privatium's security page](https://github.com/gabrielmongefranco/privatium/blob/main/docs/security.md) explains what the design does and does not protect.
 
@@ -97,7 +97,7 @@ free to send pull requests as well!
 + [ClinCalc DrugStats](https://clincalc.com/DrugStats/): the short drug catalog included in the built-in catalog is mostly sourced from ClinCalc DrugStats by Sean P. Kane, PharmD, licensed under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). Data was enhanced with RxTerms data.
 + [RxTerms](https://clinicaltables.nlm.nih.gov/apidoc/rxterms/v3/doc.html) and [RxNorm](https://www.nlm.nih.gov/research/umls/rxnorm/index.html): the strengths, forms, brand names and product numbers of the built-in catalog, and the lookup of a new medication. This product uses publicly available data from the U.S. National Library of Medicine (NLM), National Institutes of Health, Department of Health and Human Services; NLM is not responsible for the product and does not endorse or recommend this or any other product.
 + [openFDA NDC Directory](https://open.fda.gov/apis/drug/ndc/): the lookup of a medication that RxTerms does not hold, and the unit that labels print for a strength. Data of the U.S. Food and Drug Administration. Do not rely on openFDA to make decisions regarding medical care.
-+ Other libraries: none. The app bundles no JavaScript or Lua library beyond what Privatium provides. Its two scripts and its Lua modules were written for it.
++ Other libraries: none. The app bundles no JavaScript or Lua library beyond what Privatium provides. Its five browser scripts and its Lua modules were written for it.
 
 
 

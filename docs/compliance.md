@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 docs/compliance.md
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-10-04
+Last Modified: 2026-10-05
 Summary: The security and accessibility controls the app has, the evidence for each, the
          known gaps, and the checks a person still has to make.
 Notes: See README file for documentation and full license information.
@@ -27,10 +27,10 @@ claim of compliance with any law or standard.
 
 ### Review status
 
-| Subject | Status on 2026-10-01 |
+| Subject | Status on 2026-10-05 |
 |---|---|
 | Automated checks | Passing. See [How to run the tests](how-to/run-the-tests.md). |
-| Accessibility checks by a person | Not done |
+| Accessibility checks by a person | Partly done. A headless browser run on 2026-10-05 covered focus, reflow and the page changes; the screen reader and phone checks below are open. |
 | Security review by a second person | Not done |
 | Review against a health privacy law | Not done, and not claimed |
 
@@ -63,7 +63,8 @@ paid. The [data model](data-model.md) marks each such column.
 | A record in use is not removed | `uses` in the route modules | The smoke test posts removals by hand. |
 | Diagnostic messages hold no field values | `page.masked` in `lib/page.lua` | Unit tests |
 | The node calls no network service | The Lua of the app has no function that does | Lint rule PV504 passes. |
-| The browser calls three drug references, and nothing else | `permissions.remote` in `app.toml` lists them. `static/drug_references.js`, which both browser scripts use, names no other address. | Lint rule PV207 passes. |
+| The browser calls three drug references, and nothing else | `permissions.remote` in `app.toml` lists them. `static/drug_references.js`, which the product search uses, names no other address. | Lint rule PV207 passes. |
+| Every script and the stylesheet come from the manifest, with the hash of each file | `[ui]` in `app.toml`. No view carries a script or a stylesheet link. | Lint rules PV110 and PV111 pass. The headless browser run of 2026-10-05 counted each file once in the head and none inside the page. |
 | The online search sends public drug names and product identifiers only | `static/drug_references.js` sends no cookie and no page address | Read in the code. Not measured in a browser. |
 | What a drug reference answers is untrusted | The script writes it with `textContent`. The server checks every field it receives: `lib/catalog_entry.lua`, `lib/reference_words.lua`. | The smoke test sends markup as a source, a route and a dose form, and letters as an identifier. Unit tests cover the words of a reference. |
 
@@ -101,7 +102,10 @@ The target is the Web Content Accessibility Guidelines (WCAG) 2.2, level AA.
 | The app uses the shell's color tokens only | Lint rule PV406 passes. The tokens meet the contrast floors in both color schemes. |
 | Tables are real tables with header cells | Lint rule PV407 passes |
 | Every icon beside text is hidden from screen readers | Lint rule PV401 passes |
-| Every save works without JavaScript | The smoke test uses plain form posts only. The two scripts of the app only show fields and fill them in. |
+| Every save works without JavaScript | The smoke test uses plain form posts only. The scripts of the app only show fields, filter rows, page results and fill fields in. |
+| After a page change, focus lands on the new page heading | The page frame moves it after each swap, to the field marked `autofocus` or else the `<h1>`. The headless browser run of 2026-10-05 found the focus on the `<h1>` after each section change. |
+| The footer status line is a polite live region | `<p id="pv-status" role="status">` in the page frame. Privatium writes it on a connection change; the app writes nothing to it. Not yet heard with a screen reader. |
+| The bar, the footer and the pages reflow at 320 CSS pixels | The headless browser run of 2026-10-05 found no horizontal scrolling at 320 and 640 pixels on the Medications, Refills, new medication and Setup pages, with the bar's controls in view. |
 | A refused form keeps what was typed and lists its problems | The smoke test checks both |
 | Buttons are at least 44 CSS pixels high | The shell's button style. Not measured in a browser. |
 
@@ -116,12 +120,42 @@ by the smoke test, including the path without client-side scripts.
 A screen reader pass remains needed. The online search and its suggested marks also
 need an end-user check before relying on them.
 
+### Browser checks, October 5, 2026
+
+A script drove headless Firefox over WebDriver BiDi against a node on this computer, with
+two invented people and the starter catalog, at 1280 pixels wide. It is not part of the
+committed tests. It found:
+
+- Each of the five scripts and the stylesheet was in the head of the page once, and no
+  script or stylesheet was inside the page.
+- Moving through all five sections, into a person's tab, into the form for a new
+  medication and back to Medications kept the same document; a marker set on the window
+  survived every change. The title and the heading were the new page's, the row marked
+  the new section, and focus was on the new `<h1>` after each change.
+- The menu listed **Print list** only while one person was chosen, and the page had no
+  second **Print list** button. The item left when the page changed to Refills.
+- The person tab chosen last was remembered by id, and after a visit to Refills the
+  Medications page opened on that person without a reload, with four requests in all.
+- On a Medications page reached by a page change, typing in the search box wrote the
+  count of matches. On a form reached the same way, the product search answered from the
+  catalog with one pager, the pager moved to page 2, the drug references were present and
+  the hidden parts of the form were hidden.
+- The back button reloaded the page, and a link to `/settings` left for a fresh document.
+- No horizontal scrolling at 320 and 640 CSS pixels on the Medications, Refills, new
+  medication and Setup pages, with the bar's controls inside the viewport.
+
 ### Checks a person still has to make
 
-Two scripts of this change need a browser: the search box of the Medications page
-narrows the list as you type and opens the closed section for a match, and the person
-tab chosen last is remembered across pages and after the browser is closed. The smoke
-test checks the server side of both and that the scripts are served.
+The committed tests do not drive a browser, and the headless run above did not use a
+phone, a screen reader or a lost connection. These remain open from this change:
+
+- On a phone over the local network, move between the five sections and into a form. The
+  bar must not move and nothing must flash.
+- With the keyboard only, open the menu after a page change. It must list **Print list**
+  when one person is selected, then a separator, then Privatium's settings pages.
+- With a screen reader, change pages and listen for the new heading. Turn the network
+  off and on; the footer must say the app is offline and then connected again, once per
+  change.
 
 The committed tests do not drive a browser. Automated checks find only part of the accessibility problems.
 These checks are open:

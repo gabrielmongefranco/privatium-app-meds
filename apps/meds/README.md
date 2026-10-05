@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/README.md
 Author(s): Gabriel Mongefranco
 Created: 2026-09-26
-Last Modified: 2026-10-04
+Last Modified: 2026-10-05
 Summary: What the meds app folder holds and how to run it.
 Notes: See README file for documentation and full license information.
 
@@ -36,20 +36,30 @@ of a portal, and tracks prior authorizations.
 
 | File | Job |
 |---|---|
-| `app.toml` | Manifest: slug, title, tier, icon |
+| `app.toml` | Manifest: slug, title, tier, icon, the permission to call the drug references, and the `[ui]` table that names the stylesheet and the scripts and turns on in-document page changes |
 | `app.lua` | The entry point, which loads the route modules |
 | `lib/routes/` | The routes, one module for each part of the app |
 | `lib/` | Shared Lua: checks for form values, choices, names, and the one module that writes records |
 | `schema.sql` | Tables and views, rebuilt from the event log on every start |
 | `views/` | One template for each page. A name that starts with `_` is a part that pages share. |
-| `static/meds.css` | Styles, using the shell's color tokens |
+| `static/meds.css` | Styles, using the shell's color tokens. The manifest loads it on every page. |
 | `lib/starter_catalog.lua` | The starter catalog of common medications, as a Lua table. `tools/build_seed.py` writes it. |
 | `lib/starter.lua` | Loads the starter catalog the first time a page finds the catalog empty |
-| `static/drug_references.js` | Asks the public drug references about a name. The two scripts below use it. |
-| `static/product_search.js` | The product search of every form that needs a product: catalog first, then the drug references, with paged results. The server searches without it. |
+| `static/forms.js` | Shows the fields of a new record when **-- Add new --** is chosen. Every form works without it. |
 | `static/filter.js` | Narrows the Medications page as a person types. The server does the same when the form is sent. |
 | `static/person_tab.js` | Remembers the person tab chosen last, in the browser, until Privatium offers person profiles. |
+| `static/drug_references.js` | Asks the public drug references about a name. The product search uses it. |
+| `static/product_search.js` | The product search of every form that needs a product: catalog first, then the drug references, with paged results. The server searches without it. |
 | `SKILL.md` | Context an AI assistant loads before extending this app |
+
+The top bar and the footer of every page belong to Privatium, not to this app. The app
+draws only its row of five section tabs, in `views/_nav.lsp`, and the page under it.
+Moving between pages swaps the page content inside the open document, so the bar never
+moves. Because of that, every script and the stylesheet are named once in `app.toml` and
+load in the head of every page; no view carries a script or a stylesheet of its own. A
+new script must work on a page it did not start with: listen on the document, or set up
+each new page on the `htmx:load` event and mark what it has set up, so nothing is bound
+twice. The Privatium guide `skills/privatium-tier1-lua/SKILL.md` shows the pattern.
 
 ### Run it
 

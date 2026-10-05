@@ -3,10 +3,12 @@ This file is part of Prescription Tracker
 apps/meds/static/filter.js
 Author(s): Gabriel Mongefranco
 Created: 2026-10-03
-Last Modified: 2026-10-03
+Last Modified: 2026-10-05
 Summary: Filters the rows of the Medications page while a person types, hides the status
          groups that have no match, and opens the closed section of medications no longer
          taken when a match is inside it. The server does the same when the form is sent.
+         The script loads once for the whole app and listens on the document, so it works
+         on every page that is swapped in without a reload.
 Notes: See README file for documentation and full license information.
 
 Copyright © 2026 Gabriel Mongefranco
@@ -23,12 +25,15 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along
 with this program. If not, see <https://www.gnu.org/licenses/>.
 */
+
 (function () {
   'use strict';
 
-  // A page can load this file more than once. The second copy does nothing.
+  // The frame loads this file once in the head; a second copy does nothing.
   if (window.medsFilterLoaded) { return; }
   window.medsFilterLoaded = true;
+
+  var TYPING_PAUSE_MILLISECONDS = 150;   // Typing pauses this long before the rows are filtered
 
   // The same key as the server builds: lower case, with punctuation as spaces.
   function keyOf(value) {
@@ -68,20 +73,21 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
     }
   }
 
-  function start() {
-    var input = document.querySelector('[data-filter-input]');
-    if (!input) { return; }
-    var timer = null;
-    input.addEventListener('input', function () {
-      window.clearTimeout(timer);
-      timer = window.setTimeout(function () { apply(input); }, 150);
-    });
-    if (input.value !== '') { apply(input); }
-  }
+  // One listener on the document serves every search box that is ever on the page. The
+  // debounce timer is kept on the box itself, so a box that is swapped away takes its
+  // timer with it.
+  document.addEventListener('input', function (event) {
+    var input = event.target;
+    if (!input.matches || !input.matches('[data-filter-input]')) { return; }
+    window.clearTimeout(input.medsFilterTimer);
+    input.medsFilterTimer = window.setTimeout(function () { apply(input); }, TYPING_PAUSE_MILLISECONDS);
+  });
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', start);
-  } else {
-    start();
-  }
+  // A page that arrives with words in its box, from the first load or from a swap, shows
+  // the rows those words match. Filtering only hides rows, so running it again is harmless.
+  document.addEventListener('htmx:load', function (event) {
+    var root = event.detail && event.detail.elt ? event.detail.elt : document;
+    var input = root.querySelector ? root.querySelector('[data-filter-input]') : null;
+    if (input && input.value !== '') { apply(input); }
+  });
 }());

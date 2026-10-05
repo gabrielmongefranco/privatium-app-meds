@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/views/_nav.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-10-04
+Last Modified: 2026-10-05
 Summary: The app's stylesheet and the navigation bar. Every page includes it first, so the
          bar sits in the same place on every page and marks the current section.
 Notes: See README file for documentation and full license information.
@@ -23,8 +23,8 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <https://www.gnu.org/licenses/>.
 --?>
 
-<link rel="stylesheet" href="<?= url('/static/meds.css') ?>">
-<script src="<?= url('/static/forms.js') ?>" defer></script>
+<?-- The app's own tab row. The bar above it and the footer below it are the frame's, and
+     the stylesheet and scripts load from the manifest, so this partial carries neither. --?>
 <nav aria-label="Prescription Tracker">
   <ul class="pv-subnav meds-nav">
     <li><a href="<?= url('/medications') ?>"<? if section == 'medications' then ?> aria-current="page"<? end ?>><?= icon('capsule') ?> Medications</a></li>

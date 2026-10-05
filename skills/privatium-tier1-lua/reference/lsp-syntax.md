@@ -52,7 +52,7 @@ it contains, tags included.
 ### 4.0 Where helpers are available
 
 `url`, `icon`, `fmt.*`, and `t` are available **both in templates and in handler code**, as
-globals in the app's sandbox. `render`, `layout`, and `csrf` are template-only.
+globals in the app's sandbox. `render`, `layout`, `menu`, and `csrf` are template-only.
 
 ```lua
 pv.post('/name', function(req)          -- url() in a handler
@@ -73,6 +73,7 @@ is rejected by `privatium lint` rule `PV301`.
 |---|---|
 | `render('partial', ctx)` | Include another template |
 | `layout('base')` | Wrap this template in `views/base.lsp` |
+| `menu(label, path[, icon])` | Add a link to this page's menu in the page frame, before the framework's own pages |
 | `icon(name[, label])` | Inline a Bootstrap Icon (`docs/icons.md`) |
 | `url('/path')` | Mount-aware URL (host mode prefixes `/a/<slug>`, solo mode does not) |
 | `fmt.date`, `fmt.money`, `fmt.rel` | Locale-aware formatting from `sys_setting` |
@@ -100,14 +101,70 @@ with nothing for the author to do; a view that owns its document with `layout()`
 it the same way, or with `hx-include="[name=_csrf]"`. `_csrf` stays visible in `req.form`.
 
 **The page around a view.** A view that calls no `layout()` is rendered inside the
-framework's page frame: the document head with the app's title, the shell's stylesheet
-and htmx, a header with the way back, and `<main>`; the view supplies the page's one
-`<h1>`. `layout('base')` replaces that with `views/base.lsp`, which runs after the view
+framework's page frame, the standard chrome every app shares. The head carries
+`<title><app title> — Privatium</title>`, the chrome stylesheet and the shell stylesheet,
+htmx, the chrome script, and then the stylesheets and scripts the manifest's `ui.styles`
+and `ui.scripts` name (`spec/app-contract.md §3`), in that order, the scripts deferred
+and each with the hash of the file as served. The body carries `data-pv-mount`, the
+app's mount, and `hx-headers` with the CSRF token. The header has three zones. On the
+left the Privatium mark links to `/`, which is the launcher in host mode and the app
+itself in solo mode. In the centre the app's title, with `app.icon` when the manifest
+declares one, links to the mount root; it is a paragraph and not a heading, so the view
+keeps the page's one `<h1>`. On the right stand an Apps link to the launcher, in host
+mode only, and the one Menu. The menu lists, in order: the manifest's `[[ui.menu]]`
+items, the items the view added with `menu()`, a separator, and the framework's pages —
+Space settings, App settings, Data settings, Devices. The separator shows only while the
+app's list holds an item. That list is `<ul id="pv-app-menu">` and is always present,
+empty when nothing declared an item, so an app's script may append `<li>` items of its
+own: each a link or a button with a text label. The launcher is not in the menu, because
+the header carries the Apps link beside it. The footer carries a link to the project, an
+empty `<p id="pv-status" role="status">` that the framework and the app write status
+into (`spec/app-contract.md §5.2`), the space's name, and the way to connect a device.
+Between header and footer, `<main id="main">` holds the view, which supplies the page's
+one `<h1>`.
+
+`menu(label, path[, icon])` adds one item for the page being rendered. The label is 1 to
+40 characters; the path is mount-relative, beginning with one `/`, and the frame
+resolves it through `url()`; the icon, when given, names a vendored icon. Anything else
+is an error naming the template line. Like `layout`, it is for the view `pv.render`
+named, and a partial calling it is an error, since a partial is included from several
+pages and cannot know whose menu it would be adding to. The items last for one request.
+
+`layout('base')` replaces the frame with `views/base.lsp`, which runs after the view
 with the same ctx plus `content`, the rendered view, and then owns the whole document —
-`<?= content ?>` places it, and the framework adds nothing. `layout` is for the view
-`pv.render` named; a partial calling it is an error. A request htmx makes (`HX-Request`
-present, `HX-Boosted` absent) gets the view's output alone, since htmx swaps it into an
-element: that is how `pv.render('_board', ctx)` answers `req.is_htmx`.
+`<?= content ?>` places it. The document receives the standard chrome at its three
+anchors, exactly as a Tier 2 document does (`spec/app-contract.md §5`): the chrome's
+stylesheet and script before `</head>`, the skip link and the header after the opening
+`<body>`, the footer before `</body>`, with nothing else changed — unless the manifest
+sets `[ui] chrome = "none"`, in which case the framework adds nothing. A layout's
+document therefore writes the three anchors and a `<main id="main">`, draws no second way
+back, and supplies the CSRF token itself as said above, since the frame's `hx-headers`
+is not inserted. `layout` is for the view `pv.render` named; a partial calling it is an
+error. A request htmx makes (`HX-Request` present, `HX-Boosted` absent) gets the view's
+output alone, since htmx swaps it into an element, and never the chrome: that is how
+`pv.render('_board', ctx)` answers `req.is_htmx`.
+
+**Swap navigation.** Under `[ui] navigation = "swap"` (`spec/app-contract.md §3`) the
+frame's main region is `<main id="main" hx-boost="true">`, and `#pv-app-menu` carries
+`hx-swap-oob="true"`. A link or form inside the main region then fetches the next page as
+an ordinary GET or POST with `HX-Boosted`, which the node answers with the whole framed
+page, and when the destination is in scope (`spec/protocol.md §8.3.1`) the frame keeps the
+page's main region in place of its own, takes the window title from it, takes the menu's
+app list with it out of band, so page items follow the page, scrolls to the top, and moves
+focus to the field the page marks `autofocus`, or else its `<h1>`, or else the main region.
+A destination out of scope is a fresh document, as under page navigation. The submit
+controls of a form are disabled while its request is out. A page the node answers with an
+error status is swapped in like any other, and a response with no main region — a file, a
+bare error — is not swapped: a GET opens it as a fresh document. htmx's history cache is
+off for every frame, so no page is copied into browser storage and the back button reloads
+the page from the node. htmx never runs a script that arrives in swapped content, and a
+swapped page's head is never used, so under swap navigation a view MUST NOT carry a
+`<script>` or a `<link rel="stylesheet">` (`PV111`): what the app needs goes in
+`[ui] scripts` and `[ui] styles`, which the frame's head loads once, and a script binds
+to the document by event delegation, or on `htmx:load` with a guard against binding
+twice, rather than assume a fresh page. A view that calls `layout()` owns its document and
+is not swapped into a frame; a link to one from a swapping page carries
+`hx-boost="false"` so it is a fresh document.
 
 **Names in a template.** The ctx table's keys are bare names; a name absent from the ctx
 is the sandbox global of that name — `ipairs`, `os.date`, `icon` — or `nil` when there is
