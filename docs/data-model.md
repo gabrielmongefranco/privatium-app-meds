@@ -26,8 +26,8 @@ what each column holds. It is for anyone who reads the app's data files or chang
 schema. It changes in the same commit as the schema, so what you read here matches the
 code.
 
-Every table has screens, which [the usage page](usage.md) describes. The
-[app design](design/README.md) explains the rules behind them.
+[The user guide](usage.md) shows the screens for each table, and the
+[architecture page](architecture.md) explains how the code uses them.
 
 ### How the app stores data
 
@@ -120,8 +120,8 @@ An empty column still means the default.
 | `backup_min_days` | `BIGINT` | No | The smallest backup supply in days, 0 to 365. Empty means 7. | No |
 | `specialty_backup_min_days` | `BIGINT` | No | The smallest backup supply for a specialty medication, 0 to 365. Empty means 10. | No |
 
-The six reminder day counts must be zero or more. Forms limit them to 365. The view `v_reminder_default` holds the
-defaults. The view `v_reminder_setting` returns the counts in force, with the defaults
+The six reminder day counts must be zero or more, and the form limits them to 365. The
+view `v_reminder_default` holds the defaults. The view `v_reminder_setting` returns the counts in force, with the defaults
 filled in.
 
 #### `plan`
@@ -173,7 +173,7 @@ A medication needs a generic name or a brand name.
 
 RxNorm is the drug list of the United States National Library of Medicine. It gives every
 product a number, the RxCUI. Two medications never share an RxCUI and a package, and the
-forms check that. Two packages of one product share the RxCUI. [The app design](design/README.md#the-catalog-and-the-drug-references)
+forms check that. Two packages of one product share the RxCUI. [The architecture page](architecture.md#the-catalog-and-the-drug-references)
 explains how the catalog gets entries from the drug references.
 
 The short name follows one pattern unless a person types another: the brand name, the
@@ -369,7 +369,7 @@ a claim will be paid.
    Frame 3650 is a special value that counts every fill, even beyond ten years.
    For other frames, eligibility can also begin when the last counted fill leaves.
 7. A controlled medication counts every fill across payers, without a frame limit.
-   Its allowance is `controlled_early_days`, initially zero. A zero-percent payer for
+   Its allowance is `controlled_early_days`, zero by default. A zero-percent payer for
    an ordinary medication waits for all physical supply to run out. A tracked
    medication is controlled, or specialty, when any of its products is marked so.
 8. The backup supply is the last fill's days supply times `backup_percent`, rounded
@@ -406,7 +406,8 @@ nothing. Physical supply lasts until April 11. The payer allows a refill from Ap
 The backup is 7 days, the minimum, so the next fill date is April 4 as well.
 
 `v_active_medication` also exposes the marks `is_specialty` and `is_controlled` as 1 or
-0, the count of `products`, `plan_name`, `allowance`, and both day counts. Dates remain calendar dates; day counts are integers.
+0, the count of `products`, `plan_name`, `allowance`, and both day counts. Dates stay
+calendar dates, and day counts are whole numbers.
 `days_until_next_fill` may be negative while `days_until_runs_out` is still positive.
 
 #### How the refill status is worked out
@@ -445,9 +446,10 @@ that RxTerms lists. It also holds entries written by hand, such as continuous gl
 monitors, and syringes and needles in many sizes. [How to build the starter catalog](how-to/build-the-starter-catalog.md) names
 the sources and their licenses. It holds no person, no fill and no other record about anyone.
 
-A Privatium node offers to load the file from its settings page only while the app's log
-is empty. The file must never hold a real name, a date of birth, or a record of what a
-person takes.
+`lib/starter.lua` loads it only when the catalog holds no medication. The records carry
+fixed ids, so a second device that loads it repeats the same records instead of doubling
+them. The file must never hold a real name, a date of birth, or a record of what a person
+takes.
 
 The catalog names products. It is not medical advice, and it says nothing about doses.
 Some brand names in it are no longer sold. They stay because older labels and statements
@@ -456,13 +458,15 @@ still use them. Check the label in your hand before you rely on an entry.
 ### Conclusion
 
 You now know each table and view, which fields are sensitive, how a tracked medication
-relates to its catalog products, and how the two refill dates are worked out. Change `schema.sql` and this page together.
+relates to its catalog products, and how the two refill dates are worked out. Change
+`schema.sql` and this page together.
 
 ### Additional resources
 
 - [Using the app](usage.md)
 - [The app folder](../apps/meds/README.md)
-- [App design](design/README.md), the planned screens.
+- [Architecture](architecture.md)
+- [How the app works](how-it-works.md), the same date rules in plain words.
 - [Privatium's app contract](https://github.com/gabrielmongefranco/privatium/blob/main/spec/app-contract.md), the normative definition of an app and its data.
 - [Privatium's data dictionary](https://github.com/gabrielmongefranco/privatium/blob/main/spec/data-dictionary.md), which defines the column types.
 - [Privatium's security page](https://github.com/gabrielmongefranco/privatium/blob/main/docs/security.md)

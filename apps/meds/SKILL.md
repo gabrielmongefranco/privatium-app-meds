@@ -14,8 +14,8 @@ See <https://www.gnu.org/licenses/fdl-1.3.html>. See README for full license inf
 
 ## The `meds` app
 
-Tier 1, Lua. A personal prescription tracker for families with chronic conditions. This
-version has every screen of [the app design](../../docs/design/README.md).
+Tier 1, Lua. A personal prescription tracker for families with chronic conditions.
+[The architecture page](../../docs/architecture.md) describes how its parts fit together.
 
 ### Schema
 
@@ -58,7 +58,7 @@ view, and must change in the same commit as `schema.sql`.
 | `static/meds.css`, `static/*.js` | The one stylesheet and the five scripts. `[ui]` in `app.toml` names them all, and the frame loads them once, deferred, in the head of every page; no view carries a `<script>` or a stylesheet link. |
 | `static/forms.js` | Shows the fields of a new record when **-- Add new --** is chosen. Every form works without it. |
 | `static/filter.js` | Narrows the Medications page as a person types. The server filters the same way on submit. |
-| `static/person_tab.js` | Remembers the person tab chosen last, by id, in local storage, and opens it by following the tab's own link. A stopgap until Privatium offers person profiles. |
+| `static/person_tab.js` | Remembers the person tab chosen last, by id, in local storage, and opens it by following the tab's own link. Issue 10 tracks replacing it with Privatium person profiles. |
 | `static/drug_references.js` | Asks RxTerms, then the openFDA NDC Directory, then RxNorm about a name, in the browser; the search script uses it, so it is listed first |
 | `static/product_search.js` | The product search of every form that needs a product: asks `/medications/search` for JSON, pages the results, falls back to the drug references, and suggests similar products while a new medication is typed |
 | `lib/quick_add.lua` | A person, a pharmacy, a prescriber or a plan that a form adds by name beside its own record |
@@ -122,7 +122,7 @@ view, and must change in the same commit as `schema.sql`.
   or 0. Lua treats 0 as true, so `entries.lua` turns them into booleans before a
   template reads them.
 - The person tab chosen last lives in the browser, in `static/person_tab.js`. The server
-  never stores it. The script goes when Privatium offers person profiles.
+  never stores it.
 - The top bar and the footer are the page frame's. The app draws its section tabs in
   `views/_nav.lsp` and nothing else around a page. `[ui] navigation = "swap"` in
   `app.toml` makes a link or a form inside the page replace only the main region, so a
@@ -168,8 +168,8 @@ view, and must change in the same commit as `schema.sql`.
   due uses eligibility. Controlled fills count across payers without a frame limit.
   Zero percent waits for physical exhaustion. Frame 0 counts the last fill only, and
   3650 counts all history. Preserve the raw boolean in views because Lua treats 0 as true.
-- A medication's short name is `Brand (Generic) strength release package` unless the
-  a person typed another; the release part (`24 HR XR`, `12 HR XR`, `DR`, `EC`) appears only
+- A medication's short name is `Brand (Generic) strength release package` unless a
+  person typed another; the release part (`24 HR XR`, `12 HR XR`, `DR`, `EC`) appears only
   when the product has one. A pack of tablets shows `Pack of N` in place of a strength.
   One product in two packages is two medications with one RxCUI.
   A second spelling of a product is a `medication_alias` row, never a second medication.
@@ -211,6 +211,9 @@ view, and must change in the same commit as `schema.sql`.
   medication records out of `lib/starter_catalog.lua`, tests and documentation.
 - `lib/starter_catalog.lua` holds the starter catalog only. It never
   holds a person or a record about one, so it is safe in a real household.
+- The invented household for tests and screenshots is `tests/fixtures/sample-household.json`.
+  It stays outside the app folder and is never a Privatium seed, so no household is ever
+  offered it. Its products are fixed ids of the starter catalog.
 
 ### Extending it
 
@@ -220,7 +223,7 @@ gets its icon in `lib/form_icon.lua`. The schema change rematerializes from the
 logs; existing events lack the key and the column is NULL for them. Adding a table means
 a `CREATE TABLE` with a grain comment and a section in the data model page.
 
-Run the three checks in [the test how-to](../../docs/how-to/run-the-tests.md) before
-finishing: `privatium lint apps/meds`, `lua5.4 tests/lua/run.lua`, `python3 tests/test_supply.py` and `tests/smoke.sh`.
+Run the checks in [the test how-to](../../docs/how-to/run-the-tests.md) before
+finishing: `privatium lint apps/meds`, `lua5.4 tests/lua/run.lua`, `python3 tests/test_supply.py`, `python3 tests/test_catalog.py` and `tests/smoke.sh`.
 A new check in `lib/validate.lua` gets unit tests, and a new screen gets smoke tests,
 with at least one request that must be refused.

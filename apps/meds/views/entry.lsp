@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/views/entry.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-10-03
+Last Modified: 2026-10-05
 Summary: The page of one tracked medication of one person: how to take it, its refills, who
          to call, its prior authorizations, its fills and its catalog products.
 Notes: See README file for documentation and full license information.
@@ -74,7 +74,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
   <? if entry.is_controlled then ?><dt>Controlled</dt><dd>Yes.</dd><? end ?>
   <? if entry.is_specialty then ?><dt>Specialty</dt><dd>Yes. Refills are due earlier because delivery takes longer.</dd><? end ?>
 </dl></div>
-<p class="pv-help">The next fill date estimates when the plan will pay, using its refill rules. Lasts until is when all recorded supply runs out.</p>
+<p class="pv-help">The next fill date is when to refill so a backup supply is still on hand. It is never before the plan will pay. Lasts until is when all recorded supply runs out.</p>
 
 <h2>Who to call</h2>
 <div class="pv-card"><dl>

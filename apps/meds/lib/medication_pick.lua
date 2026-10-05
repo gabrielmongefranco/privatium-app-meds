@@ -2,7 +2,7 @@
 -- apps/meds/lib/medication_pick.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-10-04
+-- Last Modified: 2026-10-05
 -- Summary: Reads the medication box of a form: a name typed to search the catalog, a choice
 --          among several, a product carried by its id, or a new medication.
 -- Notes: See README file for documentation and full license information.
@@ -54,13 +54,8 @@ function medication_pick.by_id(id)
 end
 local by_id = medication_pick.by_id
 
--- A new medication from the fields of the box. A medication that already has the same
--- short name or the same RxNorm identifier is picked instead, so a product is never
--- added twice. The fields that name a drug reference are filled in by the lookup in
--- the browser. They are untrusted like any other field, and pass the same checks. The
--- route, the form and the package type are choices: a drop-down, or a new value typed
--- beside it. The route and the form a drug reference gave travel as hints in _route_ref
--- and _dose_form_ref, and count only when the person chose nothing.
+-- A choice from its drop-down or its typed box, else the hint a drug reference gave in
+-- _route_ref or _dose_form_ref, so the person's own choice always wins.
 local function chosen_or_hint(form, prefix, ending, from_hint)
   local typed = text.clean(form[prefix .. '_' .. ending .. '_new'])
   local listed = text.clean(form[prefix .. '_' .. ending])
@@ -69,6 +64,14 @@ local function chosen_or_hint(form, prefix, ending, from_hint)
   return from_hint(form[prefix .. '_' .. ending .. '_ref'])
 end
 
+--- A new medication from the fields of the box.
+-- The reference fields come from the lookup in the browser and pass the same checks as
+-- typed ones, because the browser is not trusted.
+-- @param form table  The posted form.
+-- @param prefix string  The prefix of the box's field names.
+-- @return table  { id } when a medication with the same short name or RxNorm identifier
+--         exists, so a product is never added twice; { new_row } for a new one; or
+--         { problem, open_new } when a field is refused.
 function medication_pick.as_new(form, prefix)
   local route = chosen_or_hint(form, prefix, 'route', reference_words.route)
   local dose_form = chosen_or_hint(form, prefix, 'dose_form', function(hint)
@@ -181,7 +184,7 @@ end
 
 --- Search the catalog for the products a typed name fits.
 -- @param typed string  What was typed, already cleaned by medication_search.typed.
--- @return table  Up to 25 rows of { medication_id, short_name, full_name, close }, the
+-- @return table  Up to RESULTS_MAX rows of { medication_id, short_name, full_name, close }, the
 --         ones that hold the name first and the close ones after them. `close` is true
 --         for a name that is near what was typed, which a person must confirm.
 function medication_pick.search(typed)

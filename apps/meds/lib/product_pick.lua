@@ -2,7 +2,7 @@
 -- apps/meds/lib/product_pick.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-10-03
--- Last Modified: 2026-10-04
+-- Last Modified: 2026-10-05
 -- Summary: The products of a tracked medication while its form is being filled in: the ones
 --          chosen so far travel in hidden fields, a search of the catalog lists products to
 --          check, the checked ones are added per round trip, and nothing is written until
@@ -81,11 +81,7 @@ local function picked_ids(form)
   return ids
 end
 
---- Search the catalog for the products a typed name fits.
--- @param typed string  What was typed, already cleaned by medication_search.typed.
--- @return table  Up to 25 rows of { medication_id, short_name, full_name, close }, the
---         ones that hold the name first and the close ones after them. `close` is true
---         for a name that is near what was typed, which a person must confirm.
+--- Search the catalog for the products a typed name fits; see medication_pick.search.
 function product_pick.search(typed)
   return medication_pick.search(typed)
 end

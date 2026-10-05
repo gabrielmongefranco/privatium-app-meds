@@ -3,8 +3,8 @@
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
 -- Last Modified: 2026-10-05
--- Summary: The home page, which is the Refills page once the household has people, and
---          the household name and the reminder settings, which share the one profile row.
+-- Summary: The Refills page, the Setup page and the reminder settings, which live in the
+--          one profile row.
 -- Notes: See README file for documentation and full license information.
 --
 -- Copyright © 2026 Gabriel Mongefranco
@@ -76,7 +76,7 @@ local function defaults()
       FROM v_reminder_default]])
 end
 
---- Home ---
+--- Refills ---
 
 -- The medication that needs a fill soonest comes first.
 local function soonest_first(a, b)
@@ -126,7 +126,6 @@ pv.get(REFILLS, function(req)
       next_row = row
     end
   end
-  -- Within a group, the medication that needs a fill soonest comes first.
   for _, group in ipairs(groups) do
     table.sort(group.rows, soonest_first)
   end

@@ -3,7 +3,7 @@
  * apps/meds/static/meds.css
  * Author(s): Gabriel Mongefranco
  * Created: 2026-09-26
- * Last Modified: 2026-10-04
+ * Last Modified: 2026-10-05
  * Summary: Styles for the Prescription Tracker pages, using the shell's accessible color tokens.
  * Notes: See README file for documentation and full license information.
  *
@@ -39,7 +39,7 @@
 /* The navigation bar keeps the shell's 44-pixel targets. */
 .meds-nav a { display: inline-flex; align-items: center; gap: .4rem; min-height: 44px; }
 
-/* "(optional)" is part of the label's text, in the muted color, at full weight 400. */
+/* "(optional)" sits inside the bold label, so it is muted to keep the field name first. */
 .meds-optional { color: var(--pv-muted); font-weight: 400; }
 
 /* A choice groups a drop-down and a text box. The shell lays labels inside a fieldset
@@ -50,7 +50,7 @@ main form fieldset > label:not(:has(input[type="checkbox"])):not(:has(input[type
   display: block; min-height: 0; margin: .75rem 0 .25rem; font-weight: 600;
 }
 
-/* The list of problems takes the focus when a refused form comes back. */
+/* The list of problems at the top of a refused form, kept smaller than the page heading. */
 .meds-problems h2 { font-size: 1.125rem; margin: 0 0 .25rem; }
 .meds-problems a { color: inherit; }
 
@@ -109,7 +109,7 @@ main form label.meds-option[hidden] { display: none; }
 .meds-toolbar form.meds-search { margin: 0 0 0 auto; display: flex; flex-wrap: wrap; align-items: flex-end; gap: .5rem; }
 .meds-toolbar form.meds-search label { display: block; font-weight: 600; }
 .meds-toolbar form.meds-search input[type="search"] { min-width: 14rem; }
-/* The icon of a dose form sits before the name, in the text color. */
+/* The icon of a dose form sits before the name, on the text baseline. */
 .meds-form-icon { vertical-align: -.125em; margin-right: .25rem; }
 /* The products of a tracked medication, one to a line, each with its Remove button. */
 .meds-products { list-style: none; padding: 0; margin: 0 0 1rem; }
@@ -135,10 +135,10 @@ main form label.meds-option[hidden] { display: none; }
 .meds-pager { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: .5rem 0; }
 .meds-pager .pv-btn { min-height: 44px; }
 .meds-results { margin: .5rem 0 1rem; }
-/* The folded box that adds another product: the title in bold, the note under it plain. */
+/* The folded box that adds another product, with its note on a line of its own. */
 details.meds-another > summary { flex-direction: column; align-items: flex-start; gap: .1rem; }
 .meds-summary-title { font-weight: 600; }
 .meds-summary-note { font-weight: 400; color: var(--pv-muted); }
-/* Notes of a few lines. */
+/* Notes keep a readable line length and their line breaks. */
 main form textarea.meds-notes { display: block; width: 100%; max-width: 40rem; }
 .meds-notes-text { white-space: pre-line; }

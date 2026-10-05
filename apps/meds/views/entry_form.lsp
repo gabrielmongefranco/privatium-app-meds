@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/views/entry_form.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-10-04
+Last Modified: 2026-10-05
 Summary: The form that adds a medication to the tracking list of a person, or changes one:
          its catalog products, its preferred name, and how it is taken.
 Notes: See README file for documentation and full license information.
@@ -29,10 +29,8 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 
 <form method="post" action="<?= action ?>" novalidate>
   <?= csrf() ?>
-  <? -- The first submit button of a form answers the Enter key. This one saves, so Enter
-     -- in a field never removes a product. A name typed into the search box searches
-     -- before anything is saved. The buttons are named step, because a control named
-     -- action shadows form.action in WebKit and the page frame's script reads it. ?>
+  <? -- The first submit button answers the Enter key, so Enter saves rather than removing a
+     -- product. Buttons are named step for the WebKit reason given in product_pick.lua. ?>
   <button type="submit" class="pv-visually-hidden" name="step" value="save" tabindex="-1">Save</button>
   <? if fixed then ?>
     <div class="pv-card"><dl>
