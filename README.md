@@ -97,7 +97,7 @@ free to send pull requests as well!
 + [ClinCalc DrugStats](https://clincalc.com/DrugStats/): the short drug catalog included in the built-in catalog is mostly sourced from ClinCalc DrugStats by Sean P. Kane, PharmD, licensed under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). Data was enhanced with RxTerms data.
 + [RxTerms](https://clinicaltables.nlm.nih.gov/apidoc/rxterms/v3/doc.html) and [RxNorm](https://www.nlm.nih.gov/research/umls/rxnorm/index.html): the strengths, forms, brand names and product numbers of the built-in catalog, and the lookup of a new medication. This product uses publicly available data from the U.S. National Library of Medicine (NLM), National Institutes of Health, Department of Health and Human Services; NLM is not responsible for the product and does not endorse or recommend this or any other product.
 + [openFDA NDC Directory](https://open.fda.gov/apis/drug/ndc/): the lookup of a medication that RxTerms does not hold, and the unit that labels print for a strength. Data of the U.S. Food and Drug Administration. Do not rely on openFDA to make decisions regarding medical care.
-+ Other libraries: none. The app bundles no JavaScript or Lua library beyond what Privatium provides. Its two scripts and its Lua modules were written for it.
++ Other libraries: none. The app bundles no JavaScript or Lua library beyond what Privatium provides. Its five browser scripts and its Lua modules were written for it.
 
 
 

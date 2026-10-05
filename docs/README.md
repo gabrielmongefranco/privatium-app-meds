@@ -28,6 +28,9 @@ detail.
   the design decisions.
 - [Compliance](compliance.md): the security and accessibility controls in place, the
   evidence for each, and what a person still has to check.
+- [Plan: the standard bar, footer and in-app navigation](plans/standard-chrome.md): how
+  the app moved onto Privatium's top bar, footer, menu and in-document page changes, and
+  what each browser script had to change.
 - [Documentation template](doc-template.md): starting structure for a knowledge base page.
 - [Skill authoring examples](skill-examples.md): optional recipes for common project types.
 

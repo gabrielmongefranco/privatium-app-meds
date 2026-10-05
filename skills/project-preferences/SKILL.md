@@ -76,9 +76,12 @@ node on a temporary data directory and uses invented data only.
 - Money is `DECIMAL`, dates are `DATE`, and both are handled the way the Tier 1 guide
   describes. Never do arithmetic on them as floats or by adding days to a number.
 - Every internal link goes through `url()` so the app works unchanged in solo mode.
-- The node calls no network service. The one script of the app, the lookup of a new
-  medication, calls three public drug references from the browser, and every form works
+- The node calls no network service. The product search in the browser, including the
+  lookup of a new medication, calls three public drug references, and every form works
   without it. Add no other outside address.
+- Every stylesheet and script is named in `[ui]` of `app.toml`, never in a view. Pages
+  change by swapping the main region, so a script listens on the document or sets up each
+  new page on `htmx:load` with a guard, and never assumes a fresh page.
 
 ### Project skills
 

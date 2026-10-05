@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 docs/usage.md
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-10-04
+Last Modified: 2026-10-05
 Summary: How to use the app: refills, medication lists, fills, pasted fills, prior
          authorizations and setup, and how to add a missing record from
          inside a form.
@@ -28,7 +28,13 @@ All names on this page are invented.
 
 ### Find your way around
 
-Every page has the same bar at the top, with six links:
+Every page has the same bar at the top. It belongs to Privatium, so it looks the same in
+every app: the Privatium mark on the left opens the list of your apps, **Prescription
+Tracker** in the middle opens the home page of this app, and **Apps** and **Menu** sit on
+the right. The menu holds this app's actions for the page you are on, such as **Print
+list**, and under them Privatium's own settings pages.
+
+Under the bar, the app has its own row of five sections:
 
 | Link | What it holds |
 |---|---|
@@ -38,7 +44,14 @@ Every page has the same bar at the top, with six links:
 | **Authorizations** | Prior authorizations and when they end |
 | **Setup** | Insurance plans, the family, prescribers, pharmacies, the medication catalog, the reminder settings |
 
-The bar underlines the section you are in. On pages that list records, a row of names
+The row underlines the section you are in. Moving between pages changes the page under
+the bar without reloading the whole screen, so nothing flashes, and the heading of the
+new page takes the focus. The back button of the browser reloads the page it returns to.
+
+The footer is Privatium's too. Its status line tells you when the device is offline, that
+your changes are saved on the device and sent later, and when it is connected again.
+
+On pages that list records, a row of names
 under the heading narrows the list to one person. The app remembers the person you chose
 last, in your browser, and opens the next page on that person until you choose another
 or **Everyone**. The memory holds the person's id only, and clearing the site data of
@@ -318,11 +331,16 @@ to Taking regularly.
 ### Print a medication list
 
 1. Choose **Medications** and choose one person.
-2. Choose **Print list**.
+2. Open **Menu** in the top bar and choose **Print list**. The item is there only while
+   one person is chosen.
 3. Use the print command of your browser.
 
 The list shows what the person takes now, how, when, what for, and who prescribed it.
-The printed page leaves out the navigation and the buttons.
+The printed page leaves out the bar, the footer, the section row and the buttons.
+
+**Print list** lives in the menu rather than as a button on the page so the page keeps one
+primary action, **Track a new medication**. If people miss it there, a button can return
+beside the menu item.
 
 ### Track prior authorizations
 
