@@ -123,6 +123,7 @@ The target is the Web Content Accessibility Guidelines (WCAG) 2.2, level AA.
 | A status is a word with an icon, never color alone | Lint rule PV405 passes |
 | The app uses the shell's color tokens only | Lint rule PV406 passes. The tokens meet the contrast floors in both color schemes. |
 | Tables are real tables with header cells | Lint rule PV407 passes |
+| The chart has a text equivalent | The SVG has `role="img"`, a title and a description in words, and the table under it holds every number. The average line is dashed, so it never rests on color alone. |
 | Every icon beside text is hidden from screen readers | Lint rule PV401 passes |
 | Every save works without JavaScript | The smoke test uses plain form posts only. The scripts of the app only show fields, filter rows, page results and fill fields in. |
 | After a page change, focus lands on the new page heading | The page frame moves it after each swap, to the field marked `autofocus` or else the `<h1>`. The headless browser run of 2026-10-05 found the focus on the `<h1>` after each section change. |
@@ -162,6 +163,19 @@ catalog, at 1280 pixels wide. The script is not part of the committed tests. It 
 - No horizontal scrolling at 320 and 640 CSS pixels on the Medications, Refills, new
   medication and Setup pages, with the bar's controls inside the viewport.
 
+**History and reports, 2026-10-05.** The same kind of script, with the invented
+household of `tests/fixtures/sample-household.json`, found:
+
+- Typing "ice pack" in the Fill history search box left one fill on the page, with its
+  note row, and the status line said "1 fill matches."
+- **Find** changed the page without a new document, and the person tabs kept the search.
+- The **Printable report** link opened a second tab and left the Reports page in place.
+  The **Print** button showed once the page loaded.
+- No horizontal scrolling at 320 CSS pixels on the Fill history and Reports tabs.
+
+The pictures in the user guide also showed no button or number broken mid-word in the
+fills table at 1200 pixels.
+
 ### Checks a person still has to make
 
 The committed tests don't drive a browser, and the headless runs above used no phone, no
@@ -194,6 +208,10 @@ accessibility problems. These checks are open:
     results can be reached.
 15. Check the specialty and controlled marks that the online search suggests against a
     real label before relying on them.
+16. With a screen reader, open the Reports tab. The chart must be read as one image
+    with its title and description, and the table under it must hold the same numbers.
+17. Print the spending report on paper, or to a PDF, and check that the menus and
+    buttons are gone and every column fits.
 
 Record the date, the browser, the screen reader and the result of each check here when
 it is done.

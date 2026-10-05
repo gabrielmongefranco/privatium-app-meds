@@ -2,7 +2,7 @@
 -- tests/lua/test_text.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-09-27
+-- Last Modified: 2026-10-05
 -- Summary: Unit tests for apps/meds/lib/text.lua.
 -- Notes: See README file for documentation and full license information.
 --
@@ -50,4 +50,8 @@ return function(equal)
   equal('a whole number that ends in zero', text.plain_number('30'), '30')
   equal('zero', text.plain_number('0.000'), '0')
   equal('nothing', text.plain_number(nil), nil)
+  equal('plain letters stay as they are', text.url_encode('last-90-days'), 'last-90-days')
+  equal('a space and an ampersand are encoded', text.url_encode('a b&c=d'), 'a%20b%26c%3Dd')
+  equal('a letter beyond ASCII is encoded byte by byte', text.url_encode('é'), '%C3%A9')
+  equal('nil encodes as nothing', text.url_encode(nil), '')
 end

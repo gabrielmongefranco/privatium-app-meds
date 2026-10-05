@@ -2,9 +2,9 @@
 -- apps/meds/lib/routes/fills.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-10-04
--- Summary: The screens for fills: the history with its totals, and the form that records,
---          changes or removes a fill of a tracked medication.
+-- Last Modified: 2026-10-05
+-- Summary: The screens for fills: the fill history with its filters and total, and the
+--          form that records, changes or removes a fill of a tracked medication.
 -- Notes: See README file for documentation and full license information.
 --
 -- Copyright © 2026 Gabriel Mongefranco
@@ -26,6 +26,7 @@ local catalog_entry     = require 'catalog_entry'
 local clock             = require 'clock'
 local entries           = require 'entries'
 local fills             = require 'fills'
+local history_filter    = require 'history_filter'
 local medication_pick   = require 'medication_pick'
 local page              = require 'page'
 local people_filter     = require 'people_filter'
@@ -111,21 +112,6 @@ local function starting_values(entry)
   last.quantity = text.plain_number(last.quantity)
   last.filled_on = clock.today()
   return last
-end
-
--- The filters of the history, read from the page address. A value that names nothing
--- counts as no filter.
-local function history_filters(req)
-  local year = text.clean(req.query.year) or ''
-  if not year:match('^%d%d%d%d$') then year = '' end
-  local page_number = math.tointeger(tonumber(req.query.page) or 1) or 1
-  if page_number < 1 then page_number = 1 end
-  return {
-    medication = text.clean(req.query.medication) or '',
-    pharmacy   = text.clean(req.query.pharmacy) or '',
-    year       = year,
-    page       = page_number,
-  }
 end
 
 -- The sentence after pasted fills were added. The page address carries a count only.
@@ -228,78 +214,34 @@ end
 --- Routes ---
 
 pv.get(LIST, function(req)
-  local filter = people_filter.read(req)
-  local chosen = history_filters(req)
-  local bound = { filter.id, chosen.medication, chosen.pharmacy, chosen.year }
+  local chosen = history_filter.read(req)
+  local found = history_filter.fills(chosen)
+  local total = history_filter.total(found)
 
-  -- Grain: one row, the number of fills and the exact total paid under the filters.
-  local total = pv.query1([[
-    SELECT count(*) AS fills, decimal_sum(f.amount_paid) AS amount_paid
-      FROM fill f
-      JOIN person_medication pm ON pm.id = f.person_medication_id   -- many:1
-     WHERE (?1 = '' OR pm.person_id = ?1)
-       AND (?2 = '' OR f.person_medication_id = ?2)
-       AND (?3 = '' OR f.pharmacy_id = ?3)
-       AND (?4 = '' OR strftime('%Y', f.filled_on) = ?4)]], bound)
-
-  local pages = math.max(1, math.ceil(total.fills / PAGE_SIZE))
+  local pages = math.max(1, math.ceil(#found / PAGE_SIZE))
   if chosen.page > pages then chosen.page = pages end
-  bound[5], bound[6] = PAGE_SIZE, (chosen.page - 1) * PAGE_SIZE
-
-  -- Grain: one row per fill under the filters, newest first, one page of them.
-  local rows = pv.query([[
-    SELECT f.id, f.filled_on, f.quantity, f.days_supply, f.amount_paid, f.rx_number, f.notes,
-           p.display_name  AS person_name,
-           pm.display_name AS medication_name,
-           m.short_name    AS product_name,
-           m.route, m.form, m.package_type,
-           ph.name         AS pharmacy_name,
-           pl.name         AS plan_name
-      FROM fill f
-      JOIN person_medication pm ON pm.id = f.person_medication_id   -- many:1
-      JOIN person p     ON p.id = pm.person_id         -- many:1
-      LEFT JOIN medication m ON m.id = f.medication_id -- many:0..1
-      LEFT JOIN pharmacy ph ON ph.id = f.pharmacy_id   -- many:0..1
-      LEFT JOIN plan pl ON pl.id = f.plan_id           -- many:0..1
-     WHERE (?1 = '' OR pm.person_id = ?1)
-       AND (?2 = '' OR f.person_medication_id = ?2)
-       AND (?3 = '' OR f.pharmacy_id = ?3)
-       AND (?4 = '' OR strftime('%Y', f.filled_on) = ?4)
-     ORDER BY f.filled_on DESC, f.id DESC
-     LIMIT ?5 OFFSET ?6]], bound)
-
-  -- Grain: one row per person per year with a fill.
-  local spending = pv.query([[
-    SELECT p.display_name AS person_name, s.year, s.fills, s.amount_paid
-      FROM v_spending_by_year s
-      JOIN person p ON p.id = s.person_id    -- many:1
-     WHERE ?1 = '' OR s.person_id = ?1
-     ORDER BY s.year DESC, p.display_name COLLATE NOCASE]], { filter.id })
-
-  for _, row in ipairs(rows) do
+  local rows = {}
+  for index = (chosen.page - 1) * PAGE_SIZE + 1, math.min(chosen.page * PAGE_SIZE, #found) do
+    local row = found[index]
     row.quantity = text.plain_number(row.quantity)
     row.form_icon, row.form_label = form_icon.of(row.form, row.route, row.package_type)
+    rows[#rows + 1] = row
   end
 
   return pv.render('history', {
     section     = 'history',
     notice      = added_notice(req.query.added) or page.notice(req.query.notice),
-    filter      = filter,
+    filter      = chosen.people,
     chosen      = chosen,
+    keep        = history_filter.query(chosen, { person = false, page = 1 }),
+    is_narrowed = history_filter.is_narrowed(chosen),
     rows        = rows,
     total       = total,
     counted     = page.counted(total.fills, 'fill', 'fills'),
     pages       = pages,
-    spending    = spending,
-    medications = as_options(pv.query([[
-      SELECT pm.id, p.display_name || ': ' || pm.display_name AS label
-        FROM person_medication pm
-        JOIN person p ON p.id = pm.person_id   -- many:1
-       WHERE EXISTS (SELECT 1 FROM fill f WHERE f.person_medication_id = pm.id)
-       ORDER BY p.display_name COLLATE NOCASE, pm.display_name COLLATE NOCASE, pm.id]])),
-    pharmacies  = pharmacies(),
-    years       = pv.query(
-      "SELECT DISTINCT strftime('%Y', filled_on) AS year FROM fill ORDER BY 1 DESC"),
+    newer       = chosen.page > 1 and url(history_filter.link(LIST, chosen, { page = chosen.page - 1 })),
+    older       = chosen.page < pages and url(history_filter.link(LIST, chosen, { page = chosen.page + 1 })),
+    tabs        = history_filter.tabs(chosen, 'fills'),
   })
 end)
 

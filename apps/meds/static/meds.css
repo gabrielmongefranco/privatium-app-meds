@@ -142,3 +142,52 @@ details.meds-another > summary { flex-direction: column; align-items: flex-start
 /* Notes keep a readable line length and their line breaks. */
 main form textarea.meds-notes { display: block; width: 100%; max-width: 40rem; }
 .meds-notes-text { white-space: pre-line; }
+
+/* The History tabs sit above the person tabs, so they keep a little room below. */
+.meds-tabs { margin-bottom: .5rem; }
+/* The history filters: the search box and three drop-downs side by side, wrapping on a
+   narrow screen. */
+main form.meds-history-filters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 0 1rem; margin: 0 0 1.5rem; }
+main form.meds-history-filters > div { flex: 1 1 12rem; min-width: 0; }
+main form.meds-history-filters select, main form.meds-history-filters input[type="search"] { width: 100%; }
+main form.meds-history-filters .pv-actions { flex-basis: 100%; margin: 0; }
+
+/* Buttons in a table never break mid-word. The fill tables size their columns to their
+   content, because the shell's even columns left the Change button too narrow. */
+.pv-records td .pv-btn { white-space: nowrap; }
+.meds-fills, .meds-report-fills { table-layout: auto; }
+/* The shell lets a word break anywhere, which would let these columns shrink to one
+   letter; here a word breaks only when it cannot fit on a line of its own. */
+.meds-fills, .meds-report-fills { overflow-wrap: break-word; }
+/* Each fill is a row group with its note under it, so the stripes go by group. */
+.meds-fills tbody tr:nth-child(odd) { background: none; }
+.meds-fills tbody:nth-of-type(odd) tr { background: var(--pv-panel); }
+.meds-fills tbody[hidden] { display: none; }
+.meds-note-row td { padding-top: 0; }
+@media (max-width: 40rem) {
+  .meds-fills tbody { border: 1px solid var(--pv-line); border-radius: .5rem; margin-bottom: 1rem; padding: .5rem; }
+  .meds-fills tbody tr { border: 0; border-radius: 0; margin: 0; padding: 0; }
+}
+
+/* The chart scales with the page. Its colors come from the shell, so dark mode applies,
+   and the average line is dashed so it never rests on color alone. */
+.meds-chart { margin: 0 0 1.5rem; }
+.meds-chart-drawing { display: block; width: 100%; max-width: 48rem; height: auto; }
+.meds-chart-drawing text { font-size: 13px; fill: var(--pv-fg); }
+.meds-chart-drawing .meds-chart-axis { fill: var(--pv-muted); }
+.meds-chart-grid { stroke: var(--pv-line); stroke-width: 1; }
+.meds-chart-bar { fill: var(--pv-accent); }
+.meds-chart-bar-partial { fill: var(--pv-bg); stroke: var(--pv-accent); stroke-width: 2; stroke-dasharray: 5 3; }
+.meds-chart-average { stroke: var(--pv-fg); stroke-width: 2; stroke-dasharray: 9 5; }
+.meds-chart-legend { list-style: none; padding: 0; margin: .5rem 0 0; }
+.meds-chart-legend li { display: flex; align-items: center; gap: .5rem; margin: .25rem 0; }
+.meds-chart-legend svg { flex: none; }
+
+/* The facts at the top of the printable report, as label and value pairs. */
+.meds-report-facts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: .25rem 1rem; margin: 0 0 1rem; }
+.meds-report-facts dt { font-weight: 600; }
+.meds-report-facts dd { margin: 0; }
+@media print {
+  .meds-report-fills { font-size: 10pt; }
+  .meds-report-fills tr { break-inside: avoid; }
+}

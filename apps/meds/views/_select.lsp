@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 apps/meds/views/_select.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-09-27
+Last Modified: 2026-10-05
 Summary: One labeled drop-down of a form, with its help text and its problem.
 Notes: See README file for documentation and full license information.
 
@@ -27,7 +27,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
   if help then described[#described + 1] = 'f-' .. name .. '-help' end
   if err then described[#described + 1] = 'f-' .. name .. '-err' end
 ?>
-<label for="f-<?= name ?>"><?= label ?><? if not required then ?> <span class="meds-optional">(optional)</span><? end ?></label>
+<label for="f-<?= name ?>"><?= label ?><? if not required and optional_mark ~= false then ?> <span class="meds-optional">(optional)</span><? end ?></label>
 <select id="f-<?= name ?>" name="<?= name ?>"
         <? if required then ?>required<? end ?>
         <? if err then ?>aria-invalid="true"<? end ?>

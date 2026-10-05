@@ -3,8 +3,9 @@
 // Author(s): Gabriel Mongefranco
 // Created: 2026-09-27
 // Last Modified: 2026-10-05
-// Summary: Shows the fields that add a new record only after a person chooses to add one.
-//          Every form works without this file; the fields are then always there.
+// Summary: Shows the fields that add a new record only after a person chooses to add one,
+//          and makes the Print button of a page made for paper work. Every form works
+//          without this file; the fields are then always there.
 // Notes: See README file for documentation and full license information.
 //
 // Copyright © 2026 Gabriel Mongefranco
@@ -97,7 +98,21 @@
     if (control && control.form && control.name) { arrange(control.form, control.name); }
   });
 
+  // A Print button needs this script, so it arrives hidden and is shown here.
+  function showPrintButtons() {
+    var buttons = document.querySelectorAll('[data-print][hidden]');
+    for (var index = 0; index < buttons.length; index += 1) { buttons[index].hidden = false; }
+  }
+
+  document.addEventListener('click', function (event) {
+    var button = event.target.closest ? event.target.closest('[data-print]') : null;
+    if (button) { window.print(); }
+  });
+
   // The frame fires this for the first page and for every page or fragment swapped in
   // after it. Arranging only sets values and hides parts, so running it again is harmless.
-  document.addEventListener('htmx:load', arrangeAll);
+  document.addEventListener('htmx:load', function () {
+    arrangeAll();
+    showPrintButtons();
+  });
 }());

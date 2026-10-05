@@ -2,9 +2,10 @@
 -- apps/meds/lib/text.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-09-27
--- Summary: Cleans text that a person typed or pasted, and builds the key that two names
---          are compared by. Pure Lua with no framework calls, so plain Lua can test it.
+-- Last Modified: 2026-10-05
+-- Summary: Cleans text that a person typed or pasted, builds the key that two names are
+--          compared by, and encodes text for a page address. Pure Lua with no framework
+--          calls, so plain Lua can test it.
 -- Notes: See README file for documentation and full license information.
 --
 -- Copyright © 2026 Gabriel Mongefranco
@@ -64,6 +65,16 @@ function text.plain_number(value)
   if not number:find('.', 1, true) then return number end
   number = number:gsub('0+$', ''):gsub('%.$', '')
   return number
+end
+
+--- Encode a value for a query string of a page address.
+-- Every byte but letters, digits and -._~ becomes %XX, so typed text cannot add a
+-- parameter or end the address.
+-- @param value any  Anything; nil gives ''.
+-- @return string
+function text.url_encode(value)
+  if value == nil then return '' end
+  return (tostring(value):gsub('[^%w%-%._~]', function(byte) return ('%%%02X'):format(byte:byte()) end))
 end
 
 return text

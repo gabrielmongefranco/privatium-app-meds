@@ -132,13 +132,13 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
         <td role="cell"><span class="pv-cell-label" aria-hidden="true">Pharmacy</span><?= fill.pharmacy_name ?></td>
         <td role="cell"><span class="pv-cell-label" aria-hidden="true">Quantity</span><?= fill.quantity or 'Not given' ?></td>
         <td role="cell"><span class="pv-cell-label" aria-hidden="true">Days supply</span><?= fill.days_supply or 'Not given' ?></td>
-        <td role="cell"><span class="pv-cell-label" aria-hidden="true">You paid</span><? if fill.amount_paid then ?><?= fmt.money(fill.amount_paid) ?><? else ?>Not given<? end ?></td>
+        <td role="cell"><span class="pv-cell-label" aria-hidden="true">You paid</span><?= render('_money', { amount = fill.amount_paid }) ?></td>
         <td role="cell"><a class="pv-btn" href="<?= url('/fills/' .. fill.id .. '/edit') ?>"><?= icon('pencil') ?> Change<span class="pv-visually-hidden"> the fill of <?= fill.filled_on ?></span></a></td>
       </tr>
     <? end ?>
     </tbody>
   </table>
-  <p class="pv-meta"><?= paid.fills ?> fills. Total paid: <? if paid.amount_paid then ?><?= fmt.money(paid.amount_paid) ?><? else ?>not given<? end ?>.</p>
+  <p class="pv-meta"><?= paid.counted ?>. Total paid: <?= render('_money', { amount = paid.amount_paid, missing = 'not given' }) ?>.</p>
 <? end ?>
 
 <h2>Products</h2>

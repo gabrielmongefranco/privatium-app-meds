@@ -2,7 +2,7 @@
 -- tests/lua/run.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-09-27
+-- Last Modified: 2026-10-05
 -- Summary: Runs the unit tests of the app's pure Lua modules with plain Lua 5.4. Run it
 --          from the root of the repository: lua5.4 tests/lua/run.lua
 -- Notes: See README file for documentation and full license information.
@@ -36,7 +36,7 @@ package.path = 'apps/meds/lib/?.lua;tests/lua/?.lua;' .. package.path
 local SUITES = {
   'test_text', 'test_validate', 'test_medication_name', 'test_choices', 'test_page',
   'test_clock', 'test_match', 'test_refill', 'test_portal_reader', 'test_written_name', 'test_reference_words', 'test_authorization_words',
-  'test_form_icon',
+  'test_form_icon', 'test_periods', 'test_spending_chart',
 }
 
 --- Run ---

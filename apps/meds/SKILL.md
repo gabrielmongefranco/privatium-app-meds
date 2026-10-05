@@ -95,7 +95,9 @@ view, and must change in the same commit as `schema.sql`.
 | `GET`, `POST /medications/:id/products/:link_id/remove` | `medications` | Remove a product from a tracked medication |
 | `GET /people/:id/medication-list` | `medications` | The list made for paper |
 | `GET`, `POST /fills/paste`, `/fills/paste/read`, `/fills/paste/add` | `paste` | Pasted fills: paste, review, add |
-| `GET /fills` | `fills` | History, with filters, totals and paid by year |
+| `GET /fills` | `fills` | Fill history, with search, filters and the total paid |
+| `GET /fills/reports` | `reports` | Reports tab: paid by year as a chart and a table, under the same filters |
+| `GET /fills/reports/print` | `reports` | The printable spending report under the same filters |
 | `GET`, `POST /fills/new`, `/:id/edit`, `/:id/remove` | `fills` | Record, change, remove |
 | `GET /authorizations`, `GET`, `POST /authorizations/new`, `/:id/edit`, `/:id/remove` | `authorizations` | Prior authorizations |
 | `POST /setup/catalog/:id/names`, `GET`, `POST /:id/names/:name_id/remove` | `catalog` | Other names |

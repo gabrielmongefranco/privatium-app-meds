@@ -2,7 +2,7 @@
 -- apps/meds/lib/routes/medications.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-10-03
+-- Last Modified: 2026-10-05
 -- Summary: The screens for what each person tracks: the lists with their search, the page of
 --          one tracked medication with its products, the forms, and the list made for paper.
 -- Notes: See README file for documentation and full license information.
@@ -95,10 +95,12 @@ end
 
 -- Grain: one row, the number of fills and the exact total paid.
 local function paid_for(person_medication_id)
-  return pv.query1([[
+  local paid = pv.query1([[
     SELECT count(*) AS fills, decimal_sum(amount_paid) AS amount_paid
       FROM fill
      WHERE person_medication_id = ?]], { person_medication_id })
+  paid.counted = page.counted(paid.fills, 'fill', 'fills')
+  return paid
 end
 
 -- Grain: one row per prior authorization of one tracked medication, with its state on

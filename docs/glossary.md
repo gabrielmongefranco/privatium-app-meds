@@ -53,6 +53,8 @@ them all before you start. Come back here when a word on a screen is new to you.
 | **Early fill percent** | How much of the last fill may be left when the plan pays for the next one. Many plans allow about 25 percent. For a 30-day fill, that is about 7 days early. |
 | **Supply frame** | The number of past days the plan looks at when it adds up your fills. Many plans look back about 180 days. |
 | **Prior authorization** | An approval your plan gives before it will pay for some medicines. It lasts for a set time, often a year, and then you need a new one. Your prescriber asks for it. |
+| **FSA** | A flexible spending account. Money set aside from your pay, before taxes, for health costs such as medicines. You usually send proof of what you paid to get it back. |
+| **HSA** | A health savings account. Like an FSA, but it goes with some high-deductible plans and the money carries over from year to year. |
 
 ### Kinds of medicines
 
@@ -84,6 +86,9 @@ them all before you start. Come back here when a word on a screen is new to you.
 | **Backup supply** | A few days of medicine kept on hand in case a refill is late. The app keeps about 15 percent of a fill, and at least 7 days (10 for a specialty medication). |
 | **Due** and **Due soon** | How close a refill is. By default, a refill is due when its next fill date is 3 days away or fewer, and due soon at 4 to 7 days. |
 | **Overdue** | The recorded supply has run out. |
+| **Time period** | A filter on the History page, such as last month or one whole year. Weeks start on Sunday. |
+| **Year so far** | This year's total on the Reports chart. The year isn't over, so its bar has an outline and the average leaves it out. |
+| **Spending report** | The printable report on the Reports tab. It lists what you paid for each fill and adds it up by person, year and medicine. |
 
 ### Words about the computer side
 

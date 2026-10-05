@@ -38,8 +38,8 @@ Prescription Tracker answers three everyday questions:
   never before your insurance will pay.
 - **What does each person take?** The Medications page keeps each person's list, with
   how to take each medicine and who prescribed it. You can print it for a doctor's visit.
-- **What did we get, and what did we pay?** The History page lists every fill and adds
-  up what you paid.
+- **What did we get, and what did we pay?** The History page lists every fill, adds
+  up what you paid, and prints a spending report for an FSA, an HSA or taxes.
 
 It also reminds you when a prescription has no refills left and when an insurance
 approval is about to end.
@@ -61,7 +61,7 @@ Under the bar, the app has five tabs:
 |---|---|
 | **Medications** | Each person's medicines. This is the first page you see. |
 | **Refills** | What needs a refill now, and what is coming up |
-| **History** | Every fill, and what you paid |
+| **History** | Every fill, what you paid each year, and a spending report to print |
 | **Authorizations** | Insurance approvals and when they end |
 | **Setup** | Your family, prescribers, pharmacies, insurance plans, the medication catalog and the reminder settings |
 
@@ -343,14 +343,60 @@ percent of 90. So its next fill date is March 17, as long as the plan will pay b
 
 ### See your history and spending
 
-![The History page. A row of names and drop-downs for medication, pharmacy and year sit above a table of fills, newest first, with the date, medicine, person, pharmacy, plan, quantity, days supply and amount paid. Above the table it reads 18 fills, total paid 161.00.](images/history.png)
+The History page has two tabs. **Fill history** lists every fill. **Reports** shows
+what you paid each year and makes a report you can print. Both tabs share the same
+search box and filters, so you can switch tabs without setting them again.
 
-Choose **History** to see every fill, newest first. You can narrow the list by person,
-medicine, pharmacy or year. Under the filters, the page counts the fills and adds up
-what you paid. The **Paid by year** table shows each person's total for each year,
-which helps at tax time.
+#### Find a fill
 
-To fix or remove a fill, choose **Change** in its row.
+![The Fill history tab of the History page. Under the tabs Fill history and Reports, and the person tabs Everyone, Alex Example, Jamie Example and Sam Example, there is a search box and drop-downs for medication, pharmacy and time period. Below them, 36 fills, total paid $591.00, and a table with the date, medicine, person, pharmacy, quantity, days supply, amount paid and a Change button. The note Delivered with an ice pack sits on its own line under its fill.](images/history.png)
+
+Choose **History** to see every fill, newest first. To narrow the list:
+
+- Choose a person's name to see only their fills. The Medication drop-down then lists
+  only that person's medicines.
+- Type in **Search the list**. As you type, the page hides the fills that don't match.
+  Choose **Find** to search every fill, not just the ones on this page. The search looks
+  at the medicine and product names, the person, the pharmacy, the prescription (Rx)
+  number, the claim number and the notes.
+- Choose a medicine, a pharmacy or a **Time period**, then choose **Find**. A time
+  period can be this week, this month, last week, last month, the last 90 days, or one
+  whole year. Weeks start on Sunday.
+
+Above the table, the page counts the fills and adds up what you paid. Amounts show in
+US dollars. To see everything again, choose **Show all**.
+
+To fix or remove a fill, choose **Change** in its row. A note you wrote on a fill shows
+on its own line under the fill.
+
+#### See what you paid each year
+
+![The Reports tab. A bar chart shows the total paid each year from 2023 to 2026. The 2026 bar is outlined and labeled 2026 so far. A dashed line marks the average of the full years, $144.33 a year. Below the chart, a table lists each year and person with the number of fills and the total paid, and a button opens the printable report in a new tab.](images/reports.png)
+
+Choose **Reports** to see a bar chart of what you paid each year. The filters work here
+too. For example, choose one person and one medicine to see what that medicine cost
+them each year.
+
+- Each bar is one year. This year's bar has an outline and says "so far", because the
+  year isn't over yet.
+- The dashed line is the average of the full years, so a part year doesn't pull it
+  down. It shows once you have at least two full years of fills.
+- The table under the chart gives the same totals as numbers, for each person and year.
+
+#### Print a spending report
+
+![The printable Medication spending report for Alex Example. It shows who it is for, the period, the date printed and the total paid, a Print button, totals by person and year, totals by medication, and a table of every fill with its date, medicine, prescriber, Rx number, pharmacy, quantity, days supply, claim number and amount paid.](images/printable-report.png)
+
+A flexible spending account (FSA) or a health savings account (HSA) may ask what you
+paid for medicines. The printable report helps with that, and with taxes.
+
+1. On the **Reports** tab, choose the person and the time period, such as last year.
+2. Choose **Printable report (opens in a new tab)**.
+3. Check the report, then choose **Print**, or use your browser's Print command.
+
+The report lists the totals by person and year, the totals by medication, and every
+fill with its date, prescription number, pharmacy and amount paid. The menus and
+buttons don't print. An FSA or HSA may still ask for the pharmacy's own receipts.
 
 ### Print a medication list
 

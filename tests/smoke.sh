@@ -871,6 +871,7 @@ expect_status "the fill form starts with the product of the last fill" 200 "$(ge
 expect_flat_text "the last product is selected" "value=\"$six_product\" selected"
 expect_status "page of the two-product medication" 200 "$(get "/medications/$two")"
 expect_text "the fill history shows the product" '<th scope="col" role="columnheader">Product</th>'
+expect_text "one fill is counted as one fill" "1 fill. Total paid"
 expect_status "a product with a fill cannot be taken off" 200 "$(post /setup/people/new "/medications/$two/edit" \
   "product_1_id=$lookupol" 'display_name=Lookupol' 'status=on_hold' 'refills_left=0')"
 expect_text "a product with a fill says why" "1 fill names Lookupine (Lookupol) 5 mg 6 Pack. Change those fills before you remove it."
@@ -1096,15 +1097,54 @@ expect_status "a fill with a part of a package" 303 "$(post /setup/people/new /f
 expect_status "history after the fill" 200 "$(get "/fills?person=$alex")"
 expect_text "a part of a package keeps the decimals that count" 'aria-hidden="true">Quantity</span>2.5</td>'
 expect_text "history totals the amounts exactly" "Total paid"
-expect_text "history shows what was paid by year" "Paid by year"
+expect_text "history shows money in dollars" '$1,012.50'
 expect_text "history names the portal button" "Copy refill history from patient portal"
-expect_text "history filters by tracked medication" "Alex Example: Prinivil"
+expect_text "history names the person column Person" '<th scope="col" role="columnheader">Person</th>'
+expect_no_text "history has no plan column" '<th scope="col" role="columnheader">Plan</th>'
+expect_no_text "history has no For column" '<th scope="col" role="columnheader">For</th>'
+expect_text "a note sits on a row of its own" '<td role="cell" colspan="8" class="meds-notes-text">'
+expect_text "history has the search box" 'name="q" type="search"'
+expect_text "history has the time period drop-down" '<option value="last-90-days">Last 90 days</option>'
+expect_no_flat_text "the medication filter can be left on every medication" 'name="medication" required'
+expect_no_flat_text "the pharmacy filter can be left on every pharmacy" 'name="pharmacy" required'
+expect_text "one person's drop-down names the medication alone" '>Prinivil</option>'
+expect_status "history for everyone" 200 "$(get /fills)"
+expect_text "everyone's drop-down names the person too" "Alex Example: Prinivil"
+expect_status "history with every filter left empty" 200 "$(get '/fills?person=&medication=&pharmacy=&period=&q=')"
+expect_text "every filter left empty lists the fills" "Rx 700001"
+expect_status "history of another person keeps no medication of Alex" 200 "$(get "/fills?person=$robin&medication=$entry&period=last-90-days")"
+expect_no_text "a medication of another person goes back to every medication" "value=\"$entry\" selected"
+expect_text "the person tabs keep the other filters" "period=last-90-days"
 expect_status "history of one tracked medication" 200 "$(get "/fills?medication=$entry")"
 expect_text "history of one tracked medication shows its fills" "Rx 700001"
 expect_status "history for a year with no fill" 200 "$(get '/fills?year=1999')"
 expect_text "a year with no fill says so" "No fills found."
 expect_status "history with a year that is not a year" 200 "$(get "/fills?year=%27%20OR%201=1")"
 expect_status "history with a page that is not a number" 200 "$(get '/fills?page=abc')"
+for period in this-week this-month last-week last-month last-90-days; do
+  expect_status "history for the period $period" 200 "$(get "/fills?period=$period")"
+done
+expect_status "history for a period that is not one" 200 "$(get '/fills?period=bogus')"
+expect_text "a period that is not one counts as any time" "Rx 700001"
+expect_status "history searched by Rx number" 200 "$(get '/fills?q=rx%20700001')"
+expect_text "a search finds the fill by its Rx number" "Rx 700001"
+expect_text "a search keeps its words in the box" 'value="rx 700001"'
+expect_status "history searched for nothing that exists" 200 "$(get '/fills?q=zzzqqq')"
+expect_text "a search with no match says so" "No fills found."
+expect_status "history searched with markup" 200 "$(get '/fills?q=%3Cscript%3Ealert(7)%3C/script%3E')"
+expect_no_text "a searched script is never echoed as markup" "<script>alert(7)"
+expect_status "reports tab" 200 "$(get "/fills/reports?person=$alex")"
+expect_text "reports show what was paid by year" "Paid by year"
+expect_text "reports draw the chart as an image with a title" '<title id="meds-chart-title">Total paid each year</title>'
+expect_text "reports link the printable report" "Printable report (opens in a new tab)"
+expect_text "the tabs mark the reports tab" 'aria-current="page">Reports</a>'
+expect_status "reports for a year with no fill" 200 "$(get '/fills/reports?period=1999')"
+expect_text "reports with no fill say so" "No fills found."
+expect_status "printable report" 200 "$(get "/fills/reports/print?person=$alex")"
+expect_text "the printable report names the person" "Fills for Alex Example"
+expect_text "the printable report has a Print button" "data-print hidden"
+expect_text "the printable report totals each person" "Total for Alex Example"
+expect_text "the printable report shows money in dollars" '$1,012.50'
 
 ### Pasted Fills ###
 us() { date -d "$1" +%m/%d/%Y; }
