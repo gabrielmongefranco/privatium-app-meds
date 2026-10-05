@@ -2,7 +2,7 @@
 # .github/workflows/lint.yml
 # Author(s): Gabriel Mongefranco
 # Created: 2026-09-26
-# Last Modified: 2026-10-01
+# Last Modified: 2026-10-05
 # Summary: Lints the app and checks refill rules and catalog marks on pushes and pull requests.
 #          No Rust toolchain is needed; the job downloads the release binary.
 # Notes: See README file for documentation and full license information.
@@ -27,7 +27,7 @@ on: [push, pull_request]
 
 env:
   # The Privatium release the app is tested with. Keep it in step with the README.
-  PRIVATIUM_VERSION: v0.3
+  PRIVATIUM_VERSION: v0.3.2
 
 jobs:
   lint:

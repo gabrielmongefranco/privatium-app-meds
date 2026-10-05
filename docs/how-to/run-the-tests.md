@@ -3,7 +3,7 @@ This file is part of Prescription Tracker
 docs/how-to/run-the-tests.md
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-10-03
+Last Modified: 2026-10-05
 Summary: How to run the lint, the unit tests and the smoke test, and what each one covers.
 Notes: See README file for documentation and full license information.
 
@@ -27,7 +27,7 @@ the root of the repository.
 
 | Tool | Used by | Note |
 |---|---|---|
-| Privatium | The lint and the smoke test | The version that the project README names |
+| Privatium | The lint and the smoke test | Version 0.3.2 or later. The app declares a `[ui]` table in its manifest, which an older Privatium refuses as an unknown table. The project README names the same version. |
 | Lua 5.4 | The unit tests | On many systems the command is `lua5.4`. Plain `lua` may be an older version. |
 | Python 3 | Supply regression tests | Standard library only |
 | Bash and curl | The smoke test | |
