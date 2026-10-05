@@ -3,7 +3,7 @@
 # tests/test_supply.py
 # Author(s): Gabriel Mongefranco
 # Created: 2026-10-01
-# Last Modified: 2026-10-03
+# Last Modified: 2026-10-05
 # Summary: Synthetic SQLite checks of supply, payer rules, and row grain.
 # Notes: See README file for documentation and full license information.
 #
@@ -56,14 +56,17 @@ class SupplyTests(unittest.TestCase):
     def tearDown(self):
         self.db.close()
 
-    def result(self, fills, percent=25, frame=180, controlled=False, early=0):
-        """Return one supply row for a synthetic history and check each view's grain."""
+    def result(self, fills, percent=25, frame=180, controlled=False, early=0, backup=(15, 7, 10)):
+        """Return the payer's earliest date, the physical end and the allowance for a synthetic
+        history, and check each view's grain. backup holds the backup percent and the two
+        minimum day counts."""
         self.db.execute('DELETE FROM fill')
         self.db.execute('DELETE FROM plan')
         self.db.execute('DELETE FROM profile')
         self.db.execute("UPDATE medication SET is_controlled = ? WHERE id = 'med'", (controlled,))
-        self.db.execute("INSERT INTO profile(id, early_fill_percent, supply_frame_days, controlled_early_days) "
-                        "VALUES ('settings', ?, ?, ?)", (percent, frame, early))
+        self.db.execute("INSERT INTO profile(id, early_fill_percent, supply_frame_days, controlled_early_days, "
+                        "backup_percent, backup_min_days, specialty_backup_min_days) "
+                        "VALUES ('settings', ?, ?, ?, ?, ?, ?)", (percent, frame, early, *backup))
         self.db.execute("INSERT INTO plan(id, name) VALUES ('A', 'Example Plan A')")
         self.db.execute("INSERT INTO plan(id, name) VALUES ('B', 'Example Plan B')")
         self.db.executemany("INSERT INTO fill(id, person_medication_id, medication_id, pharmacy_id, filled_on, "
@@ -74,7 +77,7 @@ class SupplyTests(unittest.TestCase):
         self.assertEqual(self.db.execute('SELECT count(*) FROM v_supply_fill').fetchone()[0], len(fills))
         self.assertEqual(self.db.execute('SELECT count(*) FROM v_supply').fetchone()[0], 1)
         self.assertEqual(self.db.execute('SELECT count(*) FROM v_active_medication').fetchone()[0], 1)
-        return self.db.execute('SELECT next_fill_on, lasts_until, allowance FROM v_supply').fetchone()
+        return self.db.execute('SELECT earliest_fill_on, lasts_until, allowance FROM v_supply').fetchone()
 
     def test_worked_examples(self):
         fills = [(dt.date.fromisoformat(date), days, 'A') for date, days in
@@ -118,15 +121,15 @@ class SupplyTests(unittest.TestCase):
         fills = [(date, 30, 'A'), (date + DAY * 10, 30, 'B'), (date + DAY * 20, 30, 'A')]
         self.assertEqual(tuple(self.result(fills)), ('2026-02-23', '2026-04-01', 7))
         self.db.execute("UPDATE plan SET early_fill_percent = 50 WHERE id = 'A'")
-        self.assertEqual(tuple(self.db.execute('SELECT next_fill_on, lasts_until, allowance FROM v_supply').fetchone()),
+        self.assertEqual(tuple(self.db.execute('SELECT earliest_fill_on, lasts_until, allowance FROM v_supply').fetchone()),
                          ('2026-02-15', '2026-04-01', 15))
         self.db.execute("UPDATE plan SET supply_frame_days = 0 WHERE id = 'A'")
-        self.assertEqual(self.db.execute('SELECT next_fill_on FROM v_supply').fetchone()[0], '2026-02-05')
+        self.assertEqual(self.db.execute('SELECT earliest_fill_on FROM v_supply').fetchone()[0], '2026-02-05')
         fills[1] = (date + DAY * 10, 30, None)
         self.assertEqual(tuple(self.result(fills)), ('2026-03-25', '2026-04-01', 7))
         self.result(fills, controlled=True, early=2)
         self.db.execute("UPDATE plan SET early_fill_percent = 100, supply_frame_days = 0 WHERE id = 'A'")
-        self.assertEqual(tuple(self.db.execute('SELECT next_fill_on, lasts_until, allowance FROM v_supply').fetchone()),
+        self.assertEqual(tuple(self.db.execute('SELECT earliest_fill_on, lasts_until, allowance FROM v_supply').fetchone()),
                          ('2026-03-30', '2026-04-01', 2))
 
     def test_constraints_reject_invalid_rules(self):
@@ -134,6 +137,58 @@ class SupplyTests(unittest.TestCase):
             for value in values:
                 with self.assertRaises(sqlite3.IntegrityError):
                     self.db.execute(f"INSERT INTO plan(id, name, {column}) VALUES ('bad', 'Example', ?)", (value,))
+        for column, values in [('backup_percent', [-1, 101]), ('backup_min_days', [-1, 366]),
+                               ('specialty_backup_min_days', [-1, 366])]:
+            for value in values:
+                with self.assertRaises(sqlite3.IntegrityError):
+                    self.db.execute(f"INSERT INTO profile(id, {column}) VALUES ('bad', ?)", (value,))
+
+    def next_fill(self):
+        """Return the next fill date, the physical end and the backup days of the one entry."""
+        return tuple(self.db.execute('SELECT next_fill_on, lasts_until, backup_days FROM v_supply').fetchone())
+
+    def test_backup_supply(self):
+        date = dt.date(2026, 3, 2)
+        # 90 days at 25 percent: the payer allows 22 days early, the backup asks for 13.
+        self.assertEqual(tuple(self.result([(date, 90, 'A')])), ('2026-05-09', '2026-05-31', 22))
+        self.assertEqual(self.next_fill(), ('2026-05-18', '2026-05-31', 13))
+        # 30 days: 15 percent is 4, so the 7-day minimum applies, as far as the payer's 7.
+        self.result([(date, 30, 'A')])
+        self.assertEqual(self.next_fill(), ('2026-03-25', '2026-04-01', 7))
+        # A payer that allows less caps the backup: 10 percent of 90 is 9 days.
+        self.result([(date, 90, 'A')], percent=10)
+        self.assertEqual(self.next_fill(), ('2026-05-22', '2026-05-31', 13))
+        # Zero percent and controlled medications wait for the supply to run out.
+        self.result([(date, 90, 'A')], percent=0)
+        self.assertEqual(self.next_fill()[:2], ('2026-05-31', '2026-05-31'))
+        self.result([(date, 90, 'A')], controlled=True)
+        self.assertEqual(self.next_fill()[:2], ('2026-05-31', '2026-05-31'))
+        self.result([(date, 90, 'A')], controlled=True, early=3)
+        self.assertEqual(self.next_fill()[:2], ('2026-05-28', '2026-05-31'))
+        # A missing or zero days supply keeps the minimum and the payer's date.
+        self.result([(date, None, 'A')])
+        self.assertEqual(self.next_fill(), ('2026-03-03', '2026-03-03', 7))
+        self.result([(date, 0, 'A')])
+        self.assertEqual(self.next_fill(), ('2026-03-02', '2026-03-02', 7))
+        # A specialty medication keeps at least 10 days, within what the payer allows.
+        self.db.execute("UPDATE medication SET is_specialty = 1 WHERE id = 'med'")
+        self.result([(date, 90, 'A')])
+        self.assertEqual(self.next_fill(), ('2026-05-18', '2026-05-31', 13))
+        self.result([(date, 30, 'A')])
+        self.assertEqual(self.next_fill(), ('2026-03-25', '2026-04-01', 10))
+        self.result([(date, 60, 'A')])
+        self.assertEqual(self.next_fill(), ('2026-04-21', '2026-05-01', 10))
+
+    def test_backup_does_not_grow(self):
+        for days in (30, 90):
+            fills, date = [], dt.date(2026, 3, 2)
+            for _ in range(8):
+                fills.append((date, days, 'A'))
+                self.result(fills)
+                next_on, lasts_until, backup = self.next_fill()
+                on_hand = (dt.date.fromisoformat(lasts_until) - dt.date.fromisoformat(next_on)).days
+                self.assertEqual(on_hand, min(backup, days * 25 // 100), (days, fills))
+                date = dt.date.fromisoformat(next_on)
 
     def test_random_histories_against_daily_simulation(self):
         rng = random.Random(20261001)
@@ -162,9 +217,15 @@ class SupplyTests(unittest.TestCase):
                     if end is None or end - DAY * allowance <= eligible:
                         break
                     eligible += DAY
-            row = self.result(fills, percent, frame, controlled, early)
+            backup = (rng.choice([0, 15, 50]), rng.choice([0, 7]), rng.choice([0, 10]))
+            row = self.result(fills, percent, frame, controlled, early, backup)
             self.assertEqual(tuple(row), (eligible.isoformat(), physical_end.isoformat(), allowance),
                              (fills, percent, frame, controlled, early))
+            backup_days = max((1 if last_days is None else last_days) * backup[0] // 100, backup[1])
+            self.assertEqual(self.next_fill(),
+                             (max(eligible, physical_end - DAY * backup_days).isoformat(),
+                              physical_end.isoformat(), backup_days),
+                             (fills, percent, frame, controlled, early, backup))
 
 
 if __name__ == '__main__':

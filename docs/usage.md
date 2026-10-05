@@ -139,7 +139,7 @@ Choose **Refills**. The page lists what needs attention, most urgent first.
 | Group | Meaning |
 |---|---|
 | Overdue | Recorded physical supply has run out |
-| Due | Eligibility has passed, is today, or is up to 3 days away |
+| Due | The next fill date has passed, is today, or is up to 3 days away |
 | Due soon | The next fill date is 4 to 7 days away |
 | New prescriptions to ask for | No refill is left, and the next fill is overdue, due or due soon |
 | Prior authorizations | A prior authorization has expired, is due or is due soon |
@@ -153,10 +153,12 @@ Only a medication with the status Taking regularly raises an alert.
 
 Each row shows two dates:
 
-- The **next fill date** estimates when the payer will allow another fill.
+- The **next fill date** is when to fill so a backup supply is still on hand. It is
+  never before the day the payer allows. For a 90-day fill the backup starts at 13 days,
+  and for a 30-day fill at 7.
 - **Lasts until** shows when all recorded supply runs out, whoever paid.
 
-Early fills add supply, while gaps do not. After eligibility passes, the row reads
+Early fills add supply, while gaps do not. After the next fill date passes, the row reads
 "Fill now. Runs out in N days" until supply runs out. Only then does it become overdue.
 The [data model](data-model.md#how-the-dates-are-worked-out) explains the calculation.
 
@@ -464,8 +466,9 @@ when you change the person's current plan. History shows the payer of each fill.
 ### Change the reminder settings
 
 1. Choose **Setup**, then **Reminder settings**.
-2. Enter day counts from 0 to 365, a percent from 0 to 100, or a frame from 0 to 3650.
-   Leave a field empty to use the default.
+2. Each box shows the number in use. Change day counts from 0 to 365, a percent from
+   0 to 100, or a frame from 0 to 3650. Clear a box to go back to the number the app
+   starts with.
 3. Choose **Save**.
 
 | Setting | The app starts with |
@@ -479,6 +482,14 @@ when you change the person's current plan. History shows the payer of each fill.
 | Early fill percent | 25 percent |
 | Supply frame | 180 days |
 | Days early for controlled medications | 0 days |
+| Backup supply percent | 15 percent |
+| Backup supply, at least | 7 days |
+| Backup supply for a specialty medication, at least | 10 days |
+
+The backup supply decides how close to running out you refill. It is a share of the
+last fill's days supply, but never less than the minimum days, and never more than
+your plan allows early. For example, a 90-day fill that runs out on March 30 keeps
+13 days, so its next fill date is March 17.
 
 ### Remove a record
 

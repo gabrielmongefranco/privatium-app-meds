@@ -495,7 +495,7 @@ This page links to six places, each a box of the launcher list:
 - **Pharmacies**: the pharmacies, with their phone numbers and addresses.
 - **Medication catalog**: every product the household has used, with its other names.
   The starter catalog of common medications loads by itself when the catalog is empty.
-- **Reminder settings**: six reminder day counts and three early refill settings.
+- **Reminder settings**: six reminder day counts and six early refill and backup supply settings.
 
 The app asks for no household name.
 
@@ -706,16 +706,21 @@ and the node computer's local date. The app stores none of these calculated valu
 |---|---|---|
 | No fill | No supply date | The same |
 | Overdue | Physical supply ran out before today | The same |
-| Due | Eligibility has passed, is today, or is up to 3 days away | Up to 5 days away |
-| Due soon | Eligibility is 4 to 7 days away | 6 to 10 days away |
-| Not due | Eligibility is more than 7 days away | More than 10 days away |
+| Due | The next fill date has passed, is today, or is up to 3 days away | Up to 5 days away |
+| Due soon | The next fill date is 4 to 7 days away | 6 to 10 days away |
+| Not due | The next fill date is more than 7 days away | More than 10 days away |
 
-Six reminder day counts cover refills and prior authorizations. Three further settings
-cover early refills. Plans can override the household percent and frame.
+Six reminder day counts cover refills and prior authorizations. Six further settings
+cover early refills and the backup supply. Plans can override the household percent and
+frame. The settings form shows the number in use in every box, and a cleared box saves
+the default.
 
 #### The two dates
 
-The **next fill date** estimates the earliest day a payer permits another fill.
+The **next fill date** is when to fill so a backup supply is still on hand: the last
+fill's days supply times the backup percent (15), but at least 7 days, or 10 for a
+specialty medication. It is never before the earliest day the payer permits another
+fill. The backup counts back from all recorded supply, so it does not grow over time.
 **Lasts until** is when physical supply runs out. Every fill adds physical supply,
 and a late fill starts from its own date without credit for the gap.
 
@@ -727,7 +732,7 @@ Their household days early setting replaces the percent, initially with zero.
 Zero-percent payers for ordinary medications wait for physical supply to run out.
 
 There is no January 1 reset. The [data model](../data-model.md) gives the full rules,
-frame boundary cases, and two worked examples. After eligibility passes with supply
+frame boundary cases, and two worked examples. After the next fill date passes with supply
 left, the row reads "Fill now. Runs out in N days".
 
 #### Groups on the Refills page
@@ -953,6 +958,7 @@ Each step ended with a clean `privatium lint`, passing tests and updated documen
 | Controlled supply | Every fill counts across payers, with no frame limit and zero early days by default. |
 | Cash and over-the-counter | Zero percent waits until physical supply runs out. |
 | Frame special values | Zero counts the last fill only; 3650 counts every fill, even beyond ten years. |
+| Backup supply | The next fill date keeps a backup of 15 percent of the last fill, at least 7 days (10 for specialty), and never comes before the payer allows. Filling at the payer's earliest date would build a stockpile. |
 | Catalog marks | Controlled comes from openFDA schedules; specialty is a name/list suggestion that can be corrected in the catalog. |
 
 ### Conclusion

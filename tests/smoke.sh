@@ -3,7 +3,7 @@
 # tests/smoke.sh
 # Author(s): Gabriel Mongefranco
 # Created: 2026-09-27
-# Last Modified: 2026-10-03
+# Last Modified: 2026-10-05
 # Summary: Starts a Privatium node on a temporary data directory, opens the catalog so the app loads its starter catalog,
 #          and checks the app's screens over HTTP: normal use, empty and invalid input,
 #          boundaries, and requests that must be refused. Uses invented data only.
@@ -186,7 +186,10 @@ expect_status "no page asks for a household name" 404 "$(get /edit)"
 
 ### Reminder Settings ###
 expect_status "reminder settings page" 200 "$(get /setup/reminders)"
-expect_text "reminder settings show the default" "Empty means 3."
+expect_text "the due box shows its default" 'name="due_within_days" type="text" value="3"'
+expect_text "the backup percent box shows its default" 'name="backup_percent" type="text" value="15"'
+expect_text "the specialty backup box shows its default" 'name="specialty_backup_min_days" type="text" value="10"'
+expect_no_text "no box says what empty means" "Empty means"
 expect_status "due soon below due is refused" 200 "$(post /setup/reminders /setup/reminders \
   'due_within_days=5' 'due_soon_within_days=2')"
 expect_text "due soon below due says why" "Make the days for due soon the same as the days for due, or more."
@@ -202,7 +205,12 @@ expect_status "reminder settings are saved" 303 "$(post /setup/reminders /setup/
   'due_within_days=4' 'due_soon_within_days=8')"
 curl -s -m 10 "$APP/api/q/v_reminder_setting" >"$BODY"
 expect_text "saved count is in force" '"due_within_days":4'
-expect_text "empty count takes its default" '"specialty_due_within_days":5'
+expect_text "a cleared box saves its default" '"specialty_due_within_days":5'
+expect_text "the backup percent is in force" '"backup_percent":15'
+expect_status "the saved settings" 200 "$(get /setup/reminders)"
+expect_text "a saved count shows in its box" 'name="due_within_days" type="text" value="4"'
+curl -s -m 10 "$APP/api/events?tbl=profile" | tail -1 >"$BODY"
+expect_text "a cleared box is saved as its default" '"backup_min_days":"7"'
 expect_status "reminder settings are saved a second time" 303 "$(post /setup/reminders /setup/reminders \
   'due_within_days=4' 'due_soon_within_days=8' 'authorization_notice_days=30')"
 expect_status "the settings stay one record" 1 "$(count_of profile)"
@@ -210,7 +218,9 @@ expect_status "the settings stay one record" 1 "$(count_of profile)"
 expect_status "a percent above 100 is refused" 200 "$(post /setup/reminders /setup/reminders 'early_fill_percent=101')"
 expect_text "a percent above 100 says why" "whole number from 0 to 100"
 expect_status "early refill settings" 200 "$(get /setup/reminders)"
-expect_text "percent default" "Empty means 25."
+expect_text "the percent box shows the number in use" 'name="early_fill_percent" type="text" value="25"'
+expect_status "a backup percent above 100 is refused" 200 "$(post /setup/reminders /setup/reminders 'backup_percent=101')"
+expect_text "a backup percent above 100 says why" "whole number from 0 to 100"
 
 ### Insurance Plans ###
 expect_status "empty plan list" 200 "$(get /setup/plans)"
@@ -929,6 +939,9 @@ record_fill 01J8MEDS0000000000MED00031 33 30 "$plan_a"
 record_fill "$framelex" 200 90 "$plan_a"
 record_fill "$framelex" 132 90 "$plan_a"
 record_fill "$framelex" 42 90 "$plan_a"
+# The largest backup supply never waits, so the next fill date is the payer's date.
+expect_status "the largest backup supply is saved" 303 "$(post /setup/reminders /setup/reminders \
+  'due_within_days=4' 'due_soon_within_days=8' 'backup_min_days=365' 'specialty_backup_min_days=365')"
 curl -s -m 10 "$APP/api/q/v_active_medication" >"$BODY"
 for check in 'Controlex|2' 'Eliquis|13' 'Lexapro|20' 'Singulair|9' 'Synthroid|-3' 'Zyrtec|-10' 'Framelex|26'; do
   name="${check%|*}"; expected="${check#*|}"
@@ -943,6 +956,15 @@ expect_status "all-history frame is saved" 303 "$(post "/setup/plans/$plan_a/edi
   'name=Example Plan A' 'supply_frame_days=3650')"
 curl -s -m 10 "$APP/api/q/v_active_medication" >"$BODY"
 if row_of Framelex | grep -q '"days_until_next_fill":48'; then pass; else fail "all-history frame counts every fill"; fi
+expect_status "the default backup supply is back" 303 "$(post /setup/reminders /setup/reminders \
+  'due_within_days=4' 'due_soon_within_days=8')"
+curl -s -m 10 "$APP/api/q/v_active_medication" >"$BODY"
+# Supply runs out in 70 days; 15 percent of 90 keeps 13 days, later than the payer's 48.
+if row_of Framelex | grep -q '"days_until_next_fill":57'; then pass; else fail "the backup supply sets the next fill date"; fi
+# Runs out in 23 days; the 7-day minimum is later than the payer's 9.
+if row_of Singulair | grep -q '"days_until_next_fill":16'; then pass; else fail "the smallest backup supply sets the next fill date"; fi
+# Controlled: the payer's 2 days wins over any backup.
+if row_of Controlex | grep -q '"days_until_next_fill":2'; then pass; else fail "a controlled medication keeps the payer's date"; fi
 expect_status "plan frame is cleared" 303 "$(post "/setup/plans/$plan_a/edit" "/setup/plans/$plan_a/edit" 'name=Example Plan A')"
 expect_status "controlled early days are saved" 303 "$(post /setup/reminders /setup/reminders \
   'due_within_days=4' 'due_soon_within_days=8' 'controlled_early_days=2')"

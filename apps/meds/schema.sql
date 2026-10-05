@@ -2,7 +2,7 @@
 -- apps/meds/schema.sql
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-26
--- Last Modified: 2026-10-03
+-- Last Modified: 2026-10-05
 -- Summary: Tables and views of the Prescription Tracker app. Derived from the event log on
 --          every start; see docs/data-model.md for the grain and meaning of every column.
 -- Notes: See README file for documentation and full license information.
@@ -39,6 +39,12 @@ CREATE TABLE profile (
     early_fill_percent             BIGINT,
     supply_frame_days              BIGINT,
     controlled_early_days          BIGINT,
+    backup_percent                 BIGINT,               -- Refill when this share of the last fill's days supply is left, never before the payer allows
+    backup_min_days                BIGINT,               -- The backup supply is never smaller than this many days, unless the payer allows less
+    specialty_backup_min_days      BIGINT,               -- The same floor for a specialty medication, which takes longer to arrive
+    CHECK (backup_percent IS NULL OR backup_percent BETWEEN 0 AND 100),
+    CHECK (backup_min_days IS NULL OR backup_min_days BETWEEN 0 AND 365),
+    CHECK (specialty_backup_min_days IS NULL OR specialty_backup_min_days BETWEEN 0 AND 365),
     CHECK (early_fill_percent IS NULL OR early_fill_percent BETWEEN 0 AND 100),
     CHECK (supply_frame_days IS NULL OR supply_frame_days BETWEEN 0 AND 3650),
     CHECK (controlled_early_days IS NULL OR controlled_early_days BETWEEN 0 AND 365),
@@ -213,7 +219,10 @@ SELECT 3  AS due_within_days,
        14 AS authorization_due_within_days,
        25 AS early_fill_percent,
        180 AS supply_frame_days,
-       0 AS controlled_early_days;
+       0 AS controlled_early_days,
+       15 AS backup_percent,
+       7 AS backup_min_days,
+       10 AS specialty_backup_min_days;
 
 --- v_reminder_setting: the day counts in force ---
 -- Grain: exactly one row, whether or not a profile row exists.
@@ -236,7 +245,13 @@ SELECT coalesce((SELECT max(p.due_within_days) FROM profile p),
        coalesce((SELECT max(p.supply_frame_days) FROM profile p),
                 d.supply_frame_days)               AS supply_frame_days,
        coalesce((SELECT max(p.controlled_early_days) FROM profile p),
-                d.controlled_early_days)           AS controlled_early_days
+                d.controlled_early_days)           AS controlled_early_days,
+       coalesce((SELECT max(p.backup_percent) FROM profile p),
+                d.backup_percent)                  AS backup_percent,
+       coalesce((SELECT max(p.backup_min_days) FROM profile p),
+                d.backup_min_days)                 AS backup_min_days,
+       coalesce((SELECT max(p.specialty_backup_min_days) FROM profile p),
+                d.specialty_backup_min_days)       AS specialty_backup_min_days
   FROM v_reminder_default d;
 
 --- v_medication: the catalog with its built names ---
@@ -401,29 +416,43 @@ SELECT c.person_medication_id, max(c.allowance) AS allowance,
  GROUP BY c.person_medication_id;
 
 --- v_supply: refill eligibility and physical supply for each tracked medication ---
--- Grain: one row per person_medication row. A missing fill leaves both dates NULL.
--- A zero-percent payer waits for physical supply to run out, including other payers.
+-- Grain: one row per person_medication row. A missing fill leaves the dates NULL.
+-- earliest_fill_on is the payer's earliest date; a zero-percent payer waits for physical
+-- supply to run out, including other payers. next_fill_on aims to refill with a backup
+-- supply on hand, so the app never urges a fill weeks early, and never suggests a date
+-- before earliest_fill_on. The backup counts back from all recorded supply, so it cannot
+-- grow from one refill to the next.
 CREATE VIEW v_supply AS
-SELECT pm.id AS person_medication_id, pm.person_id,
-       pm.status, pm.refills_left,
-       l.fill_id AS last_fill_id, l.filled_on AS last_filled_on,
-       l.pharmacy_id AS last_pharmacy_id, l.plan_id AS last_plan_id,
-       l.medication_id AS last_medication_id,
-       l.days_supply AS last_days_supply,
-       CASE WHEN l.fill_id IS NOT NULL AND l.days_supply IS NULL THEN 1 ELSE 0 END AS days_supply_missing,
-       physical.lasts_until, frame.allowance,
-       CASE WHEN NOT coalesce(e.is_controlled, 0)
-                  AND coalesce(p.early_fill_percent, r.early_fill_percent) = 0
-            THEN physical.lasts_until ELSE frame.next_fill_on END AS next_fill_on
-  FROM person_medication pm
-  LEFT JOIN v_last_fill l ON l.person_medication_id = pm.id         -- 1:0..1
-  LEFT JOIN (SELECT person_medication_id, max(ends_on) AS lasts_until
-               FROM v_supply_fill GROUP BY person_medication_id) physical
-    ON physical.person_medication_id = pm.id                         -- 1:0..1
-  LEFT JOIN v_supply_frame frame ON frame.person_medication_id = pm.id  -- 1:0..1
-  LEFT JOIN v_entry_mark e ON e.person_medication_id = pm.id         -- 1:0..1
-  LEFT JOIN plan p ON p.id = l.plan_id                                 -- many:0..1
-  CROSS JOIN v_reminder_setting r;
+SELECT b.person_medication_id, b.person_id, b.status, b.refills_left,
+       b.last_fill_id, b.last_filled_on, b.last_pharmacy_id, b.last_plan_id,
+       b.last_medication_id, b.last_days_supply, b.days_supply_missing,
+       b.lasts_until, b.allowance, b.backup_days, b.earliest_fill_on,
+       max(b.earliest_fill_on,
+           date(b.lasts_until, '-' || b.backup_days || ' days')) AS next_fill_on
+  FROM (SELECT pm.id AS person_medication_id, pm.person_id,
+               pm.status, pm.refills_left,
+               l.fill_id AS last_fill_id, l.filled_on AS last_filled_on,
+               l.pharmacy_id AS last_pharmacy_id, l.plan_id AS last_plan_id,
+               l.medication_id AS last_medication_id,
+               l.days_supply AS last_days_supply,
+               CASE WHEN l.fill_id IS NOT NULL AND l.days_supply IS NULL THEN 1 ELSE 0 END AS days_supply_missing,
+               physical.lasts_until, frame.allowance,
+               CASE WHEN l.fill_id IS NULL THEN NULL
+                    ELSE max(CAST((coalesce(l.days_supply, 1) * r.backup_percent) / 100 AS INTEGER),
+                             CASE WHEN coalesce(e.is_specialty, 0) THEN r.specialty_backup_min_days
+                                  ELSE r.backup_min_days END) END AS backup_days,
+               CASE WHEN NOT coalesce(e.is_controlled, 0)
+                          AND coalesce(p.early_fill_percent, r.early_fill_percent) = 0
+                    THEN physical.lasts_until ELSE frame.next_fill_on END AS earliest_fill_on
+          FROM person_medication pm
+          LEFT JOIN v_last_fill l ON l.person_medication_id = pm.id         -- 1:0..1
+          LEFT JOIN (SELECT person_medication_id, max(ends_on) AS lasts_until
+                       FROM v_supply_fill GROUP BY person_medication_id) physical
+            ON physical.person_medication_id = pm.id                         -- 1:0..1
+          LEFT JOIN v_supply_frame frame ON frame.person_medication_id = pm.id  -- 1:0..1
+          LEFT JOIN v_entry_mark e ON e.person_medication_id = pm.id         -- 1:0..1
+          LEFT JOIN plan p ON p.id = l.plan_id                                 -- many:0..1
+          CROSS JOIN v_reminder_setting r) b;                                  -- exactly one setting row
 
 --- v_active_medication: everything about each medication in use, in readable columns ---
 -- Grain: one row per person_medication row whose status is not 'not_taking'.
