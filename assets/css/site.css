@@ -1,0 +1,112 @@
+/*
+This file is part of Medication Tracker
+assets/css/site.css
+Author(s): Gabriel Mongefranco
+Created: 2026-10-05
+Last Modified: 2026-10-05
+Summary: Styles of the documentation website. The colors, fonts and header follow the
+         Privatium website, so the two sites look like one family. Reading text stays within
+         about 80 characters a line, and wide tables, code and pictures stay inside the page.
+Notes: See README file for documentation and full license information.
+
+Copyright © 2026 Gabriel Mongefranco
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program. If not, see <https://www.gnu.org/licenses/>.
+*/
+
+/* ### Colors And Type ### */
+:root {
+  color-scheme: light;
+  --aubergine: #251329;
+  --ivory: #fff7f0;
+  --lilac: #ebcbf3;
+  --text: #251329;
+  --muted: #68546b;
+  --line: #d9c9d7;
+  --control-line: #896e8e;
+  --soft: #f1e6ed;
+  --paper: #fffdfa;
+  --focus: #79537f;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 100%;
+  line-height: 1.65;
+  background: var(--ivory);
+  color: var(--text);
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--ivory); overflow-wrap: break-word; }
+a { color: inherit; text-underline-offset: .25em; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 4px; }
+code, kbd, pre { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .9em; }
+
+/* ### Page Frame ### */
+.container { width: min(calc(100% - 3rem), 72rem); margin-inline: auto; }
+.skip-link { position: absolute; top: .75rem; left: 1rem; z-index: 5; padding: .8rem 1rem; background: var(--ivory); color: var(--aubergine); transform: translateY(-180%); }
+.skip-link:focus { transform: translateY(0); }
+.dark { background: var(--aubergine); color: var(--ivory); --muted: #d6bfd8; --line: #614765; --control-line: #b394b9; --focus: #ebcbf3; color-scheme: dark; }
+.site-header { padding-block: 1.25rem; }
+.header-row { display: flex; align-items: center; justify-content: space-between; gap: .5rem 1.5rem; flex-wrap: wrap; }
+.brand { display: inline-flex; align-items: center; min-height: 44px; font: 400 1.6rem/1.2 Georgia, "Times New Roman", serif; letter-spacing: -.02em; text-decoration: none; }
+.brand:hover { text-decoration: underline; }
+.site-nav { display: flex; align-items: center; flex-wrap: wrap; gap: .25rem 1.35rem; }
+.site-nav a { display: inline-flex; align-items: center; min-height: 44px; font-size: .95rem; text-decoration: none; }
+.site-nav a:hover, .site-nav a[aria-current="page"] { text-decoration: underline; }
+.site-footer { margin-top: 3rem; padding-block: 2rem; border-top: 1px solid var(--line); color: var(--muted); font-size: .9rem; }
+.site-footer p { max-width: 80ch; margin: 0 0 .75rem; }
+.site-footer a { display: inline-block; padding-block: .2rem; }
+
+/* ### Page Content ### */
+.page { padding-block: 2rem 1rem; }
+.page:focus { outline: none; }
+.page > * { max-width: 80ch; }
+.page > table, .page > div.highlighter-rouge, .page > figure, .page > details, .page > p > img { max-width: 100%; }
+.page h1, .page h2, .page h3, .page h4, .page h5 { line-height: 1.25; margin: 2rem 0 .75rem; }
+.page h1, .page h2 { font-family: Georgia, "Times New Roman", serif; font-weight: 400; letter-spacing: -.02em; }
+.page h1 { font-size: clamp(2rem, 5vw, 2.8rem); margin-top: 0; }
+.page h2 { font-size: clamp(1.6rem, 3.5vw, 2.1rem); }
+.page h3 { font-size: 1.3rem; font-weight: 600; }
+.page h4 { font-size: 1.1rem; font-weight: 600; }
+.page p, .page li { margin-block: 0 1em; }
+.page li > p { margin-bottom: .5em; }
+.page ul, .page ol { padding-left: 1.5rem; }
+.page img { display: block; max-width: 100%; height: auto; border: 1px solid var(--line); border-radius: 6px; }
+.page blockquote { margin: 1rem 0; padding: .25rem 1rem; border-left: 4px solid var(--control-line); background: var(--soft); }
+.page hr { border: 0; border-top: 1px solid var(--line); margin-block: 2rem; }
+.page :not(pre) > code { padding: .1em .3em; border-radius: 4px; background: var(--soft); overflow-wrap: anywhere; }
+.page pre { margin: 0 0 1rem; padding: 1rem; overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); line-height: 1.5; }
+/* Tables keep their table semantics in the markup; the box scrolls sideways when it is wider than the page. */
+.page table { display: block; width: max-content; max-width: 100%; overflow-x: auto; margin: 0 0 1.25rem; border-collapse: collapse; }
+.page th, .page td { padding: .45rem .75rem; border: 1px solid var(--line); text-align: left; vertical-align: top; }
+.page th { background: var(--soft); font-weight: 600; }
+.page tr:nth-child(even) td { background: var(--paper); }
+.page figure.diagram { margin: 0 0 .5rem; padding: 1rem; overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
+.page figure.diagram svg { max-width: 100%; height: auto; }
+.page details { margin-bottom: 1rem; }
+.page summary { min-height: 44px; padding-block: .6rem; cursor: pointer; }
+
+/* ### Small Screens, Motion, Forced Colors And Print ### */
+@media (max-width: 44rem) {
+  .container { width: calc(100% - 2rem); }
+  .site-nav { gap: .15rem 1rem; }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; } }
+@media (forced-colors: active) {
+  :focus-visible { outline-color: Highlight; }
+  .page th, .page td, .page pre, .page img { border-color: CanvasText; }
+}
+@media print {
+  .site-nav, .skip-link { display: none !important; }
+  .dark { background: white; color: black; }
+  .page > * { max-width: none; }
+  .page pre, .page table { overflow: visible; }
+}

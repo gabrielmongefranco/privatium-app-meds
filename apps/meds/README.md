@@ -63,8 +63,9 @@ twice. The Privatium guide `skills/privatium-tier1-lua/SKILL.md` shows the patte
 
 ### Run it
 
-To use the app, copy this folder into the `apps/` folder of your Privatium data directory
-and start Privatium, as the project README shows. To work on it, link the folder instead
+To use the app, unzip `meds.zip` from the latest release into the `apps/` folder of your
+Privatium data directory and start Privatium, as the project README shows. The zip holds
+this folder and nothing else. To work on it, link the folder instead
 and start the development loop. Every node start prints its data directory on a line
 beginning `privatium: data in`.
 

@@ -3,7 +3,8 @@
 # Author(s): Gabriel Mongefranco
 # Created: 2026-09-26
 # Last Modified: 2026-10-05
-# Summary: Lints the app and checks refill rules and catalog marks on pushes and pull requests.
+# Summary: Lints the app and checks refill rules and catalog marks on pushes and pull requests,
+#          and for release.yml before it attaches the app zip to a release.
 #          No Rust toolchain is needed; the job downloads the release binary.
 # Notes: See README file for documentation and full license information.
 #
@@ -23,7 +24,20 @@
 
 name: Lint
 
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  # release.yml calls this with the release tag, so the tagged code is what gets checked.
+  workflow_call:
+    inputs:
+      ref:
+        description: The tag or commit to check out; empty means the commit that triggered the run
+        required: false
+        type: string
+        default: ''
+
+permissions:
+  contents: read
 
 env:
   # The Privatium release the app is tested with. Keep it in step with the README.
@@ -33,7 +47,10 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
 
       - name: Download the pinned Privatium release
         run: |

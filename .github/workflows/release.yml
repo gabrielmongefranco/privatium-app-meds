@@ -1,0 +1,103 @@
+# This file is part of Medication Tracker
+# .github/workflows/release.yml
+# Author(s): Gabriel Mongefranco
+# Created: 2026-10-05
+# Last Modified: 2026-10-05
+# Summary: When a release is published, lints the tagged code, checks that the tag matches the
+#          version in apps/meds/app.toml, and attaches meds.zip and its SHA-256 checksum to the
+#          release. meds.zip holds the app folder only, so it unzips straight into Privatium's
+#          apps folder. Can also be run by hand for a release that was published without them.
+# Notes: See README file for documentation and full license information.
+#
+# Copyright © 2026 Gabriel Mongefranco
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program. If not, see <https://www.gnu.org/licenses/>.
+
+name: Release app zip
+
+on:
+  release:
+    types: [published]
+  # Attaches the zip to a release that was published without it, such as one whose run failed.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: The tag of the published release to build and attach meds.zip to
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.event.release.tag_name || inputs.tag }}
+  cancel-in-progress: false
+
+env:
+  RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
+
+jobs:
+  lint:
+    uses: ./.github/workflows/lint.yml
+    with:
+      ref: ${{ github.event.release.tag_name || inputs.tag }}
+
+  attach:
+    needs: lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+          persist-credentials: false
+
+      ### Validate Inputs ###
+      # A tag may leave out trailing parts, so v0.9 and v0.9.0 both match version 0.9.0.
+      - name: Check that the tag matches the app version
+        run: |
+          normalize() {
+            local version="${1#v}"
+            while [ "$(printf '%s' "$version" | tr -cd '.' | wc -c)" -lt 2 ]; do
+              version="$version.0"
+            done
+            printf '%s' "$version"
+          }
+          app_version="$(sed -n 's/^version *= *"\([^"]*\)".*/\1/p' apps/meds/app.toml)"
+          if [ -z "$app_version" ]; then
+            echo "::error::No version line was found in apps/meds/app.toml."
+            exit 1
+          fi
+          if [ "$(normalize "$RELEASE_TAG")" != "$(normalize "$app_version")" ]; then
+            echo "::error::The tag $RELEASE_TAG does not match version $app_version in apps/meds/app.toml. Set the version, merge it, and tag that commit."
+            exit 1
+          fi
+          echo "Tag $RELEASE_TAG matches app version $app_version."
+
+      ### Build The Zip ###
+      # git archive takes tracked files only, and the prefix makes meds/ the one top folder.
+      - name: Build meds.zip
+        run: |
+          git archive --format=zip --prefix=meds/ -o meds.zip HEAD:apps/meds
+          sha256sum meds.zip > meds.zip.sha256
+          unzip -l meds.zip | tail -n 1
+          cat meds.zip.sha256
+
+      ### Attach To The Release ###
+      - name: Attach meds.zip to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh release upload "$RELEASE_TAG" meds.zip meds.zip.sha256 --clobber

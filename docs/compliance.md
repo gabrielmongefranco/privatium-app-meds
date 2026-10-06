@@ -176,6 +176,23 @@ household of `tests/fixtures/sample-household.json`, found:
 The pictures in the user guide also showed no button or number broken mid-word in the
 fills table at 1200 pixels.
 
+### The release zip and the documentation website
+
+The release workflow and the website are outside the app, but people download one and
+read the other, so their controls are listed here.
+
+| Control | Where it lives | Evidence |
+|---|---|---|
+| The release zip holds the app folder only, from the tagged commit | `git archive` of `apps/meds` in `.github/workflows/release.yml` | On 2026-10-05 the same command made a zip of 111 files, all under `meds/`, with no test or fixture file. Privatium 0.3.2 loaded the app from it. |
+| A release is lint-checked, and its tag must match the app version | The `lint` job and the version check in `release.yml` | The check passed `v0.9`, `v0.9.0` and `0.9.0` for version 0.9.0, and refused `v0.8`, `v0.9.1` and `v1`, on 2026-10-05. |
+| Each zip comes with its SHA-256 checksum | `meds.zip.sha256` on the release | `sha256sum -c` reported `meds.zip: OK` on the test zip. |
+| The release tag reaches the shell as an environment variable, never inside the command text | `env:` in `release.yml` | Read in the workflow. |
+| Updating the app keeps the records | Privatium keeps them in its data folder, apart from `apps/meds` | On 2026-10-05 an invented person added on a test node was still listed after the `meds` folder was replaced with a fresh unzip and the node restarted. |
+| The website loads no script except on a page with a diagram, and then only Mermaid 12.1.0 pinned by an integrity hash, in strict mode | `_layouts/default.html`, `assets/js/diagrams.js` | Read in the layout. The hash matched the file the browser loaded on the data model page. |
+| The website's text meets the contrast floor | `assets/css/site.css`, with the Privatium website's colors | Computed ratios: text 16.5:1 on the page and in the header, gray footer text 6.5:1, the focus outline 5.9:1 on the page and 11.9:1 in the header. |
+| The website reflows at 320 CSS pixels, and the skip link comes first | The layout and the stylesheet | A headless Firefox run on 2026-10-05 of a local build found no sideways scrolling at 320 and 1200 pixels on the home page, the documentation index, the user guide and the data model page. The first Tab reached **Skip to content**, and Enter moved the focus to the main content. The diagram drew on the data model page at both widths. |
+| Every link inside the website leads somewhere | Jekyll turns links to `.md` files into page links | A script on 2026-10-05 followed every internal link and anchor of the local build: none was broken. |
+
 ### Checks a person still has to make
 
 The committed tests don't drive a browser, and the headless runs above used no phone, no
@@ -212,6 +229,9 @@ accessibility problems. These checks are open:
     with its title and description, and the table under it must hold the same numbers.
 17. Print the spending report on paper, or to a PDF, and check that the menus and
     buttons are gone and every column fits.
+18. On the documentation website, read the home page and the user guide with a screen
+    reader, zoom to 200%, and check that the header links and headings are announced in
+    order.
 
 Record the date, the browser, the screen reader and the result of each check here when
 it is done.

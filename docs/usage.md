@@ -504,6 +504,20 @@ files can read them, so protect the computer and its backups as you would any he
 papers. [How the app works](how-it-works.md#your-privacy) explains what the app sends
 over the internet, which is only medicine names when you search online.
 
+### Update to a new version
+
+Each new version of the app comes as a file named `meds.zip` on the
+[releases page](https://github.com/gabrielmongefranco/privatium-app-meds/releases/latest).
+Your records stay where they are when you update. Privatium keeps them in its own data
+folder, apart from the app's folder.
+
+1. Stop Privatium.
+2. Download `meds.zip` from the latest release and unzip it. You get a new `meds` folder.
+3. In the `apps` folder inside Privatium's data folder, delete the old `meds` folder. Put
+   the new one in its place.
+4. Start Privatium again and open the app. Your people, medicines and fills are all
+   still there.
+
 ### Conclusion
 
 You can now keep each person's medicine list, record fills by hand or from your
