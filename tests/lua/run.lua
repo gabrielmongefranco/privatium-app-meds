@@ -35,7 +35,7 @@ package.path = 'apps/meds/lib/?.lua;tests/lua/?.lua;' .. package.path
 
 local SUITES = {
   'test_text', 'test_validate', 'test_medication_name', 'test_choices', 'test_page',
-  'test_clock', 'test_match', 'test_refill', 'test_portal_reader', 'test_written_name', 'test_reference_words', 'test_authorization_words',
+  'test_clock', 'test_match', 'test_refill', 'test_portal_reader', 'test_portals', 'test_written_name', 'test_reference_words', 'test_authorization_words',
   'test_form_icon', 'test_periods', 'test_spending_chart', 'test_when_icon',
 }
 
