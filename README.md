@@ -30,11 +30,7 @@ The app shows which refills are due and when to order them. It aims to refill wh
 
 ![The Refills page of Medication Tracker, with an invented family. A summary counts what is overdue, due and due soon, and a table lists each medicine with its next fill date and a Record fill button.](docs/images/refills.png)
 
-The app comes with a catalog of about 2,850 common medicine products in the United States. It can look up any other medicine by name in public drug lists from the U.S. government. Your records stay on your computer as plain files, with no account and no cloud. To back them up, you copy a folder.
-
-Tested with Privatium v0.3.2.
-
-**A note on your data.** Privatium stores every record as plain text by design. Anyone who can read the files on your computer can read what this app stores. So protect the computer and its backups the way you protect any papers with health information on them. [Privatium's security page](https://github.com/gabrielmongefranco/privatium/blob/main/docs/security.md) explains what the design does and does not protect.
+The app comes with a catalog of about 2,850 common medicine products in the United States. It can look up any other medicine by name in public drug lists from U.S. government databases. Your records stay on your computer as plain files, with no account and no cloud. To back them up, you simply copy a folder.
 
 
 ## Quick Start Guide
@@ -43,9 +39,7 @@ Tested with Privatium v0.3.2.
 3. Start Privatium again and open the address it prints in your browser. Choose **Medication Tracker** from the list of apps.
 4. Follow [Get started](docs/usage.md#get-started) in the user guide to add your family and your first medicines.
 
-When Privatium starts, it warns that this app uses three online services. Those are the public drug lists the app searches when you look up a medicine that isn't in its catalog. The app sends them only the name you type.
-
-Installing an app from someone you don't know deserves the same care as running a program someone emailed you. A Privatium app runs on your computer with access to its own records. Read the code, or ask someone you trust to read it, before you install an app you did not write.
+Note: When Privatium starts, it warns that this app uses three online services. Those are the public drug lists the app searches when you look up a medicine that isn't in its catalog. The app sends them only the name you type.
 
 
 ## Documentation
@@ -53,13 +47,16 @@ The documentation is also on the [Medication Tracker website](https://dev.mongef
 
 + **[User guide](docs/usage.md):** how to use every screen, with pictures.
 + **[Words to know](docs/glossary.md):** the pharmacy and insurance words the app uses, in plain language.
-+ **[How the app works](docs/how-it-works.md):** how it picks refill dates, why it keeps a backup, and what stays private.
-+ **For developers:** the [documentation index](docs/README.md) lists the architecture, the data model, and how to set up a development copy, run the tests, rebuild the catalog and publish a release. [`apps/meds/README.md`](apps/meds/README.md) describes the app folder, and [`SKILLS.md`](SKILLS.md) lists the guides an AI assistant reads before changing this repository.
++ **[How the app works](docs/how-it-works.md):** describes how the app picks refill dates, why it keeps a backup, and what stays private.
++ **For developers:** the [documentation index](docs/README.md) lists the architecture and data model, and covers how to set up a development copy, how to run the tests, how to rebuild the catalog and how to publish a release. [`apps/meds/README.md`](apps/meds/README.md) describes the app folder, and [`SKILLS.md`](SKILLS.md) lists the guides an AI assistant reads before changing this repository.
+
+
+**A note on your data.** Privatium stores every record as plain text by design. Anyone who can read the files on your computer can read what this app stores. So protect the computer and its backups the way you protect any papers with health information on them. [Privatium's security page](https://github.com/gabrielmongefranco/privatium/blob/main/docs/security.md) explains what the design does and does not protect. Tested with Privatium v0.3.2.
 
 
 ## Additional Resources
-+ [Privatium](https://github.com/gabrielmongefranco/privatium): the framework this app runs on.
-+ [Your app in its own repository](https://github.com/gabrielmongefranco/privatium/blob/main/docs/app-repository.md): the guide this repository follows.
++ [Privatium](https://dev.gabrielmongefranco.com/privatium): the framework this app runs on. [ [Code] ](https://github.com/gabrielmongefranco/privatium)
++ [Your app in its own repository](https://github.com/gabrielmongefranco/privatium/blob/main/docs/app-repository.md): Privatium's guide for creating apps and setting up their repos, which this repository follows.
 
 
 
@@ -75,8 +72,7 @@ Learn more at: [Gabriel Mongefranco's website](https://gabriel.mongefranco.com).
 
 ## Contact
 
-Questions, bug reports, enhancement ideas and requests are welcome as GitHub issues. Feel
-free to send pull requests as well!
+Questions, bug reports, enhancement ideas and requests are welcome as GitHub issues. Feel free to send pull requests as well!
 
 
 
@@ -86,11 +82,11 @@ free to send pull requests as well!
 
 
 #### This work is based in part on the following projects, libraries and/or studies:
-+ [Privatium](https://github.com/gabrielmongefranco/privatium): the local-first framework that stores, syncs and serves this app. This repository is an app folder that a Privatium node runs, and the `skills/privatium-*` folders are the assistant guides that Privatium exports. License: [GPL-3.0-or-later](https://www.gnu.org/licenses/gpl-3.0-standalone.html).
++ [Privatium](https://github.com/gabrielmongefranco/privatium): the local-first framework that stores, syncs and serves this app. This repository is an app folder that runs in a Privatium node, and the `skills/privatium-*` folders are the assistant guides that Privatium exports. License: [GPL-3.0-or-later](https://www.gnu.org/licenses/gpl-3.0-standalone.html).
 + [ClinCalc DrugStats](https://clincalc.com/DrugStats/): the short drug catalog included in the built-in catalog is mostly sourced from ClinCalc DrugStats by Sean P. Kane, PharmD, licensed under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). Data was enhanced with RxTerms data.
 + [RxTerms](https://clinicaltables.nlm.nih.gov/apidoc/rxterms/v3/doc.html) and [RxNorm](https://www.nlm.nih.gov/research/umls/rxnorm/index.html): the strengths, forms, brand names and product numbers of the built-in catalog, and the lookup of a new medication. This product uses publicly available data from the U.S. National Library of Medicine (NLM), National Institutes of Health, Department of Health and Human Services; NLM is not responsible for the product and does not endorse or recommend this or any other product.
 + [openFDA NDC Directory](https://open.fda.gov/apis/drug/ndc/): the lookup of a medication that RxTerms does not hold, and the unit that labels print for a strength. Data of the U.S. Food and Drug Administration. Do not rely on openFDA to make decisions regarding medical care.
-+ Other libraries: none. The app bundles no JavaScript or Lua library beyond what Privatium provides. Its five browser scripts and its Lua modules were written for it.
+
 
 
 
@@ -126,4 +122,4 @@ If you find this repository, code or paper useful for your research, please cite
 
 ----
 
-Copyright © 2026 Gabriel Mongefranco
+Copyright © 2026 [Gabriel Mongefranco](https://gabriel.mongefranco.com/)
