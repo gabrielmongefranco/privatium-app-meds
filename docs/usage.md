@@ -82,7 +82,7 @@ offline. Changes you make offline are kept and sent when the connection comes ba
 3. Add each person's medicines, as [Add a medicine to someone's list](#add-a-medicine-to-someones-list)
    shows.
 4. Record the last fill of each medicine, so the app can work out the next one. You can
-   type it, or copy it from your insurance website.
+   type it, or [copy it from a portal website](#copy-fills-from-a-portal-website).
 
 You don't have to set everything up first. Whenever a form asks for a person, doctor,
 pharmacy or plan that isn't in the app yet, you can add it right there.
@@ -226,22 +226,35 @@ page and pick the medicine. If nobody tracks that medicine yet, choose **-- Anot
 medication --**, pick the person and find the product. Saving the fill also adds the
 medicine to that person's list.
 
-### Copy fills from your insurance website
+### Copy fills from a portal website
 
-![The Copy refill history from patient portal page. A drop-down asks who the refill history belongs to, and a large box holds text copied from a portal.](images/copy-refill-history.png)
+![The Copy refill history from patient portal page. It lists the four portal pages the app reads, with how to copy each. Below, a drop-down asks who the refill history belongs to, and a large box holds text copied from a portal.](images/copy-refill-history.png)
 
-Your insurance plan's or pharmacy's website, often called a patient portal, lists the
-fills it paid for. Instead of typing each one, you can copy the list and let the app read
+Your insurance plan's, pharmacy's or doctor's website, often called a patient portal,
+lists your fills. Instead of typing each one, you can copy the list and let the app read
 it. Nothing is added until you check it.
 
-1. On the portal, open the details of each fill, so they show on the screen.
-2. Select the list from the first date to the end of the last fill, and copy it.
-3. In the app, choose **Refills**, then **Copy refill history from patient portal**.
-4. Choose who the fills belong to, paste the text and choose **Read the text**.
-5. Check the review page, described below.
-6. Choose **Add fills**.
+The app reads these pages. The table says how to copy each one.
 
-![The review page, titled Check the fills. A summary says 2 fills found, 1 ready to add and 1 name new to the app. For the portal name OMEPRAZOLE 20 MG DR CAPSULE, the page lists the closest catalog products to choose from, then a status drop-down set to Taking regularly. Below, a new pharmacy is offered to add, and the first fill is marked Already recorded.](images/copy-refill-history-review.png)
+| Website and page | How to copy it |
+|---|---|
+| Prime Therapeutics, **Recent claims** | Open the details of each fill with **More Info**. Then select the list from the first date to the end of the last fill. |
+| Prime Therapeutics, claims history export | Download the export and open the file in a spreadsheet program, such as LibreOffice Calc or Excel. Select the table, headings included. |
+| MyChart, **Medications** | Select the whole list. MyChart shows only the most recent fill of each medicine, so you get one fill per medicine. |
+| DromosPTM pharmacy websites, such as Henry Ford and Meijer, **Patient tax statement** | Use a computer, and make the window wide enough to show every column. Then select the table. |
+
+Some pages list your medicines but no fill dates, such as the RxLocal medication list
+and the DromosPTM prescriptions list. They have no fills to copy. Use the pages above
+instead.
+
+1. On the website, open the page and copy it as the table says.
+2. In the app, choose **Refills**, then **Copy refill history from patient portal**.
+3. Choose who the fills belong to, paste the text and choose **Read the text**.
+4. Check the review page, described below. Its summary names the page the app read,
+   such as "Read as MyChart medications".
+5. Choose **Add fills**.
+
+![The review page, titled Check the fills. A summary says 2 fills found, 1 ready to add and 1 name new to the app, read as Prime Therapeutics recent claims. For the portal name OMEPRAZOLE 20 MG DR CAPSULE, the page lists the closest catalog products to choose from, then a status drop-down set to Taking regularly. Below, a new pharmacy is offered to add, and the first fill is marked Already recorded.](images/copy-refill-history-review.png)
 
 The review page asks about each medicine name and each pharmacy only once, however many
 fills use it.
@@ -265,25 +278,27 @@ person takes the medicine. A medicine that is **Taking as needed** or **On hold*
 its status instead. If you are only copying old fills for your records, pick the status
 the medicine should keep, such as **No longer taking**.
 
-**Pharmacies.** The app matches a pharmacy by its number or its name. For a new one, it
-offers to add it with the address and phone number from the portal.
+**Pharmacies.** The app matches a pharmacy by its NPI number, then by its phone number,
+then by its name. The phone number helps when two websites write the same pharmacy's
+name differently. For a new pharmacy, the app offers to add it with the address and
+phone number from the portal.
 
 **Fills.** Each fill has a check box labeled **Add this fill**.
 
 | Result | What it means |
 |---|---|
 | Ready | Everything was read. The box is ticked for you. |
-| Not paid | The plan didn't pay this claim. Tick it only if you did get the medicine. |
+| Not paid | The plan didn't pay this claim, or denied it. Tick it only if you did get the medicine. |
 | Already recorded | You already have this fill, so it is left out. |
-| Details missing | The details weren't open on the portal. Open them and copy again. |
+| Details missing | The details weren't open on the Prime claims page. Open them and copy again. |
 | Could not read | A date or number didn't make sense. The row says which one. |
 
 If you choose **Add fills** while a question is still open, the page comes back and
 marks it. Each added fill uses the person's current plan and lowers that medicine's
 refills left by one. Pasting the same list twice adds nothing the second time.
 
-The app reads one portal layout. If your portal lays out its page differently, the
-review says "No fills can be added from this text." Record those fills by hand.
+If the app doesn't know the page you pasted, it says "The app found no fills in that
+text" and names the pages it reads. Record those fills by hand.
 
 ### Keep track of insurance approvals
 
@@ -520,8 +535,8 @@ folder, apart from the app's folder.
 
 ### Conclusion
 
-You can now keep each person's medicine list, record fills by hand or from your
-insurance website, and see what needs a refill before it runs out. For the reasons
+You can now keep each person's medicine list, record fills by hand or from a
+portal website, and see what needs a refill before it runs out. For the reasons
 behind the dates, read [How the app works](how-it-works.md).
 
 ### Additional resources

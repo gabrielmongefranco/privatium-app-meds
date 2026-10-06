@@ -5,8 +5,8 @@ Author(s): Gabriel Mongefranco
 Created: 2026-09-26
 Last Modified: 2026-10-05
 Summary: How the app is built: its parts, the page frame and in-document navigation, the
-         rules every browser script follows, the product box, the reader of pasted portal
-         text, the catalog and the drug references, and the accessibility and security
+         rules every browser script follows, the product box, the readers of pasted portal
+         pages, the catalog and the drug references, and the accessibility and security
          design.
 Notes: See README file for documentation and full license information.
 
@@ -39,7 +39,7 @@ the SQLite tables from the log on every start.
 |---|---|---|
 | Manifest | `apps/meds/app.toml` | Slug, title, tier, icon, the three drug reference addresses under `permissions.remote`, and the `[ui]` table with the stylesheet, the scripts and swap navigation |
 | Routes | `apps/meds/lib/routes/` | One module per part of the app. `app.lua` requires them in the order paths are tried. |
-| Shared Lua | `apps/meds/lib/` | Form checks, names, matching, refill words, the portal reader and the one module that writes records (`store.lua`). Modules with no framework calls are unit-tested with plain Lua. |
+| Shared Lua | `apps/meds/lib/` | Form checks, names, matching, refill words, the portal reader with one reader per portal page under `lib/portals/`, and the one module that writes records (`store.lua`). Modules with no framework calls are unit-tested with plain Lua. |
 | Schema | `apps/meds/schema.sql` | Tables and views, including `v_supply` and `v_active_medication`, which work out the refill dates in SQL |
 | Templates | `apps/meds/views/` | One template per page. A name starting with `_` is a partial. |
 | Browser scripts | `apps/meds/static/*.js` | Five small scripts that improve forms. Every form works without them. |
@@ -203,9 +203,35 @@ close match.
 ### Pasted portal text
 
 `lib/portal_reader.lua` takes the pasted text of a portal page apart into claims. It
-looks for the labels the portal prints and takes the value after each one. This
-invented example shows the layout it reads. The portal runs the columns of a row
-together, as the second line shows.
+works out which page the text came from and hands it to that page's reader under
+`lib/portals/`. Each reader looks for the labels or columns its page prints and takes
+the values. All readers return claims of the same shape, so the review and add steps
+below are the same for every page. The readers are pure Lua, and `lib/portals/common.lua`
+holds the pieces they share: dates, amounts, phone numbers and tab-separated rows.
+
+The reader asks the pages in this order, and the first page that recognizes the text
+reads it. The claims page only looks for lines that open with a date, which the export
+rows also do, so it is asked last.
+
+| Order | Page | Module | Recognized by |
+|---|---|---|---|
+| 1 | Prime Therapeutics claims history export, copied from a spreadsheet | `portals/prime_export.lua` | A tab-separated heading row with Date of Service and Drug Name |
+| 2 | DromosPTM patient tax statement | `portals/dromos_statement.lua` | A row whose cells are empty, a date such as Oct 02, 2026, and a prescription number |
+| 3 | MyChart medications | `portals/mychart.lua` | A Refill Details line and a Pharmacy Details line |
+| 4 | Prime Therapeutics recent claims | `portals/prime_claims.lua` | A line that opens with a date written month/day/year |
+
+The review page names the page in its summary, such as "Read as MyChart medications."
+Pages that list medications without fill dates, such as the RxLocal medication list and
+the DromosPTM prescriptions list, are not read. A pasted text that no page recognizes
+gives a message that names the pages the app reads. No reader captures the HTML of the
+clipboard. The plain text of every page above keeps the boundaries the readers need,
+and the HTML of a page is many times larger than the 64 kilobytes a request holds.
+
+#### Prime Therapeutics recent claims
+
+This invented example shows the layout. The portal runs the columns of a row together,
+as the second line shows. The pharmacy name that stands alone in the details is what
+splits the drug name from the pharmacy name.
 
 ```text
 SERVICE DATEDRUG NAMEPHARMACYPLAN PAIDYOU PAIDCLAIM STATUS
@@ -244,11 +270,91 @@ $5.00
 | SERVICE DATE | The fill date, written month, day, year |
 | DRUG NAME | The medication, matched as below |
 | PHARMACY ID | The pharmacy, matched by its NPI |
-| PHARMACY | The pharmacy, matched by name when no NPI matches |
+| PHARMACY | The pharmacy, matched by phone number or name when no NPI matches |
 | RX NUMBER | The prescription number |
 | DAYS SUPPLY, QUANTITY | The days supply and the quantity |
 | Patient Responsibility | The amount paid |
 | Plan Paid, Deductible, CLAIM STATUS | Shown in the review, never stored |
+
+A claim whose details were closed has no prescription number or days supply. The
+review marks it **Details missing**.
+
+#### Prime Therapeutics claims history export
+
+The export is a file. A spreadsheet program copies it as rows of cells separated by
+tabs, with a heading row. The reader finds each column by its heading, so a change in
+the order of the columns does not break it. A cell that holds line breaks arrives in
+quotation marks, which the reader takes off. Shown here with `→` for each tab:
+
+```text
+Rx Number→Date of Service→Drug Name→Quantity→Days Supply→Pharmacy→Pharmacy ID→Plan Paid Amount→Patient Responsibility→Deductible→Claim Status
+100001→09/20/2026→EXAMPLINE 10 MG TABLET→30→30→EXAMPLE PHARMACY 1 EXAMPLE ST ANYTOWN, MI 48000 (555) 555-0100→1234567893→$12.00→$5.00→$0.00→Paid
+```
+
+The headings go to the same fields as the labels of the claims page. When the Pharmacy
+cell runs its parts together on one line, the phone number is split off the end, and the
+name ends before the first word made only of digits, where the street address starts.
+A claim with the status Denied is **Not paid**.
+
+#### MyChart medications
+
+MyChart lists prescriptions, not fills. Each medication that shows a **Last filled**
+date gives one fill, the most recent. The review summary counts the medications with no
+fill date, which are left out. A medication starts on its name, the line just before
+"Generic name:", "Commonly known as:" or "Learn more". A browser may copy a value on the
+same line as its label or on the next line, and the reader takes either.
+
+```text
+Examplol 10 mg tablet
+Generic name: exampline
+Learn more
+Prescription Details
+Prescription number100001-02
+Refill Details
+Quantity30 tablets
+Day supply30
+Last filledSeptember 3, 2026
+Pharmacy Details
+Example Pharmacy - Anytown, MI - 1 Example Street
+1 Example Street, Anytown MI 48000
+555-555-0100
+Map
+```
+
+| Label | Goes to |
+|---|---|
+| Last filled | The fill date |
+| Prescription number | The prescription number |
+| Quantity | The quantity, without its unit |
+| Day supply | The days supply |
+| Pharmacy Details | The pharmacy name, address and phone number, up to Map |
+
+The page gives no amount paid and no claim status, so a complete fill is **Ready**. The
+reader ignores the prescriber, the refill count and the next fill date.
+
+#### DromosPTM patient tax statement
+
+The statement lists one fill a row, with its cells separated by tabs. A copy rarely
+includes the heading row, so the reader knows the columns by their place on the page:
+Date Sold, Rx Number, Medication, Quantity, Days Supply, Doctor, Pharmacy, Primary
+Insurance / Cash, Insurance Portion and Patient Copay, after a first column that holds
+a button. The Medication cell has the product number (NDC) on a second line, and the
+Pharmacy cell has the phone number on a second line. So a row runs on over the next
+lines until it has all its cells.
+
+```text
+ →Sep 03, 2026→100001→EXAMPLINE 10MG TABS
+NDC: 00000-0000-00→30→30→Dr. PAT SAMPLE→Example Pharmacy
+(555) 555-0100→EXAMPLE PLAN→$12.00→$5.00
+```
+
+Patient Copay is the amount paid, and Insurance Portion is shown in the review as what
+the plan paid. The product number and the doctor are not stored. In a narrow window
+the page hides columns, so a row with fewer cells is left out rather than read into the
+wrong fields, and the review summary says to widen the window. When the copy does hold
+the heading row, the reader finds the columns by heading instead.
+
+#### Matching
 
 For each drug name, the app looks for a medication in this order:
 
@@ -265,6 +371,13 @@ Prescription numbers are compared without hyphens and spaces, through `fills.rx_
 and only within one person. Step 3 compares whole words and whole strengths, so "5 mg"
 is not found in "0.5 mg" or "25 mg". When two medications pass a step, the app picks
 neither. The portal's name is saved as another name of the medication chosen.
+
+For each pharmacy, the app looks for one it knows by NPI first, then by phone number,
+then by name. Phone numbers are compared by their digits, without a leading country code
+1, and only when they have at least ten digits. A phone number that two known
+pharmacies share picks neither. The phone step exists because portals write the same
+pharmacy's name in different ways, with or without its town and street. A known
+pharmacy is used as it is; any other is offered to add, with the details from the page.
 
 A fill is already recorded when the person has a fill with the same prescription number
 and date, or a fill of the same tracked medication on the same date. The second rule

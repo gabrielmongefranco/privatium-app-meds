@@ -26,7 +26,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 ## Description
 Medication Tracker helps a family keep track of everyone's prescriptions, so nobody runs out. It runs on your own computer with [Privatium](https://github.com/gabrielmongefranco/privatium), a free program that keeps your records at home instead of on a company's servers.
 
-The app shows which refills are due and when to order them. It aims to refill while a small backup supply is still on hand, but never before your insurance will pay, so medicine doesn't pile up at home. It keeps each person's medication list, ready to print for a doctor's visit. You can record fills by hand, or copy them from your insurance plan's website. It also reminds you when a prescription has no refills left and when an insurance approval is about to end.
+The app shows which refills are due and when to order them. It aims to refill while a small backup supply is still on hand, but never before your insurance will pay, so medicine doesn't pile up at home. It keeps each person's medication list, ready to print for a doctor's visit. You can record fills by hand, or copy them from your insurance plan's, pharmacy's or doctor's website. It also reminds you when a prescription has no refills left and when an insurance approval is about to end.
 
 ![The Refills page of Medication Tracker, with an invented family. A summary counts what is overdue, due and due soon, and a table lists each medicine with its next fill date and a Record fill button.](docs/images/refills.png)
 

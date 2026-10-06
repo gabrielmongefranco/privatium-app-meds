@@ -48,7 +48,7 @@ them all before you start. Come back here when a word on a screen is new to you.
 | **Insurance plan** or **payer** | Whoever pays for a fill. Usually your insurance plan. When you pay the whole price yourself, the app calls it **Cash**. |
 | **Claim** | The request the pharmacy sends to your plan to get paid for a fill. Each claim has a claim number. |
 | **Deductible** | The amount you must pay yourself each year before your plan starts to pay. |
-| **Patient portal** | Your plan's or your pharmacy's website, where you can see the fills it paid for. |
+| **Patient portal** | Your plan's, pharmacy's or doctor's website, where you can see your fills or your list of medicines. MyChart is one. |
 | **Early refill** | Most plans won't pay for a refill until most of the last fill is used up. Pharmacies call an early request "refill too soon". The app estimates the first day your plan will pay. |
 | **Early fill percent** | How much of the last fill may be left when the plan pays for the next one. Many plans allow about 25 percent. For a 30-day fill, that is about 7 days early. |
 | **Supply frame** | The number of past days the plan looks at when it adds up your fills. Many plans look back about 180 days. |
