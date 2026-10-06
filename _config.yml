@@ -2,7 +2,7 @@
 # _config.yml
 # Author(s): Gabriel Mongefranco
 # Created: 2026-10-05
-# Last Modified: 2026-10-05
+# Last Modified: 2026-10-06
 # Summary: Settings for the documentation website that .github/workflows/pages.yml builds with
 #          GitHub Pages' Jekyll. README.md becomes the home page and every Markdown file keeps
 #          its place, so the relative links between pages work on the site as they do on GitHub.
@@ -31,6 +31,9 @@ repository: gabrielmongefranco/privatium-app-meds
 url: https://dev.mongefranco.com
 baseurl: /privatium-app-meds
 lang: en
+# Google Analytics measurement ID for the website. The layout adds the Google tag only when
+# this is set, so a fork can remove the line to turn analytics off. The app itself never loads it.
+google_analytics_id: G-ZM0BWSCDB8
 
 markdown: kramdown
 kramdown:

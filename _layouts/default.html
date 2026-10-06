@@ -3,7 +3,7 @@ This file is part of Medication Tracker
 _layouts/default.html
 Author(s): Gabriel Mongefranco
 Created: 2026-10-05
-Last Modified: 2026-10-05
+Last Modified: 2026-10-06
 Summary: The one page layout of the documentation website. It wraps each Markdown page in a
          header with the site navigation and a footer with the licenses and copyright, in the look of the
          Privatium website. Each page keeps its own headings, so the layout adds none.
@@ -68,6 +68,22 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
   <meta property="og:image:alt" content="The Refills page of Medication Tracker, with an invented family.">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="stylesheet" href="{{ '/assets/css/site.css' | relative_url }}">
+{%- if site.google_analytics_id %}
+  {%- comment -%}
+    Google Analytics counts visits to this website only. The app pages that Privatium serves
+    do not use this layout, so no health record ever reaches Google.
+  {%- endcomment %}
+  {%- assign ga_id = site.google_analytics_id | url_encode %}
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id={{ ga_id }}"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', {{ site.google_analytics_id | jsonify }});
+  </script>
+{%- endif %}
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
