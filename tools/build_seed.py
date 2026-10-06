@@ -5,7 +5,7 @@ Summary: Builds apps/meds/lib/starter_catalog.lua, the starter catalog. It reads
          for the brand names, and adds the entries that were written by hand and the
          syringes and needles.
 
-This file is part of Prescription Tracker
+This file is part of Medication Tracker
 tools/build_seed.py
 
 Author(s): Gabriel Mongefranco

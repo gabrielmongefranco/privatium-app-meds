@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-# This file is part of Prescription Tracker.
+# This file is part of Medication Tracker.
 # CITATION.cff
 # Copyright © 2026 Gabriel Mongefranco
 #
@@ -12,9 +12,9 @@ cff-version: 1.2.0
 # GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see https://www.gnu.org/licenses/.
-message: "If you find this repository, code or paper useful for your research, please cite it. Prescription Tracker is licensed under the GNU General Public License v3.0 or later. Copyright © 2026 Gabriel Mongefranco (https://gabriel.mongefranco.com)."
+message: "If you find this repository, code or paper useful for your research, please cite it. Medication Tracker is licensed under the GNU General Public License v3.0 or later. Copyright © 2026 Gabriel Mongefranco (https://gabriel.mongefranco.com)."
 type: software
-title: "Prescription Tracker"
+title: "Medication Tracker"
 url: "https://github.com/gabrielmongefranco/privatium-app-meds" # project website or repository URL
 repository-code: "https://github.com/gabrielmongefranco/privatium-app-meds"
 license: "gpl-3.0-or-later"

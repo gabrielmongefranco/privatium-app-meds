@@ -1,5 +1,5 @@
 <?--
-This file is part of Prescription Tracker
+This file is part of Medication Tracker
 apps/meds/views/merge_confirm.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27

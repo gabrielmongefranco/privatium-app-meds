@@ -4,13 +4,13 @@ description: Write and maintain the /docs knowledge base. Apply when adding or c
 ---
 
 <!--
-This file is part of Prescription Tracker
+This file is part of Medication Tracker
 Copyright © 2026 Gabriel Mongefranco
 Licensed under the GNU Free Documentation License v1.3 or later.
 See <https://www.gnu.org/licenses/fdl-1.3.html>. See README for full license information.
 -->
 
-# Prescription Tracker
+# Medication Tracker
 
 ## Documentation and the /docs knowledge base
 
@@ -48,7 +48,7 @@ Every page uses this order.
    frontmatter when present, invisible when rendered:
 
        <!--
-       This file is part of Prescription Tracker
+       This file is part of Medication Tracker
        Copyright © YYYY Gabriel Mongefranco
        Licensed under the GNU Free Documentation License v1.3 or later.
        See <https://www.gnu.org/licenses/fdl-1.3.html>. See README for full license information.

@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
-# This file is part of Prescription Tracker
+# This file is part of Medication Tracker
 # tests/screenshots/take-screenshots.sh
 # Author(s): Gabriel Mongefranco
 # Created: 2026-10-05
 # Last Modified: 2026-10-05
 # Summary: Takes the screenshots of the documentation. Starts a Privatium node on a
 #          temporary data directory and a headless Firefox, loads the invented household
-#          of tests/fixtures/sample-household.json, and saves one PNG per screen.
+#          of tests/fixtures/sample-household.json, and saves one PNG per screen and the
+#          repository preview images.
 # Notes: See README file for documentation and full license information.
 #
 # Copyright © 2026 Gabriel Mongefranco
@@ -24,7 +25,9 @@
 # with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # Usage, from the root of the repository:
-#   PRIVATIUM=/path/to/privatium tests/screenshots/take-screenshots.sh [output folder]
+#   PRIVATIUM=/path/to/privatium tests/screenshots/take-screenshots.sh [output folder] [preview folder]
+# The preview folder holds Repo-preview.png and Repo-preview-thumb.png. It defaults to
+# images/, or to the output folder when only that is given.
 # Exit codes: 0 every screenshot was saved, 1 a page or a load failed, 2 it could not start.
 
 set -u
@@ -38,6 +41,7 @@ BIDI_PORT="${MEDS_BIDI_PORT:-9222}"         # Loopback port Firefox listens on f
 START_TIMEOUT_SECONDS=30
 REPOSITORY="$(cd "$(dirname "$0")/../.." && pwd)"
 OUTPUT="${1:-$REPOSITORY/docs/images}"
+PREVIEW_OUTPUT="${2:-${1:-$REPOSITORY/images}}"
 
 ### Validate Inputs ###
 for tool in "$PRIVATIUM" "$FIREFOX" "$NODE" curl mktemp; do
@@ -45,6 +49,7 @@ for tool in "$PRIVATIUM" "$FIREFOX" "$NODE" curl mktemp; do
 done
 [ -f "$REPOSITORY/apps/meds/app.toml" ] || { echo "screenshots: apps/meds was not found"; exit 2; }
 mkdir -p "$OUTPUT" || { echo "screenshots: cannot write to $OUTPUT"; exit 2; }
+mkdir -p "$PREVIEW_OUTPUT" || { echo "screenshots: cannot write to $PREVIEW_OUTPUT"; exit 2; }
 
 ### Start The Node And The Browser ###
 # The app is copied, not linked, so nothing is written inside the repository.
@@ -88,4 +93,5 @@ NODE_FLAGS=()
   || NODE_FLAGS=(--experimental-websocket)
 
 "$NODE" "${NODE_FLAGS[@]}" "$REPOSITORY/tests/screenshots/take-screenshots.mjs" \
-  "http://127.0.0.1:$PORT" "$BIDI_PORT" "$REPOSITORY/tests/fixtures/sample-household.json" "$OUTPUT"
+  "http://127.0.0.1:$PORT" "$BIDI_PORT" "$REPOSITORY/tests/fixtures/sample-household.json" "$OUTPUT" \
+  "$PREVIEW_OUTPUT"

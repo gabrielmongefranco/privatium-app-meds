@@ -1,5 +1,5 @@
 ---
-# This file is part of Prescription Tracker
+# This file is part of Medication Tracker
 # < CLASS, MODULE OR FILE NAME >
 # Author(s): Gabriel Mongefranco
 # Created: 2026-01-01
@@ -19,7 +19,7 @@
 # with this program. If not, see <https://www.gnu.org/licenses/>.
 
 # YAML project configuration
-title: "Prescription Tracker"
+title: "Medication Tracker"
 author: "Gabriel Mongefranco"
 date: "2026-01-01"
 abstract: "< SUMMARY OF WHAT THIS FILE OR MODULE DOES >"

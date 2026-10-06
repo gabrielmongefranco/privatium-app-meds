@@ -1,9 +1,9 @@
 <?--
-This file is part of Prescription Tracker
+This file is part of Medication Tracker
 apps/meds/views/index.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-26
-Last Modified: 2026-10-04
+Last Modified: 2026-10-05
 Summary: The home page of a household with no people yet. Greets it and invites it to add
          the first person.
 Notes: See README file for documentation and full license information.
@@ -26,7 +26,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 <?= render('_nav', { section = section }) ?>
 <div class="meds">
 <p class="meds-mark"><?= icon('capsule') ?></p>
-<h1>Welcome to your prescription tracker.</h1>
+<h1>Welcome to your medication tracker.</h1>
 <p><?= greeting ?>. Add the first person to begin.</p>
 <? -- The form goes back to this tab once the person is saved. ?>
 <a class="pv-btn pv-btn-primary" href="<?= url('/setup/people/new?back=' .. (section == 'home' and 'refills' or 'medications')) ?>">

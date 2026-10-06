@@ -1,5 +1,5 @@
 <!--
-This file is part of Prescription Tracker
+This file is part of Medication Tracker
 docs/usage.md
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
@@ -15,13 +15,13 @@ Licensed under the GNU Free Documentation License v1.3 or later.
 See <https://www.gnu.org/licenses/fdl-1.3.html>. See README for full license information.
 -->
 
-# Prescription Tracker
+# Medication Tracker
 
 ## User guide
 
 [Back to project README](../README.md)
 
-This guide shows you how to use Prescription Tracker to keep your family's medicines
+This guide shows you how to use Medication Tracker to keep your family's medicines
 in order. It is for anyone in the household, with no technical or pharmacy background
 needed. If you are new to the app, read the first three sections, then jump to the task
 you need.
@@ -31,7 +31,7 @@ doctor and pharmacy in the pictures is invented.
 
 ### What the app does for you
 
-Prescription Tracker answers three everyday questions:
+Medication Tracker answers three everyday questions:
 
 - **What needs a refill, and when?** The Refills page lists what to order now and what
   is coming up. It aims to refill while a few days of medicine are still on hand, but
@@ -46,12 +46,12 @@ approval is about to end.
 
 ### Find your way around
 
-![The Medications page. A dark bar at the top holds the Privatium logo, the title Prescription Tracker, an Apps link and a Menu button. Below it are five tabs: Medications, Refills, History, Authorizations and Setup. The page lists each family member's medicines with how to take them, the prescriber and the refill status. A small icon stands before each time of day, such as a clock for Anytime and a moon for Night - At Bedtime.](images/medications.png)
+![The Medications page. A dark bar at the top holds the Privatium logo, the title Medication Tracker, an Apps link and a Menu button. Below it are five tabs: Medications, Refills, History, Authorizations and Setup. The page lists each family member's medicines with how to take them, the prescriber and the refill status. A small icon stands before each time of day, such as a clock for Anytime and a moon for Night - At Bedtime.](images/medications.png)
 
 The dark bar at the top belongs to Privatium, the program that runs this app.
 
 - The **Privatium** logo on the left opens the list of all your Privatium apps.
-- **Prescription Tracker** in the middle takes you back to this app's first page.
+- **Medication Tracker** in the middle takes you back to this app's first page.
 - **Menu** on the right holds extra actions for the page you are on, such as
   **Print list**, and Privatium's own settings.
 

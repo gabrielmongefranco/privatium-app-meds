@@ -1,5 +1,5 @@
 /*
-This file is part of Prescription Tracker
+This file is part of Medication Tracker
 apps/meds/static/person_tab.js
 Author(s): Gabriel Mongefranco
 Created: 2026-10-03

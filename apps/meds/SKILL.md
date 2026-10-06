@@ -1,20 +1,20 @@
 ---
 name: privatium-app-meds
-description: Context for extending the Prescription Tracker app (slug meds): its schema, routes and conventions. Load alongside privatium-tier1-lua when changing this app.
+description: Context for extending the Medication Tracker app (slug meds): its schema, routes and conventions. Load alongside privatium-tier1-lua when changing this app.
 ---
 
 <!--
-This file is part of Prescription Tracker
+This file is part of Medication Tracker
 Copyright © 2026 Gabriel Mongefranco
 Licensed under the GNU Free Documentation License v1.3 or later.
 See <https://www.gnu.org/licenses/fdl-1.3.html>. See README for full license information.
 -->
 
-# Prescription Tracker
+# Medication Tracker
 
 ## The `meds` app
 
-Tier 1, Lua. A personal prescription tracker for families with chronic conditions.
+Tier 1, Lua. A personal medication tracker for families with chronic conditions.
 [The architecture page](../../docs/architecture.md) describes how its parts fit together.
 
 ### Schema

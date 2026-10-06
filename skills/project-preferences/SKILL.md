@@ -4,13 +4,13 @@ description: Apply repository-specific preferences when planning, implementing, 
 ---
 
 <!--
-This file is part of Prescription Tracker
+This file is part of Medication Tracker
 Copyright © 2026 Gabriel Mongefranco
 Licensed under the GNU Free Documentation License v1.3 or later.
 See <https://www.gnu.org/licenses/fdl-1.3.html>. See README for full license information.
 -->
 
-# Prescription Tracker
+# Medication Tracker
 
 ## Project preferences
 
@@ -21,8 +21,8 @@ licensing, testing, or authorization rules.
 
 ### Purpose and scope
 
-This repository is one Privatium app, `apps/meds/`, the Prescription Tracker: a personal
-prescription tracker for families with chronic conditions. It is a Tier 1 app, written in
+This repository is one Privatium app, `apps/meds/`, the Medication Tracker: a personal
+medication tracker for families with chronic conditions. It is a Tier 1 app, written in
 Lua 5.4 with LSP templates and a SQL schema, and it runs on a Privatium node the household
 controls. Everything outside `apps/meds/` is documentation, tests, licensing and
 assistant guides.

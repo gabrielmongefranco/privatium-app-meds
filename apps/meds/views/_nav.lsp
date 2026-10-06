@@ -1,5 +1,5 @@
 <?--
-This file is part of Prescription Tracker
+This file is part of Medication Tracker
 apps/meds/views/_nav.lsp
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
@@ -25,7 +25,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 
 <?-- The app's own tab row. The bar above it and the footer below it are the frame's, and
      the stylesheet and scripts load from the manifest, so this partial carries neither. --?>
-<nav aria-label="Prescription Tracker">
+<nav aria-label="Medication Tracker">
   <ul class="pv-subnav meds-nav">
     <li><a href="<?= url('/medications') ?>"<? if section == 'medications' then ?> aria-current="page"<? end ?>><?= icon('capsule') ?> Medications</a></li>
     <li><a href="<?= url('/refills') ?>"<? if section == 'home' then ?> aria-current="page"<? end ?>><?= icon('bag-plus-fill') ?> Refills</a></li>

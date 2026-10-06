@@ -1,4 +1,4 @@
--- This file is part of Prescription Tracker
+-- This file is part of Medication Tracker
 -- apps/meds/lib/product_pick.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-10-03

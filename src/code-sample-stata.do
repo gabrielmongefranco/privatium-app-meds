@@ -1,4 +1,4 @@
-* This file is part of Prescription Tracker
+* This file is part of Medication Tracker
 * < CLASS, MODULE OR FILE NAME >
 * Author(s): Gabriel Mongefranco
 * Created: 2026-01-01

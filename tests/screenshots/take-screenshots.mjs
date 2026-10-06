@@ -1,13 +1,13 @@
 /*
-This file is part of Prescription Tracker
+This file is part of Medication Tracker
 tests/screenshots/take-screenshots.mjs
 Author(s): Gabriel Mongefranco
 Created: 2026-10-05
 Last Modified: 2026-10-05
 Summary: Loads the invented household of tests/fixtures/sample-household.json into a
          temporary node and drives a headless Firefox over WebDriver BiDi to save one
-         PNG per screen for the documentation. take-screenshots.sh starts the node and
-         the browser and runs this script.
+         PNG per screen for the documentation, plus the repository preview images.
+         take-screenshots.sh starts the node and the browser and runs this script.
 Notes: See README file for documentation and full license information.
 
 Copyright © 2026 Gabriel Mongefranco
@@ -25,6 +25,7 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <https://www.gnu.org/licenses/>.
 
 Usage: node take-screenshots.mjs <node base URL> <BiDi port> <fixture file> <output folder>
+       <preview folder>
 Exit codes: 0 every screenshot was saved, 1 a page or a load failed.
 */
 
@@ -32,12 +33,19 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 // ### Load Configuration ###
-const [, , base, bidiPort, fixturePath, outputFolder] = process.argv;
+const [, , base, bidiPort, fixturePath, outputFolder, previewFolder] = process.argv;
 const APP = base + '/a/meds';
 const DESKTOP = { width: 1200, height: 900 };
 const PHONE = { width: 390, height: 844 };
 const MAX_HEIGHT = 2000;          // Taller pages are cut here so each image stays small
 const WAIT_STEPS = 80;            // Times 100 ms: how long to wait for a page to settle
+// The top of the desktop Refills page, from the title bar to the summary, in CSS pixels.
+// It is drawn at the exact sizes the repository preview images need, never stretched.
+const PREVIEW_BOX = { x: 96, y: 0, width: 994 };
+const PREVIEWS = [
+  { name: 'Repo-preview', width: 912, height: 512 },
+  { name: 'Repo-preview-thumb', width: 360, height: 202 },
+];
 
 // ### Read The Fixture ###
 const fixture = JSON.parse(await readFile(fixturePath, 'utf8'));
@@ -121,6 +129,23 @@ async function shot(name) {
   console.log(`saved ${name}.png`);
 }
 
+// Saves the PREVIEW_BOX at each preview size. A smaller pixel ratio shrinks the drawing
+// instead of the layout, so the text stays sharp and the page looks as it does on screen.
+// The clip gets a quarter pixel more on each side, since Firefox rounds the image size down.
+async function previews() {
+  for (const { name, width, height } of PREVIEWS) {
+    const ratio = width / PREVIEW_BOX.width;
+    await send('browsingContext.setViewport', { context, viewport: DESKTOP, devicePixelRatio: ratio });
+    await sleep(300);
+    const { data } = await send('browsingContext.captureScreenshot', {
+      context, origin: 'document',
+      clip: { type: 'box', ...PREVIEW_BOX, width: (width + 0.25) / ratio, height: (height + 0.25) / ratio } });
+    await writeFile(join(previewFolder, name + '.png'), Buffer.from(data, 'base64'));
+    console.log(`saved ${name}.png in ${previewFolder}`);
+  }
+  await send('browsingContext.setViewport', { context, viewport: DESKTOP, devicePixelRatio: 1 });
+}
+
 // ### Take The Screenshots ###
 const ALEX = '01J9SAMPXE0000000000000003';
 const LIPITOR = '01J9SAMPXE0000000000000012';
@@ -142,6 +167,7 @@ try {
 
   await go('/refills', 'Refills');
   await shot('refills');
+  await previews();
 
   await go('/fills/new?entry=' + LIPITOR, 'fill');
   await shot('record-fill');

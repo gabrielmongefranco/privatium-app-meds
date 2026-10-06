@@ -1,5 +1,5 @@
 <!--
-This file is part of Prescription Tracker
+This file is part of Medication Tracker
 docs/how-to/update-the-screenshots.md
 Author(s): Gabriel Mongefranco
 Created: 2026-10-05
@@ -14,7 +14,7 @@ Licensed under the GNU Free Documentation License v1.3 or later.
 See <https://www.gnu.org/licenses/fdl-1.3.html>. See README for full license information.
 -->
 
-# Prescription Tracker
+# Medication Tracker
 
 ## How to update the screenshots
 
@@ -22,7 +22,8 @@ See <https://www.gnu.org/licenses/fdl-1.3.html>. See README for full license inf
 
 This page shows how to retake the pictures in the user guide after a screen changes. It
 is for developers. One command starts a temporary node, fills it with an invented
-family, and saves a picture of each main screen into `docs/images/`.
+family, and saves a picture of each main screen into `docs/images/`. It also saves the
+two repository preview pictures into `images/`.
 
 ### The invented household
 
@@ -58,7 +59,8 @@ node's data API.
    PRIVATIUM=/path/to/privatium tests/screenshots/take-screenshots.sh
    ```
 
-   To save the pictures somewhere else, add a folder as the first argument. The node uses
+   To save the pictures somewhere else, add a folder as the first argument. The preview
+   pictures then go to the same folder, unless you add a second folder for them. The node uses
    port 18491 and Firefox port 9222; set `MEDS_SHOT_PORT` or `MEDS_BIDI_PORT` to change
    them.
 2. Open each new PNG and check it. It must show only the invented family.
@@ -75,7 +77,10 @@ node's data API.
 5. It drives Firefox over WebDriver BiDi to each screen, fills in the product search
    and the portal paste, and saves a picture 1200 pixels wide, cut at 2000 pixels tall.
    The Refills page is also saved at phone width.
-6. It stops the node and Firefox and removes the temporary folder.
+6. It saves the top of the Refills page as `Repo-preview.png` (912 by 512 pixels) and
+   `Repo-preview-thumb.png` (360 by 202 pixels). It draws the page smaller instead of
+   stretching the picture, so the words stay sharp.
+7. It stops the node and Firefox and removes the temporary folder.
 
 The script exits with code 1 when a page does not load or the household is refused, and
 with code 2 when the node or Firefox does not start.

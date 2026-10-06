@@ -2,7 +2,7 @@
 """
 Summary: < SUMMARY OF WHAT THIS FILE OR MODULE DOES >
 
-This file is part of Prescription Tracker
+This file is part of Medication Tracker
 < CLASS, MODULE OR FILE NAME >
 
 Author(s): Gabriel Mongefranco

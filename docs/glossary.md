@@ -1,5 +1,5 @@
 <!--
-This file is part of Prescription Tracker
+This file is part of Medication Tracker
 docs/glossary.md
 Author(s): Gabriel Mongefranco
 Created: 2026-10-05
@@ -14,14 +14,14 @@ Licensed under the GNU Free Documentation License v1.3 or later.
 See <https://www.gnu.org/licenses/fdl-1.3.html>. See README for full license information.
 -->
 
-# Prescription Tracker
+# Medication Tracker
 
 ## Words to know
 
 [Back to project README](../README.md)
 
 Pharmacies and insurance companies use a lot of special words. This page explains the
-ones you will see in Prescription Tracker, in everyday language. You don't need to learn
+ones you will see in Medication Tracker, in everyday language. You don't need to learn
 them all before you start. Come back here when a word on a screen is new to you.
 
 ### Prescriptions and the pharmacy

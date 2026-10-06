@@ -1,9 +1,9 @@
--- This file is part of Prescription Tracker
+-- This file is part of Medication Tracker
 -- apps/meds/app.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-26
 -- Last Modified: 2026-10-05
--- Summary: Entry point of the Prescription Tracker app. The routes live in lib/routes,
+-- Summary: Entry point of the Medication Tracker app. The routes live in lib/routes,
 --          one module for each part of the app; loading a module registers its routes.
 -- Notes: See README file for documentation and full license information.
 --

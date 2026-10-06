@@ -1,9 +1,9 @@
-# This file is part of Prescription Tracker
+# This file is part of Medication Tracker
 # apps/meds/app.toml
 # Author(s): Gabriel Mongefranco
 # Created: 2026-09-26
 # Last Modified: 2026-10-05
-# Summary: Manifest for the Prescription Tracker app. Tier 1 (Lua), API 1.
+# Summary: Manifest for the Medication Tracker app. Tier 1 (Lua), API 1.
 # Notes: See README file for documentation and full license information.
 #
 # Copyright © 2026 Gabriel Mongefranco
@@ -22,11 +22,11 @@
 
 [app]
 slug        = "meds"
-title       = "Prescription Tracker"
+title       = "Medication Tracker"
 version     = "0.8.0"
 api         = 1
 tier        = "lua"
-description = "A personal prescription tracker for families with chronic conditions."
+description = "Track your family's medications, refills, costs, insurance and prior authorizations, and know what to refill next."
 icon        = "capsule"
 authors     = ["Gabriel Mongefranco"]
 license     = "GPL-3.0-or-later"

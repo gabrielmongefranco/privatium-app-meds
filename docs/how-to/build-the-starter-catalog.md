@@ -1,5 +1,5 @@
 <!--
-This file is part of Prescription Tracker
+This file is part of Medication Tracker
 docs/how-to/build-the-starter-catalog.md
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
@@ -14,7 +14,7 @@ Licensed under the GNU Free Documentation License v1.3 or later.
 See <https://www.gnu.org/licenses/fdl-1.3.html>. See README for full license information.
 -->
 
-# Prescription Tracker
+# Medication Tracker
 
 ## How to build the starter catalog
 

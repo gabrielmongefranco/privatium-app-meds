@@ -1,4 +1,4 @@
-# This file is part of Prescription Tracker
+# This file is part of Medication Tracker
 # tools/seed/clincalc_top200.txt
 # Summary: The 200 drugs most often prescribed in the United States in 2024, by
 #          ingredient, in rank order. The seed builder adds each one to the starter
