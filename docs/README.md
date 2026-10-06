@@ -13,7 +13,8 @@ See <https://www.gnu.org/licenses/fdl-1.3.html>. See README for full license inf
 
 This folder holds the guides for Medication Tracker. The first group is for families
 who use the app. The second is for developers who change it. The project README shows
-how to install the app.
+how to install the app. The same pages are on the
+[Medication Tracker website](https://dev.mongefranco.com/privatium-app-meds/).
 
 ### For families
 
@@ -38,6 +39,10 @@ how to install the app.
   that writes the catalog the app ships, its sources and their licenses.
 - [How to update the screenshots](how-to/update-the-screenshots.md): the invented
   household and the script that takes the pictures in these guides.
+- [How to publish a release](how-to/publish-a-release.md): set the version, tag a
+  release, and let GitHub attach the `meds.zip` people install.
+- [How to update the website](how-to/update-the-website.md): how the documentation
+  website is built from these pages, and how to preview a change.
 - [Documentation template](doc-template.md): a starting structure for a new page.
 - [Skill authoring examples](skill-examples.md): optional recipes for AI assistant skills.
 

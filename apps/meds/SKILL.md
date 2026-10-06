@@ -1,6 +1,6 @@
 ---
 name: privatium-app-meds
-description: Context for extending the Medication Tracker app (slug meds): its schema, routes and conventions. Load alongside privatium-tier1-lua when changing this app.
+description: "Context for extending the Medication Tracker app (slug meds): its schema, routes and conventions. Load alongside privatium-tier1-lua when changing this app."
 ---
 
 <!--

@@ -1,0 +1,73 @@
+# This file is part of Medication Tracker
+# .github/workflows/pages.yml
+# Author(s): Gabriel Mongefranco
+# Created: 2026-10-05
+# Last Modified: 2026-10-05
+# Summary: Builds the documentation website from README.md and docs/ with GitHub Pages' Jekyll
+#          on every push and pull request, and publishes it from main. The look comes from
+#          _layouts/default.html and assets/css/site.css; _config.yml holds the settings.
+# Notes: See README file for documentation and full license information.
+#
+# Copyright © 2026 Gabriel Mongefranco
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program. If not, see <https://www.gnu.org/licenses/>.
+
+name: Website
+
+on:
+  push:
+    branches: [main]
+  # Pull requests build the site without publishing it, so a broken page shows up in review.
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Build the site with Jekyll
+        uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./
+          destination: ./_site
+
+      - name: Keep the built site
+        uses: actions/upload-pages-artifact@v3
+
+  deploy:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publish the site
+        id: deployment
+        uses: actions/deploy-pages@v4

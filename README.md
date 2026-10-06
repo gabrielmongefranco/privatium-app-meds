@@ -39,10 +39,9 @@ Tested with Privatium v0.3.2.
 
 ## Quick Start Guide
 1. Install Privatium. Download the release for your computer from the [Privatium README](https://github.com/gabrielmongefranco/privatium#quick-start-guide) and run it once. It creates a data folder and prints its location on a line that starts with `privatium: data in`. Then stop Privatium.
-2. Download this app. On this page, choose **Code**, then **Download ZIP**, and unzip the file.
-3. Copy the `apps/meds` folder from the unzipped files into the `apps` folder inside Privatium's data folder. Keep the folder name `meds`.
-4. Start Privatium again and open the address it prints in your browser. Choose **Medication Tracker** from the list of apps.
-5. Follow [Get started](docs/usage.md#get-started) in the user guide to add your family and your first medicines.
+2. Download [meds.zip](https://github.com/gabrielmongefranco/privatium-app-meds/releases/latest/download/meds.zip) from the [latest release](https://github.com/gabrielmongefranco/privatium-app-meds/releases/latest) and unzip it. You get a folder named `meds`. Move it into the `apps` folder inside Privatium's data folder. The file `app.toml` must sit directly inside `meds`. If your computer made a `meds` folder inside another `meds` folder, move the inner one.
+3. Start Privatium again and open the address it prints in your browser. Choose **Medication Tracker** from the list of apps.
+4. Follow [Get started](docs/usage.md#get-started) in the user guide to add your family and your first medicines.
 
 When Privatium starts, it warns that this app uses three online services. Those are the public drug lists the app searches when you look up a medicine that isn't in its catalog. The app sends them only the name you type.
 
@@ -50,10 +49,12 @@ Installing an app from someone you don't know deserves the same care as running 
 
 
 ## Documentation
+The documentation is also on the [Medication Tracker website](https://dev.mongefranco.com/privatium-app-meds/).
+
 + **[User guide](docs/usage.md):** how to use every screen, with pictures.
 + **[Words to know](docs/glossary.md):** the pharmacy and insurance words the app uses, in plain language.
 + **[How the app works](docs/how-it-works.md):** how it picks refill dates, why it keeps a backup, and what stays private.
-+ **For developers:** the [documentation index](docs/README.md) lists the architecture, the data model, and how to set up a development copy, run the tests and rebuild the catalog. [`apps/meds/README.md`](apps/meds/README.md) describes the app folder, and [`SKILLS.md`](SKILLS.md) lists the guides an AI assistant reads before changing this repository.
++ **For developers:** the [documentation index](docs/README.md) lists the architecture, the data model, and how to set up a development copy, run the tests, rebuild the catalog and publish a release. [`apps/meds/README.md`](apps/meds/README.md) describes the app folder, and [`SKILLS.md`](SKILLS.md) lists the guides an AI assistant reads before changing this repository.
 
 
 ## Additional Resources

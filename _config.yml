@@ -1,0 +1,65 @@
+# This file is part of Medication Tracker
+# _config.yml
+# Author(s): Gabriel Mongefranco
+# Created: 2026-10-05
+# Last Modified: 2026-10-05
+# Summary: Settings for the documentation website that .github/workflows/pages.yml builds with
+#          GitHub Pages' Jekyll. README.md becomes the home page and every Markdown file keeps
+#          its place, so the relative links between pages work on the site as they do on GitHub.
+# Notes: See README file for documentation and full license information.
+#
+# Copyright © 2026 Gabriel Mongefranco
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program. If not, see <https://www.gnu.org/licenses/>.
+
+title: Medication Tracker
+description: >-
+  Track your family's medications, refills, costs, insurance and prior authorizations,
+  and know what to refill next, privately on your own computer with Privatium.
+repository: gabrielmongefranco/privatium-app-meds
+# The owner's GitHub Pages domain serves every project site under its repository name.
+url: https://dev.mongefranco.com
+baseurl: /privatium-app-meds
+lang: en
+
+markdown: kramdown
+kramdown:
+  input: GFM
+  hard_wrap: false
+
+# These are on by default in GitHub Pages; they are named so a local build matches it.
+# relative-links turns links to .md files into links to their pages, readme-index makes each
+# README.md its folder's index, and optional-front-matter publishes Markdown without front matter.
+plugins:
+  - jekyll-relative-links
+  - jekyll-readme-index
+  - jekyll-optional-front-matter
+  - jekyll-titles-from-headings
+relative_links:
+  enabled: true
+  collections: false
+
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: default
+
+# Instruction files for coding assistants that only point to AGENTS.md, and the tools that
+# build the starter catalog. Nothing the documentation links to is left out.
+exclude:
+  - CLAUDE.md
+  - CODEX.md
+  - CONVENTIONS.md
+  - GEMINI.md
+  - tools/

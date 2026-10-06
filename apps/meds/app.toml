@@ -23,7 +23,7 @@
 [app]
 slug        = "meds"
 title       = "Medication Tracker"
-version     = "0.8.0"
+version     = "0.9.0"
 api         = 1
 tier        = "lua"
 description = "Track your family's medications, refills, costs, insurance and prior authorizations, and know what to refill next."

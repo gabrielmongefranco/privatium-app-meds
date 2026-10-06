@@ -41,6 +41,14 @@ assistant guides.
   as sample data. `tests/screenshots/take-screenshots.sh` loads it into a temporary node.
 - `skills/privatium-*` are exported by the Privatium program and match the version the
   README names. Regenerate them with `privatium skill export`; never edit `reference/`.
+- `apps/meds/app.toml` holds the app version, and nothing else does. Publishing a GitHub
+  release runs `.github/workflows/release.yml`, which checks the tag against that version
+  and attaches `meds.zip`. Regular CI never builds the zip. See
+  `docs/how-to/publish-a-release.md`.
+- `_config.yml`, `_layouts/` and `assets/` build the documentation website from
+  `README.md` and `docs/` with GitHub Pages' Jekyll. Markdown must never hold two opening
+  curly braces in a row, or one followed by a percent sign. See
+  `docs/how-to/update-the-website.md`.
 - Every source file, including `.lua`, `.sql`, `.lsp`, `.css`, `.toml` and `.yml`, carries
   this project's header from `AGENTS.md` section 3, not Privatium's.
 
