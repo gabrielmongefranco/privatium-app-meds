@@ -64,6 +64,9 @@ code, kbd, pre { font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
 .site-footer { margin-top: 3rem; padding-block: 2rem; border-top: 1px solid var(--line); color: var(--muted); font-size: .9rem; }
 .site-footer p { max-width: 80ch; margin: 0 0 .75rem; }
 .site-footer a { display: inline-block; padding-block: .2rem; }
+/* The copyright sits on the left and the Privatium credit on the right; they stack when the line is too narrow. */
+.footer-bottom { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0 1.5rem; margin-top: 1.25rem; }
+.footer-bottom p { margin-bottom: 0; }
 
 /* ### Page Content ### */
 .page { padding-block: 2rem 1rem; }
