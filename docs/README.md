@@ -1,17 +1,17 @@
 <!--
-This file is part of Prescription Tracker
+This file is part of Medication Tracker
 Copyright © 2026 Gabriel Mongefranco
 Licensed under the GNU Free Documentation License v1.3 or later.
 See <https://www.gnu.org/licenses/fdl-1.3.html>. See README for full license information.
 -->
 
-# Prescription Tracker
+# Medication Tracker
 
 ## Documentation
 
 [Back to project README](../README.md)
 
-This folder holds the guides for Prescription Tracker. The first group is for families
+This folder holds the guides for Medication Tracker. The first group is for families
 who use the app. The second is for developers who change it. The project README shows
 how to install the app.
 

@@ -1,4 +1,4 @@
--- This file is part of Prescription Tracker
+-- This file is part of Medication Tracker
 -- tests/lua/test_choices.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27

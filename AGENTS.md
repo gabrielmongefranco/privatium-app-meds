@@ -1,5 +1,5 @@
 <!--
-This file is part of the Prescription Tracker.
+This file is part of the Medication Tracker.
 Copyright © 2026 Gabriel Mongefranco. See README for full license information.
 -->
 
@@ -53,7 +53,7 @@ When requirements are incomplete, make the safest reasonable assumption, state i
 
 Every source file that supports comments starts with this, in the language's own comment syntax:
 
-    This file is part of Prescription Tracker
+    This file is part of Medication Tracker
     < CLASS, MODULE OR FILE NAME >
     Author(s): Gabriel Mongefranco
     Created: YYYY-MM-DD

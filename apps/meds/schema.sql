@@ -1,9 +1,9 @@
--- This file is part of Prescription Tracker
+-- This file is part of Medication Tracker
 -- apps/meds/schema.sql
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-26
 -- Last Modified: 2026-10-05
--- Summary: Tables and views of the Prescription Tracker app. Derived from the event log on
+-- Summary: Tables and views of the Medication Tracker app. Derived from the event log on
 --          every start; see docs/data-model.md for the grain and meaning of every column.
 -- Notes: See README file for documentation and full license information.
 --

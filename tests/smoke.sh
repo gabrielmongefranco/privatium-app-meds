@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# This file is part of Prescription Tracker
+# This file is part of Medication Tracker
 # tests/smoke.sh
 # Author(s): Gabriel Mongefranco
 # Created: 2026-09-27
@@ -139,8 +139,8 @@ id_in_link() { grep -o "$1/[0-9A-Z]\{26\}" "$BODY" | head -1 | sed 's|.*/||'; }
 
 ### Home And Navigation ###
 expect_status "home page" 200 "$(get /)"
-expect_text "home page invites a household with no name" "Welcome to your prescription tracker."
-expect_text "home page has the navigation bar" 'aria-label="Prescription Tracker"'
+expect_text "home page invites a household with no name" "Welcome to your medication tracker."
+expect_text "home page has the navigation bar" 'aria-label="Medication Tracker"'
 expect_text "home page marks the current section" 'aria-current="page"'
 # The icon helper inlines the vendored shapes, so the checks look for the start of the
 # path of capsule and of bag-plus-fill rather than for a name.
@@ -180,7 +180,7 @@ if [ "$hour" -lt 12 ]; then greeting="Good morning"
 elif [ "$hour" -lt 18 ]; then greeting="Good afternoon"
 else greeting="Good evening"; fi
 expect_status "home page after the starter catalog" 200 "$(get /)"
-expect_text "the home page still welcomes while nobody is added" "Welcome to your prescription tracker."
+expect_text "the home page still welcomes while nobody is added" "Welcome to your medication tracker."
 expect_text "greeting follows the local hour" "$greeting."
 expect_status "no page asks for a household name" 404 "$(get /edit)"
 

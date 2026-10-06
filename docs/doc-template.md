@@ -1,5 +1,5 @@
 <!--
-This file is part of Prescription Tracker
+This file is part of Medication Tracker
 docs/YOUR_FILE_NAME.md
 Author(s): Gabriel Mongefranco
 Created: 2026-01-01
@@ -14,7 +14,7 @@ See <https://www.gnu.org/licenses/fdl-1.3.html>. See README for full license inf
 
 -->
 
-# Prescription Tracker: < YOUR_PAGE_TITLE (e.g., Installation Guide, Usage Examples, etc.) >
+# Medication Tracker: < YOUR_PAGE_TITLE (e.g., Installation Guide, Usage Examples, etc.) >
 [← Back to README](../README.md)
 
 

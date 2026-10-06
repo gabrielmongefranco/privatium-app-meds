@@ -1,5 +1,5 @@
 <!--
-This file is part of Prescription Tracker
+This file is part of Medication Tracker
 README.md
 Author(s): Gabriel Mongefranco
 Created: 2026-09-26
@@ -21,14 +21,14 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 
 -->
 
-# Prescription Tracker
+# Medication Tracker
 
 ## Description
-Prescription Tracker helps a family keep track of everyone's prescriptions, so nobody runs out. It runs on your own computer with [Privatium](https://github.com/gabrielmongefranco/privatium), a free program that keeps your records at home instead of on a company's servers.
+Medication Tracker helps a family keep track of everyone's prescriptions, so nobody runs out. It runs on your own computer with [Privatium](https://github.com/gabrielmongefranco/privatium), a free program that keeps your records at home instead of on a company's servers.
 
 The app shows which refills are due and when to order them. It aims to refill while a small backup supply is still on hand, but never before your insurance will pay, so medicine doesn't pile up at home. It keeps each person's medication list, ready to print for a doctor's visit. You can record fills by hand, or copy them from your insurance plan's website. It also reminds you when a prescription has no refills left and when an insurance approval is about to end.
 
-![The Refills page of Prescription Tracker, with an invented family. A summary counts what is overdue, due and due soon, and a table lists each medicine with its next fill date and a Record fill button.](docs/images/refills.png)
+![The Refills page of Medication Tracker, with an invented family. A summary counts what is overdue, due and due soon, and a table lists each medicine with its next fill date and a Record fill button.](docs/images/refills.png)
 
 The app comes with a catalog of about 2,850 common medicine products in the United States. It can look up any other medicine by name in public drug lists from the U.S. government. Your records stay on your computer as plain files, with no account and no cloud. To back them up, you copy a folder.
 
@@ -41,7 +41,7 @@ Tested with Privatium v0.3.2.
 1. Install Privatium. Download the release for your computer from the [Privatium README](https://github.com/gabrielmongefranco/privatium#quick-start-guide) and run it once. It creates a data folder and prints its location on a line that starts with `privatium: data in`. Then stop Privatium.
 2. Download this app. On this page, choose **Code**, then **Download ZIP**, and unzip the file.
 3. Copy the `apps/meds` folder from the unzipped files into the `apps` folder inside Privatium's data folder. Keep the folder name `meds`.
-4. Start Privatium again and open the address it prints in your browser. Choose **Prescription Tracker** from the list of apps.
+4. Start Privatium again and open the address it prints in your browser. Choose **Medication Tracker** from the list of apps.
 5. Follow [Get started](docs/usage.md#get-started) in the user guide to add your family and your first medicines.
 
 When Privatium starts, it warns that this app uses three online services. Those are the public drug lists the app searches when you look up a medicine that isn't in its catalog. The app sends them only the name you type.
@@ -64,7 +64,7 @@ Installing an app from someone you don't know deserves the same care as running 
 
 ## About the Author
 
-Prescription Tracker is built by [Gabriel Mongefranco](https://gabriel.mongefranco.com), a database and
+Medication Tracker is built by [Gabriel Mongefranco](https://gabriel.mongefranco.com), a database and
 software architect who has spent two decades building data platforms in healthcare and
 research — enterprise data warehouses, BI systems, knowledge bases, and the first architecture for mobile and
 wearable research data at a large research university.
@@ -120,7 +120,7 @@ Free Documentation License". If not, see <https://www.gnu.org/licenses/fdl-1.3-s
 If you find this repository, code or paper useful for your research, please cite it.
 
 #### Citation Example:
->_Mongefranco, Gabriel (2026). Prescription Tracker. Software. https://github.com/gabrielmongefranco/privatium-app-meds_
+>_Mongefranco, Gabriel (2026). Medication Tracker. Software. https://github.com/gabrielmongefranco/privatium-app-meds_
 
 
 ----

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# This file is part of Prescription Tracker
+# This file is part of Medication Tracker
 # tests/test_supply.py
 # Author(s): Gabriel Mongefranco
 # Created: 2026-10-01

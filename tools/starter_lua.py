@@ -5,7 +5,7 @@ Summary: Writes apps/meds/lib/starter_catalog.lua, the starter catalog as a Lua 
          module that the app requires once, the first time it finds the catalog empty.
          tools/build_seed.py calls write_module with the entries it built.
 
-This file is part of Prescription Tracker
+This file is part of Medication Tracker
 tools/starter_lua.py
 
 Author(s): Gabriel Mongefranco
@@ -36,7 +36,7 @@ import re
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODULE = os.path.join(ROOT, "apps", "meds", "lib", "starter_catalog.lua")
 
-HEADER = """-- This file is part of Prescription Tracker
+HEADER = """-- This file is part of Medication Tracker
 -- apps/meds/lib/starter_catalog.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-10-03

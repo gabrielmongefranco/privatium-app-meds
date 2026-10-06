@@ -1,5 +1,5 @@
 <!--
-This file is part of Prescription Tracker
+This file is part of Medication Tracker
 docs/how-it-works.md
 Author(s): Gabriel Mongefranco
 Created: 2026-10-05
@@ -15,7 +15,7 @@ Licensed under the GNU Free Documentation License v1.3 or later.
 See <https://www.gnu.org/licenses/fdl-1.3.html>. See README for full license information.
 -->
 
-# Prescription Tracker
+# Medication Tracker
 
 ## How the app works
 
@@ -34,7 +34,7 @@ Medicines run out at awkward times. The insurance plan refuses a refill that is 
 soon". A prescription runs out of refills right when you need it. And an insurance
 approval ends without warning.
 
-Prescription Tracker keeps a record of every fill and works out what comes next. It aims
+Medication Tracker keeps a record of every fill and works out what comes next. It aims
 for a middle path: refill early enough to keep a few days of medicine on hand, but not
 so early that the plan refuses to pay or the medicine piles up at home.
 
