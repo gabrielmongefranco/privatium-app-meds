@@ -47,19 +47,42 @@ local SUGGESTIONS_MAX = 8       -- Medications offered for a name that is not kn
 local NEW_PHARMACY    = 'new'   -- The choice that adds the pharmacy from the pasted details
 local STATUS_OF_FILLED = 'taking_regularly'   -- The status chosen to begin with for a medication the fills bring back
 local NAME_MAX, ADDRESS_MAX, PHONE_MAX, ALIAS_MAX = 120, 200, 40, 200
+local PHONE_KEY_DIGITS = 10   -- An area code and a number; fewer digits could match another town
 
 --- Reads ---
 
 -- Grain: one row per pharmacy.
 local function pharmacies()
-  return pv.query('SELECT id, name, npi FROM pharmacy ORDER BY name COLLATE NOCASE, id')
+  return pv.query('SELECT id, name, npi, phone FROM pharmacy ORDER BY name COLLATE NOCASE, id')
+end
+
+-- The digits of a phone number that tell one pharmacy from another, or nil when the
+-- number is too short to be sure. A leading country code 1 is left out.
+local function phone_key(phone)
+  local digits = (phone or ''):match('^[^%a]*'):gsub('%D', '')
+  if #digits == 11 and digits:sub(1, 1) == '1' then digits = digits:sub(2) end
+  if #digits < PHONE_KEY_DIGITS then return nil end
+  return digits
 end
 
 -- The pharmacy of a claim: by its identifier first, which cannot be misspelled, then
--- by its name.
+-- by its phone number, then by its name. Portals write the same pharmacy's name in
+-- different ways, with or without its town and street, but the phone number stays the
+-- same. A number that two pharmacies share picks neither.
 local function pharmacy_of(claim, known)
   for _, pharmacy in ipairs(known) do
     if claim.pharmacy_npi and pharmacy.npi == claim.pharmacy_npi then return pharmacy.id end
+  end
+  local phone = phone_key(claim.pharmacy_phone)
+  if phone then
+    local found
+    for _, pharmacy in ipairs(known) do
+      if phone_key(pharmacy.phone) == phone then
+        if found then found = false break end
+        found = pharmacy.id
+      end
+    end
+    if found then return found end
   end
   local key = text.key(claim.pharmacy_name)
   for _, pharmacy in ipairs(known) do
@@ -301,7 +324,7 @@ local function review(claims, person_id, typed, submitted)
       row.result = 'Already recorded'
     elseif not claim.details_open or (pharmacy_key(claim) or '') == '' then
       row.result = 'Details missing'
-    elseif (claim.status or ''):lower() ~= 'paid' then
+    elseif claim.has_status ~= false and (claim.status or ''):lower() ~= 'paid' then
       row.result, row.can_add = 'Not paid', true
     else
       row.result, row.can_add, row.ready = 'Ready', true, true
@@ -337,7 +360,13 @@ local function paste_page(typed, err)
   })
 end
 
-local function review_page(found, person, pasted, typed, err)
+-- What the summary says about the page that was read.
+local function read_as(about)
+  if not about then return '' end
+  return ' Read as ' .. about.name .. '.' .. (about.left_out_note and (' ' .. about.left_out_note) or '')
+end
+
+local function review_page(found, person, pasted, typed, err, about)
   local ready, asked = 0, 0
   for _, row in ipairs(found.rows) do if row.ready then ready = ready + 1 end end
   for _, subject in ipairs(found.medications) do if not subject.known then asked = asked + 1 end end
@@ -349,7 +378,7 @@ local function review_page(found, person, pasted, typed, err)
     statuses = choices.STATUSES,
     catalog_options = catalog_entry.options(),
     summary = page.counted(#found.rows, 'fill', 'fills') .. ' found. ' .. ready .. ' ready to add. '
-      .. page.counted(asked, 'name is', 'names are') .. ' new to the app.',
+      .. page.counted(asked, 'name is', 'names are') .. ' new to the app.' .. read_as(about),
   })
 end
 
@@ -379,14 +408,19 @@ end)
 pv.post(PASTE .. '/read', function(req)
   local person_id, pasted, problem = read_request(req.form)
   if problem then return paste_page(req.form, problem) end
-  local claims = portal_reader.read(pasted)
+  local claims, about = portal_reader.read(pasted)
   if #claims == 0 then
+    -- A page the app knows can still hold no fill, such as a medication list where no
+    -- medication shows a fill date.
+    if about then
+      return paste_page(req.form, 'The app found no fills in that text.' .. read_as(about))
+    end
     req.form.notice = 'unread'
     return paste_page(req.form)
   end
   local typed = {}
   return review_page(review(claims, person_id, typed, false),
-    pv.get_row('person', person_id), pasted, typed)
+    pv.get_row('person', person_id), pasted, typed, nil, about)
 end)
 
 pv.post(PASTE .. '/add', function(req)
@@ -395,7 +429,7 @@ pv.post(PASTE .. '/add', function(req)
 
   -- The text is read again and every value is checked again. What the review page
   -- sent back is used only for the choices a person made there.
-  local claims = portal_reader.read(pasted)
+  local claims, about = portal_reader.read(pasted)
   local found = review(claims, person_id, req.form, true)
 
   local wanted, unanswered = {}, 0
@@ -415,7 +449,7 @@ pv.post(PASTE .. '/add', function(req)
   if unanswered > 0 then
     return review_page(found, pv.get_row('person', person_id), pasted, req.form,
       'Nothing was added yet. ' .. page.counted(unanswered, 'choice is', 'choices are')
-      .. ' still open. Each one is marked below.')
+      .. ' still open. Each one is marked below.', about)
   end
 
   local saved = store.together('fill', function(tx)
