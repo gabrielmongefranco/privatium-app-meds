@@ -78,7 +78,7 @@ Run them all from the root of the repository.
 | Check | Covers |
 |---|---|
 | Lint | The rules of Privatium for an app: bound SQL parameters, the `csrf()` token in every form, labels on every field, heading order, and more |
-| Unit tests | The Lua modules with no framework calls: cleaning text, checking dates, numbers, amounts, phone numbers, email and website addresses, building a short name, merging choices, matching names, refill words, reading a pasted portal page, taking apart a name as a portal wrote it, the words of a drug reference, and the icon of a dose form |
+| Unit tests | The Lua modules with no framework calls: cleaning text, checking dates, numbers, amounts, phone numbers, email and website addresses, building a short name, merging choices, matching names, refill words, reading each portal page the app knows, from invented copies, taking apart a name as a portal wrote it, the words of a drug reference, and the icon of a dose form |
 | Supply and catalog tests | The refill dates against a day-by-day simulation, date edges, the special frame values, invalid rules and view grain; the catalog builder against invented reference answers |
 | Smoke test | The screens over HTTP, on a real node: adding, changing and removing records, empty and invalid input, the longest values, and requests that must be refused |
 

@@ -2,7 +2,7 @@
 -- tests/lua/test_portal_reader.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-09-27
+-- Last Modified: 2026-10-05
 -- Summary: Unit tests for apps/meds/lib/portal_reader.lua and for the matching of names as
 --          a portal writes them. Every name and number is invented.
 -- Notes: See README file for documentation and full license information.
@@ -98,6 +98,8 @@ return function(equal)
   local claims = portal_reader.read(PAGE)
   equal('every fill is found', #claims, 4)
   equal('the heading line is not a fill', claims[1].filled_on, '2026-09-20')
+  equal('the page is read as the claims page', select(2, portal_reader.read(PAGE)).name,
+    'Prime Therapeutics recent claims')
 
   local first = claims[1]
   equal('the date is turned into year-month-day', first.filled_on, '2026-09-20')

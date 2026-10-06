@@ -67,7 +67,8 @@ view, and must change in the same commit as `schema.sql`.
 | `lib/entries.lua` | Reads the tracked medications with their products, refill dates, words, groups and search text |
 | `lib/refill.lua` | Pure Lua: the group and the words of a refill status, and the status a new fill leads to |
 | `lib/fills.lua` | Checks a fill and writes it, with the tracked medication that goes with it |
-| `lib/portal_reader.lua` | Pure Lua: takes the pasted text of a portal page apart into claims |
+| `lib/portal_reader.lua` | Pure Lua: works out which page a pasted text came from and hands it to that page's reader |
+| `lib/portals/` | Pure Lua: one reader for each portal page the app reads, and `common.lua` with the dates, amounts, phone numbers and tab-separated rows they share. A new page gets its own module and a place in the order in `portal_reader.lua`. |
 | `lib/authorization_watch.lua` | Finds the prior authorizations that end soon or have ended |
 | `lib/people_filter.lua` | The person filter that list pages share |
 | `lib/store.lua` | The one place that writes and removes records |
@@ -187,7 +188,7 @@ view, and must change in the same commit as `schema.sql`.
   it.
 - Every time and date on a screen is local. Read them from `lib/clock.lua`, and use
   `date('now', 'localtime')` in SQL.
-- Pasted text is untrusted. `portal_reader` only takes it apart; `fills.read` checks every
+- Pasted text is untrusted. `portal_reader` and the readers under `lib/portals/` only take it apart; `fills.read` checks every
   value, and the add step reads the text again instead of trusting the review form.
 - A close match in a search is a suggestion. Code never picks a medication from one.
   Two things pick one: a name that exactly one medication answers to, and a pasted name

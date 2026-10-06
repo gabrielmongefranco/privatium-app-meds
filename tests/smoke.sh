@@ -1468,6 +1468,64 @@ done
 expect_status "a page with 60 names is read" 200 "$(post /fills/paste /fills/paste/read "person_id=$alex" "pasted=$many")"
 expect_text "every fill of the long page is found" "60 fills found."
 
+# The other pages the app reads. Each one is named on the review page.
+month_day() { LC_ALL=C date -d "$1" "+$2"; }
+statement="$(printf ' \t%s\t700040\tLISINOPRIL 10MG TABS\nNDC: 00000-0000-00\t30\t30\tDr. PAT SAMPLE\tSample Drugs Specialty\n(555) 555-0133\tEXAMPLE PLAN\t$12.00\t$5.00' \
+  "$(month_day '-6 days' '%b %d, %Y')")"
+expect_status "a tax statement is read" 200 "$(post /fills/paste /fills/paste/read "person_id=$alex" "pasted=$statement")"
+expect_text "the tax statement is named" "1 fill found. 1 ready to add. 1 name is new to the app. Read as DromosPTM patient tax statement."
+expect_text "a pharmacy with the same phone number is known" "Known pharmacy"
+expect_no_text "a pharmacy with the same phone number is not added again" "Add Sample Drugs Specialty"
+fills_before="$(count_of fill)"; pharmacies_before="$(count_of pharmacy)"
+expect_status "the tax statement is added" 303 "$(post /fills/paste /fills/paste/add "person_id=$alex" "pasted=$statement" \
+  'include_1=yes' "medication_1_choice=$prinivil" 'medication_1_status=taking_regularly')"
+expect_status "the fill of the tax statement is added" "$((fills_before + 1))" "$(count_of fill)"
+expect_status "the tax statement adds no pharmacy" "$pharmacies_before" "$(count_of pharmacy)"
+
+mychart="LISINOPRIL 10 MG TABLET
+Learn more
+Prescription Details
+Refill Details
+Quantity30 tablets
+Day supply30
+Last filled$(month_day '-7 days' '%B %-d, %Y')
+Pharmacy Details
+Example Pharmacy - Anytown, MI - 1 Example Street
+1 Example Street, Anytown MI 48000
+555-555-0100
+Map
+METFORMIN 500 MG TABLET
+Learn more
+Details
+Started takingJanuary 5, 2026"
+expect_status "a MyChart page is read" 200 "$(post /fills/paste /fills/paste/read "person_id=$alex" "pasted=$mychart")"
+expect_text "the MyChart page is named" "Read as MyChart medications. 1 medication shows no fill date, so it is not listed."
+expect_text "a MyChart pharmacy is known by its phone number" "Known pharmacy"
+expect_text "a MyChart name the app knows is known" "Known name"
+
+export="$(printf 'Rx Number\tDate of Service\tDrug Name\tQuantity\tDays Supply\tPharmacy\tPharmacy ID\tPlan Paid Amount\tPatient Responsibility\tDeductible\tClaim Status\n700041\t%s\tLISINOPRIL 10 MG TABLET\t30\t30\tEXAMPLE PHARMACY 1 EXAMPLE STREET ANYTOWN, MI 48000 (555) 555-0100\t1234567893     \t$12.00\t$5.00\t$0.00\tDenied' \
+  "$(us '-8 days')")"
+expect_status "a claims export is read" 200 "$(post /fills/paste /fills/paste/read "person_id=$alex" "pasted=$export")"
+expect_text "the claims export is named" "1 fill found. 0 ready to add. 0 names are new to the app. Read as Prime Therapeutics claims history export."
+expect_text "a denied claim is not paid" "Denied"
+
+list="Your Medications
+LISINOPRIL 10 MG TABLET
+Refills Remaining: 1
+Last Pickup Date:
+Rx#: 700042"
+expect_status "a medication list is read" 200 "$(post /fills/paste /fills/paste/read "person_id=$alex" "pasted=$list")"
+expect_text "a medication list names the pages the app reads" "It reads the Prime Therapeutics recent claims page"
+nofill="METFORMIN 500 MG TABLET
+Learn more
+Refill Details
+Quantity90 tablets
+Pharmacy Details
+Example Pharmacy
+Map"
+expect_status "a MyChart page with no fill date is read" 200 "$(post /fills/paste /fills/paste/read "person_id=$alex" "pasted=$nofill")"
+expect_text "a known page with no fill says so" "The app found no fills in that text. Read as MyChart medications."
+
 ### Time Of Day ###
 # A time of day of the starter list shows its icons before the words; a time the
 # household typed itself shows the words alone.

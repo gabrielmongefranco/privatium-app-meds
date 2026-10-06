@@ -2,7 +2,7 @@
 -- apps/meds/lib/page.lua
 -- Author(s): Gabriel Mongefranco
 -- Created: 2026-09-27
--- Last Modified: 2026-10-03
+-- Last Modified: 2026-10-05
 -- Summary: Small helpers that every screen shares: the notice shown after a save, the
 --          list of problems at the top of a form, and the wording of a count. Pure Lua
 --          with no framework calls, so plain Lua can test it.
@@ -32,7 +32,9 @@ local NOTICES = {
   removed = 'Removed.',
   missing = 'That record is not in the app. It may have been removed.',
   named   = 'Saved. The search now finds this medication by that name.',
-  unread  = 'The app found no fills in that text. Open the details of each fill in the portal, then copy the list again.',
+  unread  = 'The app found no fills in that text. It reads the Prime Therapeutics recent claims page and claims '
+    .. 'history export, the MyChart medications page and the DromosPTM patient tax statement. On the Prime '
+    .. 'claims page, open the details of each fill, then copy the list again.',
   merged  = 'Merged. Everything from the other entry now belongs to this medication.',
 }
 
