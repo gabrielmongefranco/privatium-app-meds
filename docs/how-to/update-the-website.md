@@ -3,7 +3,7 @@ This file is part of Medication Tracker
 docs/how-to/update-the-website.md
 Author(s): Gabriel Mongefranco
 Created: 2026-10-05
-Last Modified: 2026-10-05
+Last Modified: 2026-10-06
 Summary: How the documentation website is built from README.md and docs/, which files
          control its look, and how to preview a change before it is published.
 Notes: See README file for documentation and full license information.
@@ -50,13 +50,20 @@ repository needs no domain file of its own.
 
 | File | What it does |
 |---|---|
-| `_config.yml` | The site's title, description and address, the Markdown settings, and the files left out of the site. |
+| `_config.yml` | The site's title, description and address, the Google Analytics ID, the Markdown settings, and the files left out of the site. |
 | `_layouts/default.html` | The page around each Markdown file: the header and its links, the footer, and the page title. |
 | `assets/css/site.css` | The colors, fonts and spacing. They follow the Privatium website, so the two sites match. |
 | `assets/js/diagrams.js` | Draws Mermaid diagrams. It loads only on pages that have one. |
 
 Each page's title comes from its first H2 heading, the page subtitle that every
 documentation page has. So a new page needs no extra setting.
+
+### Visitor counts
+
+Every page of the website loads the Google tag, which sends visit counts to Google
+Analytics. The tag uses the ID in `google_analytics_id` in `_config.yml`. To turn it off,
+for example in a fork, delete that line. The tag is only on the website. The app that runs
+inside Privatium never loads it, so your records are never sent to Google.
 
 ### Change a page
 
