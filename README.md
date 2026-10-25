@@ -3,7 +3,7 @@ This file is part of Medication Tracker
 README.md
 Author(s): Gabriel Mongefranco
 Created: 2026-09-26
-Last Modified: 2026-10-05
+Last Modified: 2026-10-25
 Summary: Provides an overview of the project, in Markdown format.
 Notes: See README file for documentation and full license information.
 
@@ -47,7 +47,7 @@ The documentation is also on the [Medication Tracker website](https://dev.mongef
 
 + **[User guide](docs/usage.md):** how to use every screen, with pictures.
 + **[Words to know](docs/glossary.md):** the pharmacy and insurance words the app uses, in plain language.
-+ **[How the app works](docs/how-it-works.md):** describes how the app picks refill dates, why it keeps a backup, and what stays private.
++ **[Refill dates, backups and privacy](docs/how-it-works.md):** describes how the app picks refill dates, why it keeps a backup, and what stays private.
 + **For developers:** the [documentation index](docs/README.md) lists the architecture and data model, and covers how to set up a development copy, how to run the tests, how to rebuild the catalog and how to publish a release. [`apps/meds/README.md`](apps/meds/README.md) describes the app folder, and [`SKILLS.md`](SKILLS.md) lists the guides an AI assistant reads before changing this repository.
 
 

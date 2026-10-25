@@ -3,7 +3,7 @@ This file is part of Medication Tracker
 docs/how-it-works.md
 Author(s): Gabriel Mongefranco
 Created: 2026-10-05
-Last Modified: 2026-10-05
+Last Modified: 2026-10-25
 Summary: How the app works, in plain words: how it picks the refill dates and the backup
          supply, how it estimates insurance rules, how it matches medicine names, where
          the catalog comes from, and what it keeps private.
@@ -17,7 +17,7 @@ See <https://www.gnu.org/licenses/fdl-1.3.html>. See README for full license inf
 
 # Medication Tracker
 
-## How the app works
+## Refill dates, backups and privacy
 
 [Back to project README](../README.md)
 
@@ -27,7 +27,7 @@ what it keeps private. It is for families who want to trust the dates they see, 
 anyone curious about the rules. The [user guide](usage.md) shows the screens, and
 [Words to know](glossary.md) explains the terms.
 
-### What the app is for
+### Purpose
 
 Families who manage several long-term medicines face the same problems again and again.
 Medicines run out at awkward times. The insurance plan refuses a refill that is "too
@@ -74,7 +74,7 @@ From December 12 the refill shows as due, 3 days ahead. Once December 15 has pas
 row reads "Fill now. Runs out in 12 days", and it counts down. It only becomes overdue
 after December 28, when the medicine is gone.
 
-### How the app estimates your insurance rules
+### Estimates of your insurance rules
 
 Most plans pay for a refill only once most of the last fill is used. The app copies the
 way plans usually count:
@@ -155,7 +155,7 @@ picks one when it has seen that exact name before. It also picks one when the po
 name starts with the brand or generic name of exactly one product and includes its exact
 strength. Even then, the review page shows the choice before anything is saved.
 
-### Where the catalog comes from
+### Catalog sources
 
 The app comes with about 2,850 common products, plus 619 other names for them. They
 include:

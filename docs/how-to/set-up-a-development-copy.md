@@ -3,7 +3,7 @@ This file is part of Medication Tracker
 docs/how-to/set-up-a-development-copy.md
 Author(s): Gabriel Mongefranco
 Created: 2026-10-05
-Last Modified: 2026-10-05
+Last Modified: 2026-10-25
 Summary: How to run the app from a clone of the repository while you change it, and how
          to lint it before you commit.
 Notes: See README file for documentation and full license information.
@@ -16,7 +16,7 @@ See <https://www.gnu.org/licenses/fdl-1.3.html>. See README for full license inf
 
 # Medication Tracker
 
-## How to set up a development copy
+## Set up a development copy
 
 [Back to project README](../../README.md)
 
@@ -24,7 +24,7 @@ This page shows how to run the app straight from a clone of the repository, so a
 you save shows up when you refresh the browser. It is for developers. To simply use the
 app, follow the Quick Start Guide in the project README instead.
 
-### What you need
+### Requirements
 
 | Tool | Note |
 |---|---|
@@ -63,8 +63,8 @@ app itself is Lua, SQL and HTML templates that Privatium runs.
    privatium lint apps/meds
    ```
 
-   The command exits with code 3 while any finding remains. Then run the other checks in
-   [How to run the tests](run-the-tests.md).
+   The command exits with code 3 while any finding remains. Then run the other checks on
+   the [Run the tests](run-the-tests.md) page.
 
 Link the app folder; never use the repository itself as Privatium's data folder. That
 keeps private keys and real records out of the working tree.
@@ -73,7 +73,7 @@ keeps private keys and real records out of the working tree.
 
 A new data folder starts empty. To see the app filled in, use the invented household in
 `tests/fixtures/sample-household.json` through the screenshot script, which loads it into
-a temporary node. [How to update the screenshots](update-the-screenshots.md) explains it.
+a temporary node. The [Update the screenshots](update-the-screenshots.md) page explains it.
 Never load that file into a real household's node.
 
 ### Conclusion
@@ -83,8 +83,8 @@ commit.
 
 ### Additional resources
 
-- [How to run the tests](run-the-tests.md)
-- [How to update the screenshots](update-the-screenshots.md)
+- [Run the tests](run-the-tests.md)
+- [Update the screenshots](update-the-screenshots.md)
 - [Architecture](../architecture.md)
 - [Privatium's guide to an app in its own repository](https://github.com/gabrielmongefranco/privatium/blob/main/docs/app-repository.md)
 - [Privatium's backup and restore guide](https://github.com/gabrielmongefranco/privatium/blob/main/docs/backup-and-restore.md), which names the data folder on each platform

@@ -3,7 +3,7 @@ This file is part of Medication Tracker
 docs/how-to/build-the-starter-catalog.md
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-10-05
+Last Modified: 2026-10-25
 Summary: How to build the starter catalog the app ships, what it is built from, and
          the licenses of its sources.
 Notes: See README file for documentation and full license information.
@@ -16,7 +16,7 @@ See <https://www.gnu.org/licenses/fdl-1.3.html>. See README for full license inf
 
 # Medication Tracker
 
-## How to build the starter catalog
+## Build the starter catalog
 
 [Back to project README](../../README.md)
 
@@ -27,7 +27,7 @@ references.
 
 Nobody who only uses the app has to do this. The file is part of the repository.
 
-### What the catalog is built from
+### Catalog sources
 
 | File in `tools/seed/` | Holds |
 |---|---|
@@ -59,7 +59,7 @@ about the chosen product.
 
 The catalog has 264 controlled products and 29 specialty suggestions.
 
-### What you need
+### Requirements
 
 | Tool | Note |
 |---|---|
@@ -88,13 +88,13 @@ The catalog has 264 controlled products and 29 specialty suggestions.
    build_seed: 72 entries written by hand, 229 syringes and needles, 2551 entries from RxTerms, 544 brand names as other names
    ```
 
-4. Run the checks in [How to run the tests](run-the-tests.md). The smoke test opens the
+4. Run the checks on the [Run the tests](run-the-tests.md) page. The smoke test opens the
    catalog on an empty app, which loads the new module, and reads its counts from it.
 5. If the counts changed, update them in [the data model](../data-model.md),
-   [How the app works](../how-it-works.md), [Words to know](../glossary.md), the
+   [Refill dates, backups and privacy](../how-it-works.md), [Words to know](../glossary.md), the
    [user guide](../usage.md) and the project README.
 
-### What the script does
+### Script steps
 
 1. It reads the lists and drops a drug that is on two of them.
 2. It asks RxTerms for every product of each drug: one for each strength and form.
@@ -130,7 +130,7 @@ The catalog has 264 controlled products and 29 specialty suggestions.
 
 The same lists and the same answers always give the same file.
 
-### What the script sends
+### Data the script sends
 
 The script sends names of drugs and numbers of products to the three services. It sends
 nothing about any person, and it reads no record of the app.
@@ -172,7 +172,7 @@ You can now rebuild the starter catalog and say where each of its entries came f
 
 - [Architecture: the catalog and the drug references](../architecture.md#the-catalog-and-the-drug-references)
 - [Data model](../data-model.md)
-- [How to run the tests](run-the-tests.md)
+- [Run the tests](run-the-tests.md)
 - [RxTerms search, National Library of Medicine](https://clinicaltables.nlm.nih.gov/apidoc/rxterms/v3/doc.html)
 - [ClinCalc DrugStats, The Top 200](https://clincalc.com/DrugStats/Top200Drugs.aspx)
 

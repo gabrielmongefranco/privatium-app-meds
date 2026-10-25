@@ -3,7 +3,7 @@ This file is part of Medication Tracker
 docs/how-to/publish-a-release.md
 Author(s): Gabriel Mongefranco
 Created: 2026-10-05
-Last Modified: 2026-10-05
+Last Modified: 2026-10-25
 Summary: How to publish a new version of the app, and how the release workflow builds and
          attaches the meds.zip file that families install.
 Notes: See README file for documentation and full license information.
@@ -16,7 +16,7 @@ See <https://www.gnu.org/licenses/fdl-1.3.html>. See README for full license inf
 
 # Medication Tracker
 
-## How to publish a release
+## Publish a release
 
 [Back to project README](../../README.md)
 
@@ -24,7 +24,7 @@ This page shows how to publish a new version of the app. It is for developers. Y
 the version, merge it, and publish a GitHub release. A workflow then checks the code and
 attaches `meds.zip`, the file families download and unzip into Privatium's `apps` folder.
 
-### What a release holds
+### Release contents
 
 Each release has two files that the workflow adds:
 
@@ -54,7 +54,7 @@ needs a new link.
 7. Open the **Actions** tab and watch the **Release app zip** workflow. When it finishes,
    `meds.zip` and `meds.zip.sha256` appear under the release's assets.
 
-### What the workflow checks
+### Workflow checks
 
 `.github/workflows/release.yml` runs only when a release is published, or when you start
 it by hand. Regular pushes and pull requests never build the zip. It does these things in
@@ -66,7 +66,7 @@ order, and stops at the first failure:
 3. It builds `meds.zip` with `git archive` and writes its checksum.
 4. It attaches both files to the release. If they are already there, it replaces them.
 
-### When the workflow fails
+### Workflow failures
 
 - **The tag does not match the version.** The log says which tag and version it found.
   Set the right version in `app.toml` and merge it. Then delete the release and its tag,
@@ -96,8 +96,8 @@ The user guide tells families how to move to the new version.
 ### Additional resources
 
 - [User guide: update to a new version](../usage.md#update-to-a-new-version)
-- [How to run the tests](run-the-tests.md)
-- [How to update the website](update-the-website.md)
+- [Run the tests](run-the-tests.md)
+- [Update the website](update-the-website.md)
 - [Privatium's guide to sharing an app](https://github.com/gabrielmongefranco/privatium/blob/main/docs/app-repository.md#9-share-the-app)
 - [GitHub's guide to managing releases](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository)
 

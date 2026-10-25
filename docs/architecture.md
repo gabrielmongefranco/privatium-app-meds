@@ -3,7 +3,7 @@ This file is part of Medication Tracker
 docs/architecture.md
 Author(s): Gabriel Mongefranco
 Created: 2026-09-26
-Last Modified: 2026-10-05
+Last Modified: 2026-10-25
 Summary: How the app is built: its parts, the page frame and in-document navigation, the
          rules every browser script follows, the product box, the readers of pasted portal
          pages, the catalog and the drug references, and the accessibility and security
@@ -26,7 +26,7 @@ This page explains how the app is put together, for developers who change it. It
 the parts of the app folder, how pages change inside Privatium's page frame, how forms
 find and add records, how the History filters and reports work, how pasted portal text
 becomes fills, and how the catalog uses the public drug references. The [data model](data-model.md) describes every table and the
-exact date rules. [How the app works](how-it-works.md) gives the same rules in plain
+exact date rules. [Refill dates, backups and privacy](how-it-works.md) gives the same rules in plain
 words for families.
 
 ### Parts of the app
@@ -182,7 +182,7 @@ script, and searches itself when the form is posted without the script. With a c
 thousands of entries, a search narrows in SQL first and compares the few rows left in
 Lua, so a request never runs out of steps.
 
-#### How a typed name picks a medication
+#### Matching a typed name to a medication
 
 The review of pasted fills uses the explicit picker `views/_medication_picker.lsp`. A
 typed name is compared with the short name, the generic name, the brand name and the
@@ -392,8 +392,8 @@ holds up to about 64 kilobytes, roughly 100 fills.
 
 The catalog gets its entries in three ways: the starter catalog, which the app loads
 into an empty catalog; the online search, one entry at a time; and typing. The app never
-loads a whole drug reference. [How to build the starter catalog](how-to/build-the-starter-catalog.md)
-covers the builder.
+loads a whole drug reference. The [Build the starter catalog](how-to/build-the-starter-catalog.md)
+page covers the builder.
 
 The online search runs in the browser. It asks the references in this order and stops
 at the first that finds something. A reference that limits requests, or takes longer
@@ -489,16 +489,16 @@ conditions they treat, prescription and claim numbers, and amounts paid.
 ### Conclusion
 
 You now know how the app's parts fit together and the rules a change must keep. Read the
-[data model](data-model.md) before changing the schema, and run the checks in
-[How to run the tests](how-to/run-the-tests.md) before you commit.
+[data model](data-model.md) before changing the schema, and run the checks on the
+[Run the tests](how-to/run-the-tests.md) page before you commit.
 
 ### Additional resources
 
 - [Data model](data-model.md)
-- [How the app works](how-it-works.md)
+- [Refill dates, backups and privacy](how-it-works.md)
 - [Compliance](compliance.md)
-- [How to run the tests](how-to/run-the-tests.md)
-- [How to build the starter catalog](how-to/build-the-starter-catalog.md)
+- [Run the tests](how-to/run-the-tests.md)
+- [Build the starter catalog](how-to/build-the-starter-catalog.md)
 - [The app's own skill](../apps/meds/SKILL.md), with the routes and conventions
 - [Privatium Tier 1 guide](../skills/privatium-tier1-lua/SKILL.md)
 - [Privatium accessibility guide](../skills/privatium-accessibility/SKILL.md)
