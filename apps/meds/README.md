@@ -3,7 +3,7 @@ This file is part of Medication Tracker
 apps/meds/README.md
 Author(s): Gabriel Mongefranco
 Created: 2026-09-26
-Last Modified: 2026-10-05
+Last Modified: 2026-10-25
 Summary: What the meds app folder holds and how to run it.
 Notes: See README file for documentation and full license information.
 
@@ -22,7 +22,7 @@ This folder is the app itself. Privatium loads it from the `apps/` folder of its
 directory, and nothing outside this folder is needed to run it. The rest of the
 repository holds the documentation, the license and the assistant guides.
 
-### What it does
+### Features
 
 The app shows which refills are due, keeps each person's medication list with the
 catalog products behind each medicine, records fills by hand or from text copied from a

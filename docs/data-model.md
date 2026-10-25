@@ -3,7 +3,7 @@ This file is part of Medication Tracker
 docs/data-model.md
 Author(s): Gabriel Mongefranco
 Created: 2026-09-26
-Last Modified: 2026-10-05
+Last Modified: 2026-10-25
 Summary: Every table and view the app stores: grain, columns, meaning, which fields hold
          personal or health information, how the refill dates are worked out, and what
          the starter catalog holds.
@@ -29,7 +29,7 @@ code.
 [The user guide](usage.md) shows the screens for each table, and the
 [architecture page](architecture.md) explains how the code uses them.
 
-### How the app stores data
+### Data storage
 
 Privatium keeps every record as one line of plain text in an append-only log under the
 node's data directory, at `data/meds/log/<device>.jsonl`. The tables below are rebuilt
@@ -355,7 +355,7 @@ Every view except `v_spending_by_year` leaves out the quantity and the amount pa
 Those columns need SQLite's decimal extension, which many SQLite tools lack. Without
 them, any SQLite tool can run the other views against the cache file.
 
-#### How the dates are worked out
+#### Date calculations
 
 The app works out two dates for each tracked medication, over the fills of all of its
 products. They are estimates from recorded fills and rules, rather than a guarantee that
@@ -417,7 +417,7 @@ The backup is 7 days, the minimum, so the next fill date is April 4 as well.
 calendar dates, and day counts are whole numbers.
 `days_until_next_fill` may be negative while `days_until_runs_out` is still positive.
 
-#### How the refill status is worked out
+#### Refill status calculation
 
 Overdue uses physical supply. Due and due soon use the next fill date.
 Checks run in the order shown, with household reminder settings applied.
@@ -450,8 +450,8 @@ it by itself the first time a page needs the catalog and finds it empty.
 The catalog has 2,852 medications and 619 other names for them. It holds the 200 drugs
 most prescribed in the United States, and the drugs of a second list of common medications, at every strength
 that RxTerms lists. It also holds entries written by hand, such as continuous glucose
-monitors, and syringes and needles in many sizes. [How to build the starter catalog](how-to/build-the-starter-catalog.md) names
-the sources and their licenses. It holds no person, no fill and no other record about anyone.
+monitors, and syringes and needles in many sizes. The [Build the starter catalog](how-to/build-the-starter-catalog.md) page
+names the sources and their licenses. It holds no person, no fill and no other record about anyone.
 
 `lib/starter.lua` loads it only when the catalog holds no medication. The records carry
 fixed ids, so a second device that loads it repeats the same records instead of doubling
@@ -473,7 +473,7 @@ relates to its catalog products, and how the two refill dates are worked out. Ch
 - [Using the app](usage.md)
 - [The app folder](../apps/meds/README.md)
 - [Architecture](architecture.md)
-- [How the app works](how-it-works.md), the same date rules in plain words.
+- [Refill dates, backups and privacy](how-it-works.md), the same date rules in plain words.
 - [Privatium's app contract](https://github.com/gabrielmongefranco/privatium/blob/main/spec/app-contract.md), the normative definition of an app and its data.
 - [Privatium's data dictionary](https://github.com/gabrielmongefranco/privatium/blob/main/spec/data-dictionary.md), which defines the column types.
 - [Privatium's security page](https://github.com/gabrielmongefranco/privatium/blob/main/docs/security.md)

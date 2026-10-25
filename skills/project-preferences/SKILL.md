@@ -100,6 +100,27 @@ node on a temporary data directory and uses invented data only.
   change by swapping the main region, so a script listens on the document or sets up each
   new page on `htmx:load` with a guard, and never assumes a fresh page.
 
+### Terms
+
+Use one name for each concept in the interface, messages, help, and documentation.
+[Words to know](../../docs/glossary.md) defines each of these for families; add a new
+term there and here together.
+
+| Use | Meaning | Avoid |
+|---|---|---|
+| person, people | Someone in the household whose medications the app tracks | patient, member, user |
+| medication | A medicine on screen and in developer pages. Family pages may say "medicine" in running text, but use "medication" when they name a screen, tab or field. | prescription, when it means the medicine itself |
+| tracked medication | A medication that a person takes, shown on the Medications tab | item |
+| catalog | The list of products the app knows about | database, library |
+| product | One catalog entry: one medication at one strength, form and package | item, SKU |
+| drug | The active substance, as in "generic name" and "drug references" (the public lists the online search reads) | drug, when it means a medication or a product |
+| fill | One time a pharmacy gives out a medication | dispense, order, purchase |
+| refill | Another fill of the same prescription | reorder |
+| prescriber | The clinician who wrote the prescription | doctor (in the interface), provider |
+| insurance plan, plan | Whoever pays for a fill. "Payer" appears only in the data model and developer pages. | insurer, insurance company, carrier |
+| prior authorization | A plan's approval before it pays for a medication. Family pages explain it as an approval from the plan at first use. | PA, preauthorization |
+| patient portal | A plan's, pharmacy's or doctor's website that lists fills or medications | portal site, account page |
+
 ### Project skills
 
 Load `privatium-tier1-lua`, `privatium-security` and `privatium-accessibility` from

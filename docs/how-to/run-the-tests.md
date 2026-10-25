@@ -3,7 +3,7 @@ This file is part of Medication Tracker
 docs/how-to/run-the-tests.md
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-10-05
+Last Modified: 2026-10-25
 Summary: How to run the lint, the unit tests and the smoke test, and what each one covers.
 Notes: See README file for documentation and full license information.
 
@@ -15,7 +15,7 @@ See <https://www.gnu.org/licenses/fdl-1.3.html>. See README for full license inf
 
 # Medication Tracker
 
-## How to run the tests
+## Run the tests
 
 [Back to project README](../../README.md)
 
@@ -23,7 +23,7 @@ This page shows how to check the app before you commit a change. It is for devel
 There are four checks: the lint, the unit tests, the supply tests and the smoke test.
 Run them all from the root of the repository.
 
-### What you need
+### Requirements
 
 | Tool | Used by | Note |
 |---|---|---|
@@ -73,7 +73,7 @@ Run them all from the root of the repository.
    Leave `PRIVATIUM` out when the program is on your path. The test uses port 18490. Set
    `MEDS_TEST_PORT` to use another port.
 
-### What each check covers
+### Coverage of each check
 
 | Check | Covers |
 |---|---|
@@ -98,19 +98,19 @@ When a check fails, set `MEDS_SMOKE_KEEP` to a folder and run the test again. Th
 each failed check is written there, named after the check, so you can read what the app
 answered.
 
-### How the smoke test keeps your data safe
+### Data safety in the smoke test
 
 The smoke test starts its own node on a temporary data directory. It copies the app into
 that directory, so it writes nothing inside the repository and nothing in your own data
 directory. It uses invented names only. When it ends, it stops the node and removes the
 temporary directory.
 
-### What no test covers
+### Gaps in test coverage
 
 No committed test drives a browser, so none runs the online lookup of a new medication
 as a person would. The smoke test checks what the server does with the fields the lookup
-fills in. The screenshot script in
-[How to update the screenshots](update-the-screenshots.md) does drive Firefox, but it
+fills in. The screenshot script on the
+[Update the screenshots](update-the-screenshots.md) page does drive Firefox, but it
 only takes pictures and checks no behavior. Keyboard use, a screen reader, zoom and small
 screens need a person. [The compliance page](../compliance.md) lists those checks.
 
@@ -125,7 +125,7 @@ documentation matches the change.
 ### Additional resources
 
 - [Architecture](../architecture.md)
-- [How to update the screenshots](update-the-screenshots.md)
+- [Update the screenshots](update-the-screenshots.md)
 - [Compliance](../compliance.md)
 - [Data model](../data-model.md)
 - [Project preferences](../../skills/project-preferences/SKILL.md)

@@ -3,7 +3,7 @@ This file is part of Medication Tracker
 docs/glossary.md
 Author(s): Gabriel Mongefranco
 Created: 2026-10-05
-Last Modified: 2026-10-05
+Last Modified: 2026-10-25
 Summary: Plain explanations of the pharmacy, insurance and app words that the app and
          its documentation use.
 Notes: See README file for documentation and full license information.
@@ -102,13 +102,13 @@ them all before you start. Come back here when a word on a screen is new to you.
 ### Conclusion
 
 You now know the words that the screens use. The [user guide](usage.md) shows how to do
-each task, and [How the app works](how-it-works.md) explains how the app picks the
+each task, and [Refill dates, backups and privacy](how-it-works.md) explains how the app picks the
 dates it shows.
 
 ### Additional resources
 
 - [User guide](usage.md)
-- [How the app works](how-it-works.md)
+- [Refill dates, backups and privacy](how-it-works.md)
 - [Documentation index](README.md)
 
 [Back to project README](../README.md)

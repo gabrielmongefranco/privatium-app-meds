@@ -3,7 +3,7 @@ This file is part of Medication Tracker
 docs/how-to/update-the-website.md
 Author(s): Gabriel Mongefranco
 Created: 2026-10-05
-Last Modified: 2026-10-06
+Last Modified: 2026-10-25
 Summary: How the documentation website is built from README.md and docs/, which files
          control its look, and how to preview a change before it is published.
 Notes: See README file for documentation and full license information.
@@ -16,7 +16,7 @@ See <https://www.gnu.org/licenses/fdl-1.3.html>. See README for full license inf
 
 # Medication Tracker
 
-## How to update the website
+## Update the website
 
 [Back to project README](../../README.md)
 
@@ -26,7 +26,7 @@ It is for developers. The website is made from the same Markdown files you read 
 GitHub, so you update it by changing those files. This page also shows how to change the
 website's look and how to preview a change.
 
-### How the site is built
+### Site build
 
 GitHub Pages builds the site with Jekyll, a program that turns Markdown into web pages.
 The build follows the same rules GitHub uses to show the files:
@@ -123,7 +123,7 @@ live.
 
 ### Additional resources
 
-- [How to publish a release](publish-a-release.md)
+- [Publish a release](publish-a-release.md)
 - [Documentation index](../README.md)
 - [Data model](../data-model.md), the page with a Mermaid diagram
 - [GitHub Pages and Jekyll](https://docs.github.com/en/pages/setting-up-a-github-pages-site-with-jekyll/about-github-pages-and-jekyll)

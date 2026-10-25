@@ -3,7 +3,7 @@ This file is part of Medication Tracker
 docs/how-to/update-the-screenshots.md
 Author(s): Gabriel Mongefranco
 Created: 2026-10-05
-Last Modified: 2026-10-05
+Last Modified: 2026-10-25
 Summary: How to retake the screenshots in the documentation with the invented household
          and a headless browser, and how to reuse that household in other tests.
 Notes: See README file for documentation and full license information.
@@ -16,7 +16,7 @@ See <https://www.gnu.org/licenses/fdl-1.3.html>. See README for full license inf
 
 # Medication Tracker
 
-## How to update the screenshots
+## Update the screenshots
 
 [Back to project README](../../README.md)
 
@@ -42,7 +42,7 @@ sample data, and it must never be loaded into a real household's node. Other tes
 reuse it the same way: load the starter catalog first, then post the records to the
 node's data API.
 
-### What you need
+### Requirements
 
 | Tool | Note |
 |---|---|
@@ -67,7 +67,7 @@ node's data API.
 3. If a screen changed its words, update the picture's alt text in the
    [user guide](../usage.md) so it still describes what the picture shows.
 
-### What the script does
+### Script steps
 
 1. It copies the app into a temporary data folder and starts a node there, so nothing
    touches your own data or the repository.
@@ -93,8 +93,8 @@ other tests.
 ### Additional resources
 
 - [User guide](../usage.md), where the pictures appear
-- [How to run the tests](run-the-tests.md)
-- [How to set up a development copy](set-up-a-development-copy.md)
+- [Run the tests](run-the-tests.md)
+- [Set up a development copy](set-up-a-development-copy.md)
 - [WebDriver BiDi specification](https://w3c.github.io/webdriver-bidi/)
 
 [Back to project README](../../README.md)

@@ -3,7 +3,7 @@ This file is part of Medication Tracker
 docs/usage.md
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-10-05
+Last Modified: 2026-10-25
 Summary: The user guide: how a family uses each screen of the app, from adding people and
          medications to recording fills, copying fills from a patient portal, prior
          authorizations, insurance plans and reminders.
@@ -29,7 +29,7 @@ you need.
 When a word is new to you, look it up in [Words to know](glossary.md). Every person,
 doctor and pharmacy in the pictures is invented.
 
-### What the app does for you
+### Features
 
 Medication Tracker answers three everyday questions:
 
@@ -504,7 +504,7 @@ but take it off the active list, change its status to **No longer taking** inste
 Removing hides the record in the app. Privatium still keeps the original on your
 computer, as part of its history of changes.
 
-### When a form comes back with problems
+### Fixing problems in a form
 
 If something in a form isn't right, the form comes back with a list of problems at the
 top. Each problem links to its field. Everything you typed is still there.
@@ -516,7 +516,7 @@ traveling in another time zone, you still see that computer's date.
 
 Your records stay on your own computer as plain text files. Anyone who can open those
 files can read them, so protect the computer and its backups as you would any health
-papers. [How the app works](how-it-works.md#your-privacy) explains what the app sends
+papers. [Refill dates, backups and privacy](how-it-works.md#your-privacy) explains what the app sends
 over the internet, which is only medicine names when you search online.
 
 ### Update to a new version
@@ -537,12 +537,12 @@ folder, apart from the app's folder.
 
 You can now keep each person's medicine list, record fills by hand or from a
 portal website, and see what needs a refill before it runs out. For the reasons
-behind the dates, read [How the app works](how-it-works.md).
+behind the dates, read [Refill dates, backups and privacy](how-it-works.md).
 
 ### Additional resources
 
 - [Words to know](glossary.md)
-- [How the app works](how-it-works.md)
+- [Refill dates, backups and privacy](how-it-works.md)
 - [Compliance](compliance.md): the security and accessibility checks
 - [Privatium's guide to using your apps](https://github.com/gabrielmongefranco/privatium/blob/main/docs/usage.md)
 - [Privatium's security page](https://github.com/gabrielmongefranco/privatium/blob/main/docs/security.md)

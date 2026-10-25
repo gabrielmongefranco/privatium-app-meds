@@ -3,7 +3,7 @@ This file is part of Medication Tracker
 docs/compliance.md
 Author(s): Gabriel Mongefranco
 Created: 2026-09-27
-Last Modified: 2026-10-05
+Last Modified: 2026-10-25
 Summary: The security and accessibility controls the app has, the evidence for each, the
          known gaps, and the checks a person still has to make.
 Notes: See README file for documentation and full license information.
@@ -29,12 +29,12 @@ was checked and what was not. It makes no claim to meet any law or standard.
 
 | Subject | Status on 2026-10-05 |
 |---|---|
-| Automated checks | Passing. See [How to run the tests](how-to/run-the-tests.md). |
+| Automated checks | Passing. See [Run the tests](how-to/run-the-tests.md). |
 | Accessibility checks by a person | Partly done. A headless browser run on 2026-10-05 covered focus, reflow and the page changes; the screen reader and phone checks below are open. |
 | Security review by a second person | Not done |
 | Review against a health privacy law | Not done, and not claimed |
 
-### What the app holds
+### Data the app holds
 
 The app holds health information about the members of a household: names, birth dates,
 medications, the conditions they treat, prescription numbers, claim numbers and amounts
@@ -251,10 +251,10 @@ technology.
 
 ### Additional resources
 
-- [How to run the tests](how-to/run-the-tests.md)
+- [Run the tests](how-to/run-the-tests.md)
 - [Data model](data-model.md)
 - [Architecture](architecture.md)
-- [How the app works](how-it-works.md)
+- [Refill dates, backups and privacy](how-it-works.md)
 - [WCAG 2.2 quick reference](https://www.w3.org/WAI/WCAG22/quickref/)
 - [Privatium's security page](https://github.com/gabrielmongefranco/privatium/blob/main/docs/security.md)
 
